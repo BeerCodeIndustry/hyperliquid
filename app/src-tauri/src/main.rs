@@ -6,7 +6,7 @@ mod high_level;
 mod types;
 mod utils;
 
-use high_level::batch::create_unit;
+use high_level::batch::{close_and_create_same_unit, close_unit, create_unit};
 
 #[tokio::main]
 async fn main() {
@@ -14,7 +14,11 @@ async fn main() {
     env_logger::init();
 
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![create_unit])
+        .invoke_handler(tauri::generate_handler![
+            create_unit,
+            close_unit,
+            close_and_create_same_unit
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

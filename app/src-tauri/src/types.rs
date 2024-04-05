@@ -31,7 +31,7 @@ impl OrderType {
 
 pub struct Position {
     pub id: Uuid,
-    pub asset_position: AssetPosition,
+    pub asset_position: Option<AssetPosition>,
 }
 
 pub struct Account {
@@ -44,11 +44,6 @@ pub struct Handlers {
     pub info_client: InfoClient,
     pub exchange_client: ExchangeClient,
     pub public_address: String,
-}
-
-pub struct Asset {
-    pub name: &'static str,
-    pub round_n: u32,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
