@@ -1,6 +1,8 @@
 use hyperliquid_rust_sdk::{AssetPosition, ExchangeClient, InfoClient};
 use reqwest::Proxy;
 use serde::{Deserialize, Serialize};
+use std::sync::Arc;
+use tokio::task::JoinHandle;
 use uuid::Uuid;
 
 #[derive(Clone)]
@@ -49,14 +51,14 @@ pub struct Asset {
     pub round_n: u32,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FileAccount {
     pub name: String,
     pub public_address: String,
     pub api_private_key: String,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct FileProxy {
     pub name: String,
     pub host: String,
@@ -65,8 +67,14 @@ pub struct FileProxy {
     pub password: String,
 }
 
-#[derive(Deserialize)]
-pub struct InitBatchAccount {
+#[derive(Deserialize, Debug, Clone)]
+pub struct BatchAccount {
     pub account: FileAccount,
     pub proxy: Option<FileProxy>,
+}
+
+#[derive(Clone, Debug)]
+pub struct GlobalAccount {
+    pub sub_id: Option<u32>,
+    pub account: BatchAccount,
 }

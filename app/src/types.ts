@@ -23,6 +23,11 @@ export interface HeadCell {
 }
 
 export interface Batch {
-  account_1_id: string
-  account_2_id: string
+  account_1_id: string;
+  account_2_id: string;
+}
+
+export interface BatchAccount {
+  account: Account;
+  proxy?: Proxy;
 }

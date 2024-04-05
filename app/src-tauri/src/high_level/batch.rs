@@ -2,11 +2,10 @@ use ethers::prelude::*;
 use hyperliquid_rust_sdk::{BaseUrl, ExchangeClient, InfoClient};
 use log::info;
 use reqwest::{Client, Proxy};
-use tokio::runtime::Handle;
 
 use crate::actions::exchange::{open_limit_order, open_position};
 use crate::actions::info::{can_open_position, get_position, subscribe_positions};
-use crate::types::{Account, DefaultPair, FileProxy, Handlers, InitBatchAccount, Position};
+use crate::types::{Account, BatchAccount, DefaultPair, FileProxy, Handlers, Position};
 use crate::utils::str::private_key_slice;
 
 async fn init_account(account: Account) -> Handlers {
@@ -38,10 +37,7 @@ async fn init_account(account: Account) -> Handlers {
     }
 }
 
-pub async fn get_batch_handlers(
-    account1: InitBatchAccount,
-    account2: InitBatchAccount,
-) -> [Handlers; 2] {
+pub async fn get_batch_handler(account: BatchAccount) -> Handlers {
     let default_proxy = FileProxy {
         name: "default_proxy".to_string(),
         host: "89.40.223.107".to_string(),
@@ -50,67 +46,39 @@ pub async fn get_batch_handlers(
         password: "7qrarsn88jhk".to_string(),
     };
 
-    let InitBatchAccount {
-        account: account_1,
-        proxy: proxy_1,
-    } = account1;
-    let InitBatchAccount {
-        account: account_2,
-        proxy: proxy_2,
-    } = account2;
+    let BatchAccount { account, proxy } = account;
 
-    let proxy_1 = proxy_1.unwrap_or(default_proxy.clone());
-    let proxy_2 = proxy_2.unwrap_or(default_proxy.clone());
+    let proxy = proxy.unwrap_or(default_proxy.clone());
 
-    let proxy_1 = Proxy::all(format!("{}:{}", proxy_1.host, proxy_1.port))
+    let proxy = Proxy::all(format!("{}:{}", proxy.host, proxy.port))
         .unwrap()
-        .basic_auth(&proxy_1.username, &proxy_1.password);
+        .basic_auth(&proxy.username, &proxy.password);
 
-    let proxy_2 = Proxy::all(format!("{}:{}", proxy_2.host, proxy_2.port))
-        .unwrap()
-        .basic_auth(&proxy_2.username, &proxy_2.password);
+    let private_api_key = private_key_slice(&account.api_private_key);
 
-    let private_api_key_1 = private_key_slice(&account_1.api_private_key);
-    let private_api_key_2 = private_key_slice(&account_2.api_private_key);
-
-    let handler_1 = init_account(Account {
-        public_address: account_1.public_address.to_string(),
-        private_api_key: private_api_key_1.to_string(),
-        proxy: proxy_1.clone(),
+    init_account(Account {
+        public_address: account.public_address.to_string(),
+        private_api_key: private_api_key.to_string(),
+        proxy: proxy.clone(),
     })
-    .await;
-    let handler_2 = init_account(Account {
-        public_address: account_2.public_address.to_string(),
-        private_api_key: private_api_key_2.to_string(),
-        proxy: proxy_2.clone(),
-    })
-    .await;
-
-    [handler_1, handler_2]
+    .await
 }
 
 #[tauri::command]
-pub async fn init_batch(account1: InitBatchAccount, account2: InitBatchAccount) {
-    let [handler_1, handler_2] = get_batch_handlers(account1, account2).await;
-
-    let Handlers {
-        info_client: mut info_client_1,
-        exchange_client: exchange_client_1,
-        public_address: public_address_1,
-    } = handler_1;
-
-    subscribe_positions(&mut info_client_1, &public_address_1).await;
-}
+pub async fn init_batch(account1: BatchAccount, account2: BatchAccount) {}
 
 #[tauri::command]
 pub async fn create_unit(
-    account1: InitBatchAccount,
-    account2: InitBatchAccount,
+    account1: BatchAccount,
+    account2: BatchAccount,
     asset: String,
     sz: f64,
     leverage: u32,
 ) {
-    let [handler_1, handler_2] = get_batch_handlers(account1, account2).await;
+    let [handler_1, handler_2] = [
+        get_batch_handler(account1).await,
+        get_batch_handler(account2).await,
+    ];
     let sz = sz * leverage as f64;
     let Handlers {
         info_client: mut info_client_1,
