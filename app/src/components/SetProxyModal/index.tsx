@@ -20,10 +20,10 @@ export const SetProxyModal: React.FC<{
   selected: string[];
 }> = ({ open, handleClose, selected }) => {
   const { proxies, linkAccountsProxy } = useContext(GlobalContext);
-  const [proxy, setProxy] = useState("");
+  const [proxyId, setProxyId] = useState("");
 
   const onConfirm = () => {
-    linkAccountsProxy(selected, proxy);
+    linkAccountsProxy(selected, proxyId);
     handleClose();
   };
 
@@ -43,15 +43,15 @@ export const SetProxyModal: React.FC<{
               <Select
                 labelId="proxy-label"
                 id="proxy-select"
-                value={proxy}
+                value={proxyId}
                 label="Proxy"
-                onChange={(e) => setProxy(e.target.value)}
+                onChange={(e) => setProxyId(e.target.value)}
               >
                 <MenuItem value="">
                   <em>No proxy</em>
                 </MenuItem>
                 {proxies.map((p) => (
-                  <MenuItem value={stringifyProxy(p)}>
+                  <MenuItem value={p.id}>
                     {stringifyProxy(p)}
                   </MenuItem>
                 ))}

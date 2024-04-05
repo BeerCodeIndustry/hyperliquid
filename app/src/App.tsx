@@ -1,4 +1,5 @@
 import { useState } from "react";
+
 import MuiTabs from "@mui/material/Tabs";
 import MuiTab from "@mui/material/Tab";
 import Box from "@mui/material/Box";
@@ -32,7 +33,7 @@ const App = () => {
           aria-label="basic tabs example"
         >
           {Object.values(Tabs).map(({ label, id }) => (
-            <MuiTab label={label} value={id} />
+            <MuiTab label={label} value={id} key={id} />
           ))}
         </MuiTabs>
       </Box>

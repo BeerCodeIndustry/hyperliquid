@@ -11,14 +11,14 @@ export const AddProxyModal: React.FC<{
 }> = ({ open, handleClose, handleAddAccount }) => {
   const [proxy, setProxy] = useState<ProxyType>({
     name: "",
-    ip: "",
+    host: "",
     port: "",
-    login: "",
-    pass: "",
+    username: "",
+    password: "",
   });
 
   const onConfirm = () => {
-    if (proxy.ip && proxy.port && proxy.login && proxy.pass && proxy.name) {
+    if (proxy.host && proxy.port && proxy.username && proxy.password && proxy.name) {
       handleAddAccount(proxy);
       handleClose();
     }
@@ -53,9 +53,9 @@ export const AddProxyModal: React.FC<{
               }}
             >
               <TextField
-                label="Ip"
+                label="Host"
                 variant="outlined"
-                onChange={(e) => onChange("ip", e.target.value)}
+                onChange={(e) => onChange("host", e.target.value)}
               />
               <TextField
                 label="Port"
@@ -72,14 +72,14 @@ export const AddProxyModal: React.FC<{
               }}
             >
               <TextField
-                label="Login"
+                label="Username"
                 variant="outlined"
-                onChange={(e) => onChange("login", e.target.value)}
+                onChange={(e) => onChange("username", e.target.value)}
               />
               <TextField
                 label="Password"
                 variant="outlined"
-                onChange={(e) => onChange("pass", e.target.value)}
+                onChange={(e) => onChange("password", e.target.value)}
               />
             </Box>
           </Box>
@@ -100,10 +100,10 @@ export const AddProxyModal: React.FC<{
               onClick={onConfirm}
               disabled={
                 !proxy.name ||
-                !proxy.ip ||
+                !proxy.host ||
                 !proxy.port ||
-                !proxy.login ||
-                !proxy.pass
+                !proxy.username ||
+                !proxy.password
               }
             >
               Confirm

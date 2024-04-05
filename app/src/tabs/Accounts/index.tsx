@@ -5,12 +5,13 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import { Table, Row } from "../../components/Table";
 import { AddAccountModal } from "../../components/AddAccountModal";
 import { SetProxyModal } from "../../components/SetProxyModal";
-import { Account, HeadCell } from "../../types";
+import { Account, HeadCell, Proxy } from "../../types";
 import { GlobalContext } from "../../context";
+import { stringifyProxy } from "../../utils";
 
 const createRows = (
   accounts: Account[],
-  accountProxy: Record<Account["public_address"], string>
+  getAccountProxy: (account: Account) => Proxy | null
 ): Row[] => {
   return accounts.map((account) => ({
     id: account.public_address,
@@ -18,7 +19,7 @@ const createRows = (
       account.name,
       account.public_address,
       account.api_private_key,
-      accountProxy?.[account.public_address] || "No proxy",
+      stringifyProxy(getAccountProxy(account)!),
     ],
   }));
 };
@@ -51,10 +52,10 @@ const headCells: HeadCell[] = [
 ];
 
 export const Accounts = () => {
-  const { accountProxy, accounts, addAccount } = useContext(GlobalContext);
+  const { accounts, addAccount, getAccountProxy } = useContext(GlobalContext);
   const rows = useMemo(
-    () => createRows(accounts, accountProxy),
-    [accounts, accountProxy]
+    () => createRows(accounts, getAccountProxy),
+    [accounts]
   );
   const [activeModalId, setModalId] = useState<string | null>(null);
 

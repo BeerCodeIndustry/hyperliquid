@@ -9,12 +9,13 @@ import { invoke } from "@tauri-apps/api";
 
 import { Proxy, Account } from "./types";
 import { stringifyProxy } from "./utils";
+import { SUPABASE_DB } from "./db/SUPABASE_DB";
 
 interface GlobalContextType {
   proxies: Proxy[];
   accounts: Account[];
-  accountProxy: Record<Account["public_address"], string>;
   addAccount: (account: Account) => void;
+  getAccountProxy: (account: Account) => Proxy | null;
   addProxy: (proxy: Proxy) => void;
   linkAccountsProxy: (
     accounts: Account["public_address"][],
@@ -32,72 +33,60 @@ interface GlobalContextType {
 export const GlobalContext = createContext<GlobalContextType>({
   proxies: [],
   accounts: [],
-  accountProxy: {},
   addAccount: () => {},
   addProxy: () => {},
+  getAccountProxy: () => ({} as Proxy),
   linkAccountsProxy: () => {},
   initBatch: () => {},
 });
 
+const db = new SUPABASE_DB();
+
 export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
   const [proxies, setProxies] = useState<Proxy[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
-  const [accountProxy, setAccountProxy] = useState<
-    Record<Account["public_address"], string>
-  >({});
 
   const addAccount = useCallback((account: Account) => {
-    invoke("add_account", {
-      data: `${account.name}//${account.public_address}//${account.api_private_key}`,
-    });
-    getAccounts();
+    db.addAccount(account).then(() => {
+      getAccounts();
+    })
   }, []);
 
   const addProxy = useCallback((proxy: Proxy) => {
-    invoke("add_proxy", {
-      data: `${proxy.name}:${proxy.ip}:${proxy.port}:${proxy.login}:${proxy.pass}`,
-    });
-    getProxies();
+    db.addProxy(proxy).then(() => {
+      getProxies();
+    })
   }, []);
 
+  const getAccountProxy = (account: Account) => {
+    return proxies.find((proxy) => proxy.id === account.proxy_id) ?? null
+  }
+
   const getAccounts = useCallback(() => {
-    invoke("parse_accounts").then((accounts) =>
-      setAccounts(accounts as Account[])
-    );
+    db.getAccounts().then((accounts) => {
+      setAccounts(accounts)
+    })
   }, []);
 
   const getProxies = useCallback(() => {
-    invoke("parse_proxy").then((proxies) => setProxies(proxies as Proxy[]));
-  }, []);
-
-  const getAccountProxy = useCallback(() => {
-    invoke("parse_account_proxy")
-      .then((accountsProxy) =>
-        setAccountProxy(
-          accountsProxy as Record<Account["public_address"], string>
-        )
-      )
-      .catch((e) => console.log(e));
+    db.getProxies().then((proxies) => {
+      setProxies(proxies)
+    })
   }, []);
 
   const linkAccountsProxy = useCallback(
-    (accounts: Account["public_address"][], stringifyProxy: string) => {
-      invoke("link_account_proxy", {
-        data: accounts.map((s) => `${s}//${stringifyProxy}`).join("\n"),
-      });
-      getAccountProxy();
+    (accountIds: string[], proxyId: string) => {
+      db.connectProxyToAccounts(accountIds, proxyId).then(() => {
+        getAccounts();
+      })
     },
     []
   );
 
   const initBatch = useCallback(
     ({ account_1, account_2 }: { account_1: Account; account_2: Account }) => {
-      const proxy_1 = proxies.find(
-        (p) => stringifyProxy(p) === accountProxy[account_1.public_address]
-      );
-      const proxy_2 = proxies.find(
-        (p) => stringifyProxy(p) === accountProxy[account_2.public_address]
-      );
+      const proxy_1 = stringifyProxy(getAccountProxy(account_1)!)
+      const proxy_2 = stringifyProxy(getAccountProxy(account_2)!)
 
       invoke("create_unit", {
         account1: { account: account_1, proxy: proxy_1 },
@@ -107,26 +96,25 @@ export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
         leverage: 10,
       }).catch((e) => console.log(e));
     },
-    [proxies, accountProxy]
+    [proxies]
   );
 
   const value = useMemo(
     () => ({
-      accountProxy,
       proxies,
       accounts,
       addAccount,
       addProxy,
+      getAccountProxy,
       linkAccountsProxy,
       initBatch,
     }),
-    [proxies, accounts, accountProxy]
+    [proxies, accounts]
   );
 
   useEffect(() => {
     getAccounts();
     getProxies();
-    getAccountProxy();
   }, []);
 
   return (
