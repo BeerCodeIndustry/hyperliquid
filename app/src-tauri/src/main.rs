@@ -11,7 +11,8 @@ use utils::local_db::{
     add_account, add_proxy, link_account_proxy, parse_account_proxy, parse_accounts, parse_proxy,
 };
 
-fn main() {
+#[tokio::main]
+async fn main() {
     dotenv::dotenv().ok();
     env_logger::init();
 

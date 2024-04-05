@@ -1,8 +1,13 @@
 use ethers::types::H160;
-use hyperliquid_rust_sdk::{AssetPosition, InfoClient};
+use hyperliquid_rust_sdk::{AssetPosition, InfoClient, Message, Subscription};
 use itertools::Itertools;
 use log::info;
 use std::{collections::HashMap, str::FromStr};
+use tokio::{
+    spawn,
+    sync::mpsc::unbounded_channel,
+    time::{sleep, Duration},
+};
 
 use crate::utils::num::round_num_by_hyper_liquid;
 
@@ -81,4 +86,18 @@ pub async fn can_open_position(
     let full_amount = sz * FEES * price_by_asset + BALANCE_LIMIT;
 
     balance.parse::<f64>().unwrap() >= full_amount
+}
+
+pub async fn subscribe_positions(info_client: &mut InfoClient, public_address: &str) {
+    let (sender, mut receiver) = unbounded_channel::<Message>();
+    let user = H160::from_str(public_address).unwrap();
+
+    let subscription_id = info_client
+        .subscribe(Subscription::AllMids, sender)
+        .await
+        .unwrap();
+
+    while let Some(Message::AllMids(all_mids)) = receiver.recv().await {
+        info!("Received order updates: {:?}", all_mids);
+    }
 }
