@@ -123,12 +123,8 @@ pub async fn open_position(
 
     let position = get_position(info_client, &public_address, &position_pair.asset).await;
 
-    if position.is_none() {
-        panic!("Position not created {id}");
-    }
-
     Position {
-        asset_position: position.unwrap(),
+        asset_position: position,
         id,
     }
 }

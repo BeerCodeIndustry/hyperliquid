@@ -31,7 +31,7 @@ impl OrderType {
 
 pub struct Position {
     pub id: Uuid,
-    pub asset_position: AssetPosition,
+    pub asset_position: Option<AssetPosition>,
 }
 
 pub struct Account {
