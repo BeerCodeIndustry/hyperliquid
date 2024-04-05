@@ -7,7 +7,7 @@ import {
 } from "react";
 import { invoke } from "@tauri-apps/api";
 
-import { Proxy, Account } from "./types";
+import { Proxy, Account, Batch } from "./types";
 import { stringifyProxy } from "./utils";
 import { SUPABASE_DB } from "./db/SUPABASE_DB";
 
@@ -23,12 +23,12 @@ interface GlobalContextType {
     accounts: Account["public_address"][],
     stringifyProxy: string
   ) => void;
-  initBatch: ({
-    account_1,
-    account_2,
+  createBatch: ({
+    account_1_id,
+    account_2_id,
   }: {
-    account_1: Account;
-    account_2: Account;
+    account_1_id: string;
+    account_2_id: string;
   }) => void;
 }
 
@@ -41,7 +41,7 @@ export const GlobalContext = createContext<GlobalContextType>({
   removeProxies: () => {},
   getAccountProxy: () => ({} as Proxy),
   linkAccountsProxy: () => {},
-  initBatch: () => {},
+  createBatch: () => {},
 });
 
 const db = new SUPABASE_DB();
@@ -49,6 +49,7 @@ const db = new SUPABASE_DB();
 export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
   const [proxies, setProxies] = useState<Proxy[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
+  const [batches, setBatches] = useState<Batch[]>([]);
 
   const addAccount = useCallback((account: Account) => {
     db.addAccount(account).then(() => {
@@ -84,6 +85,12 @@ export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
     });
   }, []);
 
+  const getBatches = useCallback(() => {
+    db.getBatches().then((batches) => {
+      setBatches(batches);
+    });
+  }, []);
+
   const getProxies = useCallback(() => {
     db.getProxies().then((proxies) => {
       setProxies(proxies);
@@ -99,18 +106,17 @@ export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
     []
   );
 
-  const initBatch = useCallback(
-    ({ account_1, account_2 }: { account_1: Account; account_2: Account }) => {
-      const proxy_1 = getAccountProxy(account_1)!;
-      const proxy_2 = getAccountProxy(account_2)!;
-
-      invoke("create_unit", {
-        account1: { account: account_1, proxy: proxy_1 },
-        account2: { account: account_2, proxy: proxy_2 },
-        asset: "MATIC",
-        sz: 20.0,
-        leverage: 10,
-      }).catch((e) => console.log(e));
+  const createBatch = useCallback(
+    ({
+      account_1_id,
+      account_2_id,
+    }: {
+      account_1_id: string;
+      account_2_id: string;
+    }) => {
+      db.createBatch(account_1_id, account_2_id).then(() => {
+        getBatches();
+      });
     },
     [proxies]
   );
@@ -125,7 +131,7 @@ export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
       removeProxies,
       getAccountProxy,
       linkAccountsProxy,
-      initBatch,
+      createBatch,
     }),
     [proxies, accounts]
   );
@@ -133,6 +139,7 @@ export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     getAccounts();
     getProxies();
+    getBatches();
   }, []);
 
   return (

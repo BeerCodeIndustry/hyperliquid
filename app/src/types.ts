@@ -21,3 +21,8 @@ export interface HeadCell {
   label: string;
   align: "left" | "center" | "right" | "inherit" | "justify" | undefined;
 }
+
+export interface Batch {
+  account_1_id: string
+  account_2_id: string
+}
