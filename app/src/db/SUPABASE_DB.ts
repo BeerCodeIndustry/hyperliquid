@@ -38,6 +38,6 @@ export class SUPABASE_DB {
   }
 
   public connectProxyToAccounts = async (accountIds: string[], proxyId: string) => {
-    return this.client.from('accounts').update({proxy_id: proxyId}).eq('public_address', accountIds)
+    return this.client.from('accounts').update({proxy_id: proxyId}).eq('id', accountIds)
   }
 }

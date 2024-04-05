@@ -14,7 +14,7 @@ const createRows = (
   getAccountProxy: (account: Account) => Proxy | null
 ): Row[] => {
   return accounts.map((account) => ({
-    id: account.public_address,
+    id: account.id!,
     data: [
       account.name,
       account.public_address,
@@ -52,7 +52,7 @@ const headCells: HeadCell[] = [
 ];
 
 export const Accounts = () => {
-  const { accounts, addAccount, getAccountProxy } = useContext(GlobalContext);
+  const { accounts, addAccount, getAccountProxy, removeAccounts } = useContext(GlobalContext);
   const rows = useMemo(
     () => createRows(accounts, getAccountProxy),
     [accounts]
@@ -83,13 +83,13 @@ export const Accounts = () => {
           >
             Set Proxy
           </Button>
-          <Tooltip title="Delete" onClick={() => console.log("delete")}>
+          <Tooltip title="Delete" onClick={() => removeAccounts(selected)}>
             <IconButton>
               <DeleteIcon />
             </IconButton>
           </Tooltip>
         </Box>
-      </>
+        </>
     );
   };
 

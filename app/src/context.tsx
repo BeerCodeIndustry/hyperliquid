@@ -16,6 +16,8 @@ interface GlobalContextType {
   accounts: Account[];
   addAccount: (account: Account) => void;
   getAccountProxy: (account: Account) => Proxy | null;
+  removeAccounts: (accountIds: string[]) => void;
+  removeProxies: (proxyIds: string[]) => void;
   addProxy: (proxy: Proxy) => void;
   linkAccountsProxy: (
     accounts: Account["public_address"][],
@@ -35,6 +37,8 @@ export const GlobalContext = createContext<GlobalContextType>({
   accounts: [],
   addAccount: () => {},
   addProxy: () => {},
+  removeAccounts: () => {},
+  removeProxies: () => {},
   getAccountProxy: () => ({} as Proxy),
   linkAccountsProxy: () => {},
   initBatch: () => {},
@@ -49,6 +53,18 @@ export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
   const addAccount = useCallback((account: Account) => {
     db.addAccount(account).then(() => {
       getAccounts();
+    })
+  }, []);
+
+  const removeAccounts = useCallback((accountIds: string[]) => {
+    db.removeAccounts(accountIds).then(() => {
+      getAccounts();
+    })
+  }, []);
+
+  const removeProxies = useCallback((proxyIds: string[]) => {
+    db.removeProxies(proxyIds).then(() => {
+      getProxies();
     })
   }, []);
 
@@ -102,6 +118,8 @@ export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
       accounts,
       addAccount,
       addProxy,
+      removeAccounts,
+      removeProxies,
       getAccountProxy,
       linkAccountsProxy,
       initBatch,
