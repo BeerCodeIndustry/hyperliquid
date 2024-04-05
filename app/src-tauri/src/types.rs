@@ -56,11 +56,17 @@ pub struct FileAccount {
     pub api_private_key: String,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct FileProxy {
     pub name: String,
     pub ip: String,
     pub port: String,
     pub login: String,
     pub pass: String,
+}
+
+#[derive(Deserialize)]
+pub struct InitBatchAccount {
+    pub account: FileAccount,
+    pub proxy: Option<FileProxy>,
 }

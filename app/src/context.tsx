@@ -104,9 +104,12 @@ export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
       const proxy_1 = stringifyProxy(getAccountProxy(account_1)!)
       const proxy_2 = stringifyProxy(getAccountProxy(account_2)!)
 
-      invoke("init_batch", {
+      invoke("create_unit", {
         account1: { account: account_1, proxy: proxy_1 },
         account2: { account: account_2, proxy: proxy_2 },
+        asset: "MATIC",
+        sz: 20.0,
+        leverage: 10,
       }).catch((e) => console.log(e));
     },
     [proxies]

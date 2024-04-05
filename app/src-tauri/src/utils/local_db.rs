@@ -166,6 +166,3 @@ pub fn unlink_account_proxy(data: &str) {
     // let reader = BufReader::new(file.unwrap());
     // let mut lines = vec![];
 }
-
-#[tauri::command]
-pub fn create_batch(data: &str) {}
