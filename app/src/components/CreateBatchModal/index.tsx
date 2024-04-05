@@ -9,36 +9,32 @@ import {
   Modal,
   Paper,
   Select,
-  TextField,
 } from "@mui/material";
 
-import { Account, Proxy as ProxyType } from "../../types";
 import { GlobalContext } from "../../context";
 
 export const CreateBatchModal: React.FC<{
   open: boolean;
   handleClose: () => void;
 }> = ({ open, handleClose }) => {
-  const { accounts, initBatch } = useContext(GlobalContext);
+  const { accounts, createBatch } = useContext(GlobalContext);
   const [batchAccounts, setBatchAccounts] = useState<{
-    account_1: Account | null;
-    account_2: Account | null;
+    account_1_id: string;
+    account_2_id: string;
   }>({
-    account_1: null,
-    account_2: null,
+    account_1_id: '',
+    account_2_id: '',
   });
 
   const onConfirm = () => {
-    if (batchAccounts.account_1 && batchAccounts.account_2) {
-      initBatch(batchAccounts as { account_1: Account; account_2: Account });
+    if (batchAccounts.account_1_id && batchAccounts.account_2_id) {
+      createBatch(batchAccounts);
       handleClose();
     }
   };
 
-  const onChange = (id: "account_1" | "account_2", v: string) => {
-    const acc = accounts.find((a) => a.public_address === v);
-
-    setBatchAccounts((prev) => ({ ...prev, [id]: acc ?? null }));
+  const onChange = (id: "account_1_id" | "account_2_id", v: string) => {
+    setBatchAccounts((prev) => ({ ...prev, [id]: v ?? '' }));
   };
 
   return (
@@ -57,21 +53,17 @@ export const CreateBatchModal: React.FC<{
               <Select
                 labelId="account-label"
                 id="account-select"
-                value={batchAccounts.account_1?.public_address}
+                value={batchAccounts.account_1_id}
                 label="Account 1"
-                onChange={(e) => onChange("account_1", e.target.value)}
+                onChange={(e) => onChange("account_1_id", e.target.value)}
               >
                 <MenuItem value="">
                   <em>None</em>
                 </MenuItem>
                 {accounts
-                  .filter(
-                    (a) =>
-                      a.public_address !==
-                      batchAccounts.account_2?.public_address
-                  )
+                  .filter((a) => a.id !== batchAccounts.account_2_id)
                   .map((a) => (
-                    <MenuItem value={a.public_address}>
+                    <MenuItem value={a.id}>
                       {a.public_address}
                     </MenuItem>
                   ))}
@@ -82,21 +74,17 @@ export const CreateBatchModal: React.FC<{
               <Select
                 labelId="account-label"
                 id="account-select"
-                value={batchAccounts.account_2?.public_address}
+                value={batchAccounts.account_2_id}
                 label="Account 2"
-                onChange={(e) => onChange("account_2", e.target.value)}
+                onChange={(e) => onChange("account_2_id", e.target.value)}
               >
                 <MenuItem value="">
                   <em>None</em>
                 </MenuItem>
                 {accounts
-                  .filter(
-                    (a) =>
-                      a.public_address !==
-                      batchAccounts.account_1?.public_address
-                  )
+                  .filter((a) => a.id !== batchAccounts.account_1_id)
                   .map((a) => (
-                    <MenuItem value={a.public_address}>
+                    <MenuItem value={a.id}>
                       {a.public_address}
                     </MenuItem>
                   ))}
@@ -118,7 +106,7 @@ export const CreateBatchModal: React.FC<{
               variant="contained"
               color="success"
               onClick={onConfirm}
-              disabled={!batchAccounts.account_1 || !batchAccounts.account_2}
+              disabled={!batchAccounts.account_1_id || !batchAccounts.account_2_id}
             >
               Confirm
             </Button>
