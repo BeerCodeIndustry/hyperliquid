@@ -53,56 +53,56 @@ export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
   const addAccount = useCallback((account: Account) => {
     db.addAccount(account).then(() => {
       getAccounts();
-    })
+    });
   }, []);
 
   const removeAccounts = useCallback((accountIds: string[]) => {
     db.removeAccounts(accountIds).then(() => {
       getAccounts();
-    })
+    });
   }, []);
 
   const removeProxies = useCallback((proxyIds: string[]) => {
     db.removeProxies(proxyIds).then(() => {
       getProxies();
-    })
+    });
   }, []);
 
   const addProxy = useCallback((proxy: Proxy) => {
     db.addProxy(proxy).then(() => {
       getProxies();
-    })
+    });
   }, []);
 
   const getAccountProxy = (account: Account) => {
-    return proxies.find((proxy) => proxy.id === account.proxy_id) ?? null
-  }
+    return proxies.find((proxy) => proxy.id === account.proxy_id) ?? null;
+  };
 
   const getAccounts = useCallback(() => {
     db.getAccounts().then((accounts) => {
-      setAccounts(accounts)
-    })
+      setAccounts(accounts);
+    });
   }, []);
 
   const getProxies = useCallback(() => {
     db.getProxies().then((proxies) => {
-      setProxies(proxies)
-    })
+      setProxies(proxies);
+    });
   }, []);
 
   const linkAccountsProxy = useCallback(
     (accountIds: string[], proxyId: string) => {
       db.connectProxyToAccounts(accountIds, proxyId).then(() => {
         getAccounts();
-      })
+      });
     },
     []
   );
 
   const initBatch = useCallback(
     ({ account_1, account_2 }: { account_1: Account; account_2: Account }) => {
-      const proxy_1 = stringifyProxy(getAccountProxy(account_1)!)
-      const proxy_2 = stringifyProxy(getAccountProxy(account_2)!)
+      const proxy_1 = getAccountProxy(account_1)!;
+      const proxy_2 = getAccountProxy(account_2)!;
 
       invoke("create_unit", {
         account1: { account: account_1, proxy: proxy_1 },

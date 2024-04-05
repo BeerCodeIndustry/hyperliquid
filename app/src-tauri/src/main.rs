@@ -7,9 +7,6 @@ mod types;
 mod utils;
 
 use high_level::batch::create_unit;
-use utils::local_db::{
-    add_account, add_proxy, link_account_proxy, parse_account_proxy, parse_accounts, parse_proxy,
-};
 
 #[tokio::main]
 async fn main() {
@@ -17,15 +14,7 @@ async fn main() {
     env_logger::init();
 
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![
-            create_unit,
-            add_account,
-            parse_accounts,
-            add_proxy,
-            parse_proxy,
-            link_account_proxy,
-            parse_account_proxy,
-        ])
+        .invoke_handler(tauri::generate_handler![create_unit])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

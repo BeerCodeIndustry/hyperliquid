@@ -3,7 +3,7 @@ export interface Account {
   name: string;
   public_address: string;
   api_private_key: string;
-  proxy_id?: string
+  proxy_id?: string;
 }
 
 export interface Proxy {

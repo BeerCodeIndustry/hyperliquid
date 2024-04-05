@@ -59,10 +59,10 @@ pub struct FileAccount {
 #[derive(Serialize, Deserialize, Clone)]
 pub struct FileProxy {
     pub name: String,
-    pub ip: String,
+    pub host: String,
     pub port: String,
-    pub login: String,
-    pub pass: String,
+    pub username: String,
+    pub password: String,
 }
 
 #[derive(Deserialize)]
