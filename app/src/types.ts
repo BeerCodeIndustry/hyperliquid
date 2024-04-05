@@ -1,15 +1,18 @@
 export interface Account {
+  id?: string;
   name: string;
   public_address: string;
   api_private_key: string;
+  proxy_id?: string
 }
 
 export interface Proxy {
+  id?: string;
   name: string;
-  ip: string;
+  host: string;
   port: string;
-  login: string;
-  pass: string;
+  username: string;
+  password: string;
 }
 
 export interface HeadCell {

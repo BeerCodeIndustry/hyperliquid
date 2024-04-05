@@ -1,11 +1,11 @@
 import { Proxy } from "./types";
 
 export const stringifyProxy = (proxy: Proxy) => {
-  return `${proxy.name}:${proxy.ip}:${proxy.port}:${proxy.login}:${proxy.pass}`;
+  return `${proxy.name}:${proxy.host}:${proxy.port}:${proxy.username}:${proxy.password}`;
 };
 
 export const parseProxy = (proxyString: string): Proxy => {
-  const [name, ip, port, login, pass] = proxyString.split(":");
+  const [name, host, port, username, password] = proxyString.split(":");
 
-  return { name, ip, port, login, pass };
+  return { name, host, port, username, password };
 };

@@ -11,7 +11,7 @@ import { stringifyProxy } from "../../utils";
 const createRows = (proxies: ProxyType[]): Row[] => {
   return proxies.map((proxy) => ({
     id: stringifyProxy(proxy),
-    data: [proxy.name, `${proxy.ip}:${proxy.port}`, proxy.login, proxy.pass],
+    data: [proxy.name, `${proxy.host}:${proxy.port}`, proxy.username, proxy.password],
   }));
 };
 
