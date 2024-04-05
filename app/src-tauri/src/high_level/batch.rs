@@ -1,13 +1,12 @@
 use ethers::prelude::*;
 use hyperliquid_rust_sdk::{BaseUrl, ExchangeClient, InfoClient};
 use log::info;
-use reqwest::Client;
-use uuid::Uuid;
+use reqwest::{Client, Proxy};
 
 use crate::actions::exchange::{open_limit_order, open_position};
-use crate::actions::info::get_position;
-
-use crate::types::{Account, DefaultPair, Handlers, Position};
+use crate::actions::info::{can_open_position, get_account_balance, get_position};
+use crate::types::{Account, DefaultPair, FileProxy, Handlers, InitBatchAccount, Position};
+use crate::utils::str::private_key_slice;
 
 async fn init_account(account: Account) -> Handlers {
     let Account {
@@ -38,21 +37,63 @@ async fn init_account(account: Account) -> Handlers {
     }
 }
 
-pub async fn create_batch(account_1: Account, account_2: Account) -> [Handlers; 2] {
-    let batch_id = Uuid::new_v4();
-    let handler_1 = init_account(account_1).await;
-    let handler_2 = init_account(account_2).await;
+pub async fn init_batch(account1: InitBatchAccount, account2: InitBatchAccount) -> [Handlers; 2] {
+    let default_proxy = FileProxy {
+        name: "default_proxy".to_string(),
+        ip: "89.40.223.107".to_string(),
+        port: "6143".to_string(),
+        login: "gljdskgd".to_string(),
+        pass: "7qrarsn88jhk".to_string(),
+    };
+
+    let InitBatchAccount {
+        account: account_1,
+        proxy: proxy_1,
+    } = account1;
+    let InitBatchAccount {
+        account: account_2,
+        proxy: proxy_2,
+    } = account2;
+
+    let proxy_1 = proxy_1.unwrap_or(default_proxy.clone());
+    let proxy_2 = proxy_2.unwrap_or(default_proxy.clone());
+
+    let proxy_1 = Proxy::all(format!("{}:{}", proxy_1.ip, proxy_1.port))
+        .unwrap()
+        .basic_auth(&proxy_1.login, &proxy_1.pass);
+
+    let proxy_2 = Proxy::all(format!("{}:{}", proxy_2.ip, proxy_2.port))
+        .unwrap()
+        .basic_auth(&proxy_2.login, &proxy_2.pass);
+
+    let private_api_key_1 = private_key_slice(&account_1.api_private_key);
+    let private_api_key_2 = private_key_slice(&account_2.api_private_key);
+
+    let handler_1 = init_account(Account {
+        public_address: account_1.public_address.to_string(),
+        private_api_key: private_api_key_1.to_string(),
+        proxy: proxy_1.clone(),
+    })
+    .await;
+    let handler_2 = init_account(Account {
+        public_address: account_2.public_address.to_string(),
+        private_api_key: private_api_key_2.to_string(),
+        proxy: proxy_2.clone(),
+    })
+    .await;
 
     [handler_1, handler_2]
 }
 
+#[tauri::command]
 pub async fn create_unit(
-    handler_1: Handlers,
-    handler_2: Handlers,
-    asset: &str,
+    account1: InitBatchAccount,
+    account2: InitBatchAccount,
+    asset: String,
     sz: f64,
     leverage: u32,
 ) {
+    let [handler_1, handler_2] = init_batch(account1, account2).await;
     let sz = sz * leverage as f64;
     let Handlers {
         info_client: info_client_1,
@@ -66,12 +107,27 @@ pub async fn create_unit(
         public_address: public_address_2,
     } = handler_2;
 
+    let can_open_1 = can_open_position(&info_client_1, &public_address_1, &asset, sz).await;
+    let can_open_2 = can_open_position(&info_client_2, &public_address_2, &asset, sz).await;
+
+    if !can_open_1 {
+        info!("Cannot open position for {public_address_1}, not enough balance");
+
+        return;
+    }
+
+    if !can_open_2 {
+        info!("Cannot open position for {public_address_1}, not enough balance");
+
+        return;
+    }
+
     let _ = exchange_client_1
-        .update_leverage(leverage, asset, false, None)
+        .update_leverage(leverage, &asset, false, None)
         .await;
 
     let _ = exchange_client_2
-        .update_leverage(leverage, asset, false, None)
+        .update_leverage(leverage, &asset, false, None)
         .await;
 
     let position_pair = DefaultPair {
@@ -81,8 +137,8 @@ pub async fn create_unit(
         order_type: "FrontendMarket".to_string(),
     };
 
-    let before_pos_1 = get_position(&info_client_1, &public_address_1, asset).await;
-    let before_pos_2 = get_position(&info_client_2, &public_address_2, asset).await;
+    let before_pos_1 = get_position(&info_client_1, &public_address_1, &asset).await;
+    let before_pos_2 = get_position(&info_client_2, &public_address_2, &asset).await;
 
     if before_pos_1.is_some() || before_pos_2.is_some() {
         panic!("Position already exists");
@@ -114,6 +170,7 @@ pub async fn create_unit(
 
     open_limit_order(&pos_2, &exchange_client_1, &info_client_1).await;
     open_limit_order(&pos_1, &exchange_client_2, &info_client_2).await;
-
-    // info!("Batch created: {batch_id} with positions: {id_pos_1} and {id_pos_2}");
 }
+
+#[tauri::command]
+pub async fn close_unit() {}
