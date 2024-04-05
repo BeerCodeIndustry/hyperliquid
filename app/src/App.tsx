@@ -1,36 +1,35 @@
-import { useState } from "react";
+import MuiTab from '@mui/material/Tab'
+import MuiTabs from '@mui/material/Tabs'
+import Box from '@mui/material/Box'
+import { useState } from 'react'
 
-import MuiTabs from "@mui/material/Tabs";
-import MuiTab from "@mui/material/Tab";
-import Box from "@mui/material/Box";
-
-import { Accounts, Proxy, Batches } from "./tabs";
+import { Accounts, Batches, Proxy } from './tabs'
 
 const Tabs = {
   Accounts: {
-    label: "Accounts",
-    id: "Accounts",
+    label: 'Accounts',
+    id: 'Accounts',
   },
   Proxy: {
-    label: "Proxy",
-    id: "Proxy",
+    label: 'Proxy',
+    id: 'Proxy',
   },
   Batches: {
-    label: "Batches",
-    id: "Batches",
+    label: 'Batches',
+    id: 'Batches',
   },
-} as const;
+} as const
 
 const App = () => {
-  const [tabId, setTabId] = useState<keyof typeof Tabs>(Tabs.Accounts.id);
+  const [tabId, setTabId] = useState<keyof typeof Tabs>(Tabs.Accounts.id)
 
   return (
     <Box>
-      <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
+      <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
         <MuiTabs
           value={tabId}
           onChange={(_, newTabId) => setTabId(newTabId)}
-          aria-label="basic tabs example"
+          aria-label='basic tabs example'
         >
           {Object.values(Tabs).map(({ label, id }) => (
             <MuiTab label={label} value={id} key={id} />
@@ -43,7 +42,7 @@ const App = () => {
         {tabId === Tabs.Batches.id && <Batches />}
       </Box>
     </Box>
-  );
-};
+  )
+}
 
-export default App;
+export default App

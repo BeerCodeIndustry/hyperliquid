@@ -1,10 +1,10 @@
-import ReactDOM from "react-dom/client";
-import App from "./App";
+import ReactDOM from 'react-dom/client'
 
-import { GlobalProvider } from "./context";
+import App from './App'
+import { GlobalProvider } from './context'
 
-ReactDOM.createRoot(document.getElementById("root")!).render(
+ReactDOM.createRoot(document.getElementById('root')!).render(
   <GlobalProvider>
     <App />
-  </GlobalProvider>
-);
+  </GlobalProvider>,
+)

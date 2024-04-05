@@ -1,82 +1,87 @@
-import { useContext, useMemo, useState } from "react";
-import { Box, IconButton, Tooltip, Button } from "@mui/material";
-import DeleteIcon from "@mui/icons-material/Delete";
+import DeleteIcon from '@mui/icons-material/Delete'
+import { Box, Button, IconButton, Tooltip } from '@mui/material'
+import { useContext, useMemo, useState } from 'react'
 
-import { Table, Row } from "../../components/Table";
-import { AddProxyModal } from "../../components/AddProxyModal";
-import { Proxy as ProxyType, HeadCell } from "../../types";
-import { GlobalContext } from "../../context";
+import { AddProxyModal } from '../../components/AddProxyModal'
+import { Row, Table } from '../../components/Table'
+import { GlobalContext } from '../../context'
+import { HeadCell, Proxy as ProxyType } from '../../types'
 
 const createRows = (proxies: ProxyType[]): Row[] => {
-  return proxies.map((proxy) => ({
+  return proxies.map(proxy => ({
     id: proxy.id!,
-    data: [proxy.name, `${proxy.host}:${proxy.port}`, proxy.username, proxy.password],
-  }));
-};
+    data: [
+      proxy.name,
+      `${proxy.host}:${proxy.port}`,
+      proxy.username,
+      proxy.password,
+    ],
+  }))
+}
 
 const headCells: HeadCell[] = [
   {
-    id: "name",
-    align: "left",
+    id: 'name',
+    align: 'left',
     disablePadding: true,
-    label: "Name",
+    label: 'Name',
   },
   {
-    id: "ip_port",
-    align: "center",
+    id: 'ip_port',
+    align: 'center',
     disablePadding: false,
-    label: "Ip:Port",
+    label: 'Ip:Port',
   },
   {
-    id: "login",
-    align: "center",
+    id: 'login',
+    align: 'center',
     disablePadding: false,
-    label: "Login",
+    label: 'Login',
   },
   {
-    id: "password",
-    align: "center",
+    id: 'password',
+    align: 'center',
     disablePadding: false,
-    label: "Password",
+    label: 'Password',
   },
-];
+]
 
 export const Proxy = () => {
-  const { proxies, addProxy, removeProxies } = useContext(GlobalContext);
-  const rows = useMemo(() => createRows(proxies), [proxies]);
-  const [activeModalId, setModalId] = useState<string | null>(null);
+  const { proxies, addProxy, removeProxies } = useContext(GlobalContext)
+  const rows = useMemo(() => createRows(proxies), [proxies])
+  const [activeModalId, setModalId] = useState<string | null>(null)
 
   const ActionBar: React.FC<{ selected: string[] }> = ({ selected }) => {
     return (
       <div>
-        <Tooltip title="Delete" onClick={() => removeProxies(selected)}>
+        <Tooltip title='Delete' onClick={() => removeProxies(selected)}>
           <IconButton>
             <DeleteIcon />
           </IconButton>
         </Tooltip>
       </div>
-    );
-  };
+    )
+  }
 
   const toolbar = () => {
     return (
       <div>
         <Button
-          variant="contained"
-          color="primary"
-          onClick={() => setModalId("addProxyModal")}
+          variant='contained'
+          color='primary'
+          onClick={() => setModalId('addProxyModal')}
         >
           Add proxy
         </Button>
       </div>
-    );
-  };
+    )
+  }
 
   return (
-    <Box sx={{ width: "100%" }}>
+    <Box sx={{ width: '100%' }}>
       <AddProxyModal
         handleAddAccount={addProxy}
-        open={activeModalId === "addProxyModal"}
+        open={activeModalId === 'addProxyModal'}
         handleClose={() => setModalId(null)}
       />
       <Table
@@ -87,5 +92,5 @@ export const Proxy = () => {
         toolbar={toolbar()}
       />
     </Box>
-  );
-};
+  )
+}

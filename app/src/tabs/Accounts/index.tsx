@@ -1,19 +1,19 @@
-import React, { useContext, useMemo, useState } from "react";
-import { Box, IconButton, Tooltip, Button } from "@mui/material";
-import DeleteIcon from "@mui/icons-material/Delete";
+import DeleteIcon from '@mui/icons-material/Delete'
+import { Box, Button, IconButton, Tooltip } from '@mui/material'
+import React, { useContext, useMemo, useState } from 'react'
 
-import { Table, Row } from "../../components/Table";
-import { AddAccountModal } from "../../components/AddAccountModal";
-import { SetProxyModal } from "../../components/SetProxyModal";
-import { Account, HeadCell, Proxy } from "../../types";
-import { GlobalContext } from "../../context";
-import { stringifyProxy } from "../../utils";
+import { AddAccountModal } from '../../components/AddAccountModal'
+import { SetProxyModal } from '../../components/SetProxyModal'
+import { Row, Table } from '../../components/Table'
+import { GlobalContext } from '../../context'
+import { Account, HeadCell, Proxy } from '../../types'
+import { stringifyProxy } from '../../utils'
 
 const createRows = (
   accounts: Account[],
-  getAccountProxy: (account: Account) => Proxy | null
+  getAccountProxy: (account: Account) => Proxy | null,
 ): Row[] => {
-  return accounts.map((account) => ({
+  return accounts.map(account => ({
     id: account.id!,
     data: [
       account.name,
@@ -21,97 +21,95 @@ const createRows = (
       account.api_private_key,
       stringifyProxy(getAccountProxy(account)!),
     ],
-  }));
-};
+  }))
+}
 
 const headCells: HeadCell[] = [
   {
-    id: "name",
-    align: "left",
+    id: 'name',
+    align: 'left',
     disablePadding: true,
-    label: "Name",
+    label: 'Name',
   },
   {
-    id: "public_address",
-    align: "center",
+    id: 'public_address',
+    align: 'center',
     disablePadding: false,
-    label: "Public Address",
+    label: 'Public Address',
   },
   {
-    id: "api_private_key",
-    align: "center",
+    id: 'api_private_key',
+    align: 'center',
     disablePadding: false,
-    label: "Api private key",
+    label: 'Api private key',
   },
   {
-    id: "proxy",
-    align: "center",
+    id: 'proxy',
+    align: 'center',
     disablePadding: false,
-    label: "Proxy",
+    label: 'Proxy',
   },
-];
+]
 
 export const Accounts = () => {
-  const { accounts, addAccount, getAccountProxy, removeAccounts } = useContext(GlobalContext);
-  const rows = useMemo(
-    () => createRows(accounts, getAccountProxy),
-    [accounts]
-  );
-  const [activeModalId, setModalId] = useState<string | null>(null);
+  const { accounts, addAccount, getAccountProxy, removeAccounts } =
+    useContext(GlobalContext)
+  const rows = useMemo(() => createRows(accounts, getAccountProxy), [accounts])
+  const [activeModalId, setModalId] = useState<string | null>(null)
 
   const ActionBar: React.FC<{ selected: string[] }> = ({ selected }) => {
     return (
       <>
         <SetProxyModal
           selected={selected}
-          open={activeModalId === "setProxyModal"}
+          open={activeModalId === 'setProxyModal'}
           handleClose={() => setModalId(null)}
         />
         <Box
           sx={{
-            display: "flex",
+            display: 'flex',
             gap: 1,
-            alignItems: "center",
-            width: "100%",
-            justifyContent: "flex-end",
+            alignItems: 'center',
+            width: '100%',
+            justifyContent: 'flex-end',
           }}
         >
           <Button
-            variant="contained"
-            color="primary"
-            onClick={() => setModalId("setProxyModal")}
+            variant='contained'
+            color='primary'
+            onClick={() => setModalId('setProxyModal')}
           >
             Set Proxy
           </Button>
-          <Tooltip title="Delete" onClick={() => removeAccounts(selected)}>
+          <Tooltip title='Delete' onClick={() => removeAccounts(selected)}>
             <IconButton>
               <DeleteIcon />
             </IconButton>
           </Tooltip>
         </Box>
-        </>
-    );
-  };
+      </>
+    )
+  }
 
   const toolbar = () => {
     return (
       <div>
         <Button
-          variant="contained"
-          color="primary"
-          onClick={() => setModalId("addAccountModal")}
+          variant='contained'
+          color='primary'
+          onClick={() => setModalId('addAccountModal')}
         >
           Add Account
         </Button>
       </div>
-    );
-  };
+    )
+  }
 
   return (
-    <Box sx={{ width: "100%" }}>
+    <Box sx={{ width: '100%' }}>
       <AddAccountModal
         handleAddAccount={addAccount}
-        open={activeModalId === "addAccountModal"}
+        open={activeModalId === 'addAccountModal'}
         handleClose={() => setModalId(null)}
       />
       <Table
@@ -122,5 +120,5 @@ export const Accounts = () => {
         toolbar={toolbar()}
       />
     </Box>
-  );
-};
+  )
+}
