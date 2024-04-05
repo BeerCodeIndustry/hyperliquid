@@ -53,6 +53,6 @@ export class SUPABASE_DB {
     return this.client
       .from("accounts")
       .update({ proxy_id: proxyId })
-      .eq("public_address", accountIds);
+      .eq("id", accountIds);
   };
 }

@@ -6,11 +6,10 @@ import { Table, Row } from "../../components/Table";
 import { AddProxyModal } from "../../components/AddProxyModal";
 import { Proxy as ProxyType, HeadCell } from "../../types";
 import { GlobalContext } from "../../context";
-import { stringifyProxy } from "../../utils";
 
 const createRows = (proxies: ProxyType[]): Row[] => {
   return proxies.map((proxy) => ({
-    id: stringifyProxy(proxy),
+    id: proxy.id!,
     data: [proxy.name, `${proxy.host}:${proxy.port}`, proxy.username, proxy.password],
   }));
 };
@@ -43,14 +42,14 @@ const headCells: HeadCell[] = [
 ];
 
 export const Proxy = () => {
-  const { proxies, addProxy } = useContext(GlobalContext);
+  const { proxies, addProxy, removeProxies } = useContext(GlobalContext);
   const rows = useMemo(() => createRows(proxies), [proxies]);
   const [activeModalId, setModalId] = useState<string | null>(null);
 
-  const actionBar = () => {
+  const ActionBar: React.FC<{ selected: string[] }> = ({ selected }) => {
     return (
       <div>
-        <Tooltip title="Delete" onClick={() => console.log("delete")}>
+        <Tooltip title="Delete" onClick={() => removeProxies(selected)}>
           <IconButton>
             <DeleteIcon />
           </IconButton>
@@ -84,6 +83,7 @@ export const Proxy = () => {
         headCells={headCells}
         rows={rows}
         withCheckbox
+        ActionBar={ActionBar}
         toolbar={toolbar()}
       />
     </Box>
