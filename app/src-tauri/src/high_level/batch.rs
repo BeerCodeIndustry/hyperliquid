@@ -173,7 +173,7 @@ pub async fn close_unit(account1: BatchAccount, account2: BatchAccount, asset: S
     ];
 
     let Handlers {
-        info_client: mut info_client_1,
+        info_client: info_client_1,
         exchange_client: exchange_client_1,
         public_address: public_address_1,
     } = handler_1;
@@ -197,13 +197,46 @@ pub async fn close_unit(account1: BatchAccount, account2: BatchAccount, asset: S
     }
 }
 
-//   const proxy_1 = getAccountProxy(account_1)!;
-//   const proxy_2 = getAccountProxy(account_2)!;
+#[tauri::command]
+pub async fn close_and_create_same_unit(
+    account1: BatchAccount,
+    account2: BatchAccount,
+    asset: String,
+    sz: f64,
+    leverage: u32,
+) {
+    let [handler_1, handler_2] = [
+        get_batch_handler(account1.clone()).await,
+        get_batch_handler(account2.clone()).await,
+    ];
 
-//   invoke("create_unit", {
-//     account1: { account: account_1, proxy: proxy_1 },
-//     account2: { account: account_2, proxy: proxy_2 },
-//     asset: "MATIC",
-//     sz: 20.0,
-//     leverage: 10,
-//   }).catch((e) => console.log(e));
+    let Handlers {
+        info_client: info_client_1,
+        exchange_client: exchange_client_1,
+        public_address: public_address_1,
+    } = handler_1;
+
+    let Handlers {
+        info_client: info_client_2,
+        exchange_client: exchange_client_2,
+        public_address: public_address_2,
+    } = handler_2;
+
+    let pos_1 = get_position(&info_client_1, &public_address_1, &asset).await;
+    let pos_2 = get_position(&info_client_2, &public_address_2, &asset).await;
+
+    if pos_1.is_none() && pos_2.is_none() {
+        warn!("No position to close");
+        return;
+    }
+
+    if pos_1.is_some() {
+        close_position(&pos_1.unwrap(), &exchange_client_1, &info_client_1).await;
+    }
+
+    if pos_2.is_some() {
+        close_position(&pos_2.unwrap(), &exchange_client_2, &info_client_2).await;
+    }
+
+    create_unit(account1, account2, asset, sz, leverage).await;
+}

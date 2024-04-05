@@ -46,11 +46,6 @@ pub struct Handlers {
     pub public_address: String,
 }
 
-pub struct Asset {
-    pub name: &'static str,
-    pub round_n: u32,
-}
-
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FileAccount {
     pub name: String,
