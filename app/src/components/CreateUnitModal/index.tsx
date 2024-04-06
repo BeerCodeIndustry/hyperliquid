@@ -1,6 +1,6 @@
+import LoadingButton from '@mui/lab/LoadingButton'
 import {
   Box,
-  Button,
   FormControl,
   InputLabel,
   MenuItem,
@@ -15,13 +15,14 @@ const AllowedAssets = ['JUP', 'MATIC', 'AVAX']
 
 export const CreateUnitModal: React.FC<{
   open: boolean
+  isCreating: boolean
   handleClose: () => void
   handleCreateUnit: (form: {
     asset: string
     sz: number
     leverage: number
   }) => void
-}> = ({ open, handleClose, handleCreateUnit }) => {
+}> = ({ open, handleClose, handleCreateUnit, isCreating }) => {
   const [form, setForm] = useState({
     asset: '',
     sz: 0,
@@ -99,14 +100,15 @@ export const CreateUnitModal: React.FC<{
             justifyContent: 'flex-end',
           }}
         >
-          <Button
+          <LoadingButton
             variant='contained'
             color='success'
             onClick={onConfirm}
+            loading={isCreating}
             disabled={!form.asset || !form.sz || !form.leverage}
           >
             Confirm
-          </Button>
+          </LoadingButton>
         </Box>
       </Paper>
     </Modal>

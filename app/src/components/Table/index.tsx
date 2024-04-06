@@ -111,68 +111,72 @@ export const Table: React.FC<Props> = ({
             rowCount={rows.length}
             withCheckbox={withCheckbox}
           />
-          {!loading ? <TableBody>
-            {visibleRows.map((row, index) => {
-              const isItemSelected = isSelected(row.id)
-              const labelId = `enhanced-table-checkbox-${index}`
+          {!loading ? (
+            <TableBody>
+              {visibleRows.map((row, index) => {
+                const isItemSelected = isSelected(row.id)
+                const labelId = `enhanced-table-checkbox-${index}`
 
-              return (
-                <TableRow
-                  hover
-                  onClick={event => handleClick(event, row.id)}
-                  role='checkbox'
-                  aria-checked={isItemSelected}
-                  tabIndex={-1}
-                  key={row.id}
-                  selected={isItemSelected}
-                  sx={{ cursor: 'pointer' }}
-                >
-                  {withCheckbox && (
-                    <TableCell padding='checkbox'>
-                      <Checkbox
-                        color='primary'
-                        checked={isItemSelected}
-                        inputProps={{
-                          'aria-labelledby': labelId,
-                        }}
-                      />
-                    </TableCell>
-                  )}
-                  {row.data.map((cell, cellIdx) => {
-                    if (cellIdx === 0) {
+                return (
+                  <TableRow
+                    hover
+                    onClick={event => handleClick(event, row.id)}
+                    role='checkbox'
+                    aria-checked={isItemSelected}
+                    tabIndex={-1}
+                    key={row.id}
+                    selected={isItemSelected}
+                    sx={{ cursor: 'pointer' }}
+                  >
+                    {withCheckbox && (
+                      <TableCell padding='checkbox'>
+                        <Checkbox
+                          color='primary'
+                          checked={isItemSelected}
+                          inputProps={{
+                            'aria-labelledby': labelId,
+                          }}
+                        />
+                      </TableCell>
+                    )}
+                    {row.data.map((cell, cellIdx) => {
+                      if (cellIdx === 0) {
+                        return (
+                          <TableCell
+                            key={labelId}
+                            component='th'
+                            id={labelId}
+                            scope='row'
+                            padding={withCheckbox ? 'none' : 'normal'}
+                            align='left'
+                          >
+                            {cell}
+                          </TableCell>
+                        )
+                      }
+
                       return (
-                        <TableCell
-                          key={labelId}
-                          component='th'
-                          id={labelId}
-                          scope='row'
-                          padding={withCheckbox ? 'none' : 'normal'}
-                          align='left'
-                        >
+                        <TableCell key={cellIdx} align='center'>
                           {cell}
                         </TableCell>
                       )
-                    }
-
-                    return (
-                      <TableCell key={cellIdx} align='center'>
-                        {cell}
-                      </TableCell>
-                    )
-                  })}
+                    })}
+                  </TableRow>
+                )
+              })}
+              {emptyRows > 0 && (
+                <TableRow
+                  style={{
+                    height: 53 * emptyRows,
+                  }}
+                >
+                  <TableCell colSpan={6} />
                 </TableRow>
-              )
-            })}
-            {emptyRows > 0 && (
-              <TableRow
-                style={{
-                  height: 53 * emptyRows,
-                }}
-              >
-                <TableCell colSpan={6} />
-              </TableRow>
-            )}
-          </TableBody> : <CircularProgress size={20} />}
+              )}
+            </TableBody>
+          ) : (
+            <CircularProgress size={20} />
+          )}
         </MuiTable>
       </TableContainer>
       {pagination && (

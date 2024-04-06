@@ -34,6 +34,9 @@ export interface Position {
     coin: string
     positionValue: string
     liquidationPx: string
+    leverage: {
+      value: number
+    }
     szi: string
   }
 }
@@ -60,6 +63,8 @@ export interface Unit {
   base_unit_info: {
     asset: string
     timestamp: number
+    leverage: number
+    size: number
   }
   positions: {
     public_address: string
