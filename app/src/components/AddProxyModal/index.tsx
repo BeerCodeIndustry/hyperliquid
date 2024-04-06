@@ -29,8 +29,16 @@ export const AddProxyModal: React.FC<{
     }
   }
 
-  const onChange = (key: keyof ProxyType, v: string) => {
-    setProxy(prev => ({ ...prev, [key]: v }))
+  const onChange = (key: 'name' | 'proxy', v: string) => {
+    if (key === 'proxy') {
+      const [host, port, username, password] = v.split(':')
+
+      setProxy(prev => ({ ...prev, host, port, username, password }))
+
+      return
+    }
+
+    setProxy(prev => ({ ...prev, name: v }))
   }
 
   return (
@@ -45,48 +53,17 @@ export const AddProxyModal: React.FC<{
         <Box sx={{ gap: 5, display: 'flex', flexDirection: 'column' }}>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <TextField
+              fullWidth
               label='Name'
               variant='outlined'
               onChange={e => onChange('name', e.target.value)}
             />
-            <Box
-              sx={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                width: '100%',
-                gap: 2,
-              }}
-            >
-              <TextField
-                label='Host'
-                variant='outlined'
-                onChange={e => onChange('host', e.target.value)}
-              />
-              <TextField
-                label='Port'
-                variant='outlined'
-                onChange={e => onChange('port', e.target.value)}
-              />
-            </Box>
-            <Box
-              sx={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                gap: 2,
-                width: '100%',
-              }}
-            >
-              <TextField
-                label='Username'
-                variant='outlined'
-                onChange={e => onChange('username', e.target.value)}
-              />
-              <TextField
-                label='Password'
-                variant='outlined'
-                onChange={e => onChange('password', e.target.value)}
-              />
-            </Box>
+            <TextField
+              fullWidth
+              label='host:port:login:password'
+              variant='outlined'
+              onChange={e => onChange('proxy', e.target.value)}
+            />
           </Box>
 
           <Box

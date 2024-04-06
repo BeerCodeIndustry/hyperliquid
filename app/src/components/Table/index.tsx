@@ -35,7 +35,7 @@ export const Table: React.FC<Props> = ({
   ActionBar,
   toolbar,
   withCheckbox,
-  pagination,
+  pagination = true,
   loading,
   rows,
 }) => {
