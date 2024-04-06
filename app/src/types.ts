@@ -55,6 +55,7 @@ export interface AccountState {
     assetPositions: Position[]
     marginSummary: { accountValue: string; totalRawUsd: string }
   }
+  timestamp: number
   openOrders: Order[]
   user: string
 }
@@ -62,7 +63,6 @@ export interface AccountState {
 export interface Unit {
   base_unit_info: {
     asset: string
-    timestamp: number
     leverage: number
     size: number
   }

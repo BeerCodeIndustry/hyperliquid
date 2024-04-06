@@ -47,7 +47,6 @@ export const transformAccountStatesToUnits = (
         unitsMap[coin] = {
           base_unit_info: {
             asset: coin,
-            timestamp: 0,
             leverage: leverage.value,
             size: Math.floor(Math.abs(Number(szi) / leverage.value)),
           },
@@ -69,7 +68,6 @@ export const transformAccountStatesToUnits = (
       if (!unitsMap[order.coin]) {
         throw new Error('No position for order')
       }
-      unitsMap[order.coin].base_unit_info.timestamp = order.timestamp
       unitsMap[order.coin].orders.push({
         public_address: accountState.user,
         info: {

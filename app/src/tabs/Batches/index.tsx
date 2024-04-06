@@ -19,8 +19,9 @@ const UNIT_RECREATE_TIMIMG = 3600000
 
 const createRows = (
   units: Unit[],
-  closingUnitAsset: string,
+  closingUnitAsset: string[],
   reCreatingUnitAssets: string[],
+  batchId: string,
   handleAction?: (type: 'close_unit', unit: Unit) => void,
 ): Row[] => {
   return units.map(unit => ({
@@ -35,7 +36,7 @@ const createRows = (
         ) : (
           <div>
             Time opened:{' '}
-            {convertMsToTime(Date.now() - unit.base_unit_info.timestamp)}
+            {convertMsToTime(Date.now() - Number(localStorage.getItem(`${batchId}-${unit.base_unit_info.asset}`)))}
           </div>
         )}
       </div>,
@@ -51,22 +52,22 @@ const createRows = (
           {unit.positions?.[1]?.info.liquidationPx}
         </div>
       </div>,
-      <div>
-        <div>Amount: {unit.orders.length}</div>
-        <div>
-          Sizes: {unit.orders?.[0]?.info.origSz} /{' '}
-          {unit.orders?.[1]?.info.origSz}
-        </div>
-        <div>
-          Limit px: {unit.orders?.[0]?.info.limitPx} /{' '}
-          {unit.orders?.[1]?.info.limitPx}
-        </div>
-      </div>,
+      // <div>
+      //   <div>Amount: {unit.orders.length}</div>
+      //   <div>
+      //     Sizes: {unit.orders?.[0]?.info.origSz} /{' '}
+      //     {unit.orders?.[1]?.info.origSz}
+      //   </div>
+      //   <div>
+      //     Limit px: {unit.orders?.[0]?.info.limitPx} /{' '}
+      //     {unit.orders?.[1]?.info.limitPx}
+      //   </div>
+      // </div>,
       <Box sx={{ display: 'flex', width: '100%', justifyContent: 'center' }}>
         <LoadingButton
           variant='contained'
           color='error'
-          loading={unit.base_unit_info.asset === closingUnitAsset}
+          loading={closingUnitAsset.includes(unit.base_unit_info.asset)}
           onClick={() => handleAction && handleAction('close_unit', unit)}
         >
           Close Unit
@@ -89,12 +90,12 @@ const headCells: HeadCell[] = [
     disablePadding: false,
     label: <Typography>Opened positions</Typography>,
   },
-  {
-    id: 'orders',
-    align: 'center',
-    disablePadding: false,
-    label: <Typography>Opened limit orders</Typography>,
-  },
+  // {
+  //   id: 'orders',
+  //   align: 'center',
+  //   disablePadding: false,
+  //   label: <Typography>Opened limit orders</Typography>,
+  // },
   {
     id: 'actions',
     align: 'center',
@@ -112,8 +113,9 @@ const Batch: React.FC<{
   const { accounts, getAccountProxy, closeBatch } = useContext(GlobalContext)
 
   const [loading, setLoading] = useState(true)
-  const [closingUnitAsset, setClosingUnitAsset] = useState('')
-  const [reCreatingUnitAssets, setReCreatingUnitAssets] = useState<string[]>([])
+  const [closingUnits, setClosingUnits] = useState<string[]>([])
+  const [creatingUnits, setCreatingUnits] = useState<string[]>([])
+  const [reCreatingUnits, setReCreatingUnits] = useState<string[]>([])
 
   const account_1 = accounts.find(({ id }) => id === account_id_1)!
   const account_2 = accounts.find(({ id }) => id === account_id_2)!
@@ -153,17 +155,20 @@ const Batch: React.FC<{
 
   useEffect(() => {
     units.forEach(unit => {
+      const timestamp = Number(localStorage.getItem(`${id}-${unit.base_unit_info.asset}`))
       if (
-        unit.base_unit_info.timestamp &&
-        Date.now() - unit.base_unit_info.timestamp >= UNIT_RECREATE_TIMIMG
+        (timestamp &&
+        Date.now() - timestamp >= UNIT_RECREATE_TIMIMG) ||
+        unit.positions.length === 1
       ) {
         if (
-          reCreatingUnitAssets.includes(unit.base_unit_info.asset) ||
-          closingUnitAsset === unit.base_unit_info.asset
+          reCreatingUnits.includes(unit.base_unit_info.asset) ||
+          closingUnits.includes(unit.base_unit_info.asset) ||
+          creatingUnits.includes(unit.base_unit_info.asset)
         ) {
           return
         }
-        setReCreatingUnitAssets(prev => [...prev, unit.base_unit_info.asset])
+        setCreatingUnits(prev => [...prev, unit.base_unit_info.asset])
         invoke('close_and_create_same_unit', {
           account1: getBatchAccount(account_1, getAccountProxy(account_1)),
           account2: getBatchAccount(account_2, getAccountProxy(account_2)),
@@ -171,31 +176,34 @@ const Batch: React.FC<{
           sz: unit.base_unit_info.size,
           leverage: unit.base_unit_info.leverage,
         }).then(() => {
-          setReCreatingUnitAssets(prev =>
+          setReCreatingUnits(prev =>
             prev.filter(asset => asset !== unit.base_unit_info.asset),
           )
         })
       }
     })
-  }, [units, reCreatingUnitAssets])
+  }, [units, reCreatingUnits, closingUnits, creatingUnits])
 
   const handleAction = (type: 'close_unit', unit: Unit) => {
     if (type === 'close_unit') {
-      setClosingUnitAsset(unit.base_unit_info.asset)
+      setClosingUnits(prev => [...prev, unit.base_unit_info.asset])
       invoke('close_unit', {
         account1: getBatchAccount(account_1, getAccountProxy(account_1)),
         account2: getBatchAccount(account_2, getAccountProxy(account_2)),
         asset: unit.base_unit_info.asset,
       }).then(() => {
-        setClosingUnitAsset('')
+        setClosingUnits(prev =>
+          prev.filter(asset => asset !== unit.base_unit_info.asset),
+        )
+        localStorage.removeItem(`${id}-${unit.base_unit_info.asset}`)
       })
     }
   }
 
   const rows = useMemo(
     () =>
-      createRows(units, closingUnitAsset, reCreatingUnitAssets, handleAction),
-    [units, closingUnitAsset, reCreatingUnitAssets],
+      createRows(units, closingUnits, reCreatingUnits, id, handleAction),
+    [units, closingUnits, reCreatingUnits, id],
   )
 
   const handleCreateUnit = (form: {
@@ -209,6 +217,8 @@ const Batch: React.FC<{
       asset: form.asset,
       sz: Number(form.sz),
       leverage: Number(form.leverage),
+    }).then(() => {
+      localStorage.setItem(`${id}-${form.asset}`, Date.now().toString())
     })
     setModalId(null)
   }
