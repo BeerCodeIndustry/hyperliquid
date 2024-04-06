@@ -6,12 +6,37 @@ mod high_level;
 mod types;
 mod utils;
 
+use fern::colors::{Color, ColoredLevelConfig};
 use high_level::batch::{close_and_create_same_unit, close_unit, create_unit};
+use log::LevelFilter;
+
+fn setup_logger() -> Result<(), fern::InitError> {
+    let colors = ColoredLevelConfig::new()
+        .info(Color::Green)
+        .warn(Color::Yellow)
+        .error(Color::Red)
+        .debug(Color::Blue);
+
+    fern::Dispatch::new()
+        .level(LevelFilter::Debug)
+        .format(move |out, message, record| {
+            out.finish(format_args!(
+                "{}[{}][{}] {}",
+                chrono::Local::now().format("[%Y-%m-%d][%H:%M:%S]"),
+                record.target(),
+                colors.color(record.level()),
+                message
+            ))
+        })
+        .chain(std::io::stdout())
+        .chain(fern::log_file("logs.log")?)
+        .apply()?;
+    Ok(())
+}
 
 #[tokio::main]
 async fn main() {
-    dotenv::dotenv().ok();
-    env_logger::init();
+    setup_logger().expect("Error setting up logger");
 
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![

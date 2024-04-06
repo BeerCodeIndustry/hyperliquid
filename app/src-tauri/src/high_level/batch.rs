@@ -73,6 +73,10 @@ pub async fn create_unit(
     sz: f64,
     leverage: u32,
 ) {
+    warn!(
+        "Creating unit for {}, {} asset: {}",
+        account1.account.public_address, account2.account.public_address, asset
+    );
     let [handler_1, handler_2] = [
         get_batch_handler(account1.clone()).await,
         get_batch_handler(account2.clone()).await,
@@ -94,13 +98,13 @@ pub async fn create_unit(
     let can_open_2 = can_open_position(&info_client_2, &public_address_2, &asset, sz).await;
 
     if !can_open_1 {
-        info!("Cannot open position for {public_address_1}, not enough balance");
+        warn!("Cannot open position for {public_address_1}, not enough balance");
 
         return;
     }
 
     if !can_open_2 {
-        info!("Cannot open position for {public_address_1}, not enough balance");
+        warn!("Cannot open position for {public_address_1}, not enough balance");
 
         return;
     }
@@ -124,7 +128,7 @@ pub async fn create_unit(
     let before_pos_2 = get_position(&info_client_2, &public_address_2, &asset).await;
 
     if before_pos_1.is_some() || before_pos_2.is_some() {
-        panic!("Position already exists");
+        error!("Position already exists");
     }
 
     let Position {
@@ -182,6 +186,10 @@ pub async fn create_unit(
 
 #[tauri::command]
 pub async fn close_unit(account1: BatchAccount, account2: BatchAccount, asset: String) {
+    warn!(
+        "Closing unit for {}, {} asset: {}",
+        account1.account.public_address, account2.account.public_address, asset
+    );
     let [handler_1, handler_2] = [
         get_batch_handler(account1).await,
         get_batch_handler(account2).await,
@@ -220,6 +228,7 @@ pub async fn close_and_create_same_unit(
     sz: f64,
     leverage: u32,
 ) {
+    warn!("Invoke close_and_create_same_unit");
     let [handler_1, handler_2] = [
         get_batch_handler(account1.clone()).await,
         get_batch_handler(account2.clone()).await,
