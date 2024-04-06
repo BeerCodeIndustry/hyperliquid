@@ -56,7 +56,7 @@ export const Table: React.FC<Props> = ({
     setPage(0)
   }
 
-  const handleClick = (event: React.MouseEvent<unknown>, id: string) => {
+  const handleClick = (_: React.MouseEvent<unknown>, id: string) => {
     if (!withCheckbox) return
     const selectedIndex = selected.indexOf(id)
     let newSelected: string[] = []
@@ -78,7 +78,7 @@ export const Table: React.FC<Props> = ({
 
   const isSelected = (id: string) => selected.indexOf(id) !== -1
 
-  const handleChangePage = (event: unknown, newPage: number) => {
+  const handleChangePage = (_: unknown, newPage: number) => {
     setPage(newPage)
   }
 

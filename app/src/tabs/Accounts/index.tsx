@@ -11,7 +11,7 @@ import { stringifyProxy } from '../../utils'
 
 const createRows = (
   accounts: Account[],
-  getAccountProxy: (account: Account) => Proxy | null,
+  getAccountProxy: (account: Account) => Proxy | undefined,
 ): Row[] => {
   return accounts.map(account => ({
     id: account.id!,
