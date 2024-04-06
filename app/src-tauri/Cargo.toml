@@ -25,6 +25,8 @@ tokio = "1.37.0"
 uuid = { version = "1.8.0", features = ["v4"] }
 rust_decimal = "1.35.0"
 async-recursion = "1.1.0"
+fern = { version = "0.6.2", features = ["colored"] }
+chrono = "0.4.37"
 
 
 [features]
