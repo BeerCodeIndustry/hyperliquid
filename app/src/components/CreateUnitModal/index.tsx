@@ -15,14 +15,13 @@ const AllowedAssets = ['JUP', 'MATIC', 'AVAX']
 
 export const CreateUnitModal: React.FC<{
   open: boolean
-  isCreating: boolean
   handleClose: () => void
   handleCreateUnit: (form: {
     asset: string
     sz: number
     leverage: number
   }) => void
-}> = ({ open, handleClose, handleCreateUnit, isCreating }) => {
+}> = ({ open, handleClose, handleCreateUnit }) => {
   const [form, setForm] = useState({
     asset: '',
     sz: 0,
@@ -104,7 +103,6 @@ export const CreateUnitModal: React.FC<{
             variant='contained'
             color='success'
             onClick={onConfirm}
-            loading={isCreating}
             disabled={!form.asset || !form.sz || !form.leverage}
           >
             Confirm
