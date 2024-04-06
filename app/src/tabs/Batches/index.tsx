@@ -112,7 +112,6 @@ const Batch: React.FC<{
   const { accounts, getAccountProxy, closeBatch } = useContext(GlobalContext)
 
   const [loading, setLoading] = useState(true)
-  const [isCreating, setIsCreating] = useState(false)
   const [closingUnitAsset, setClosingUnitAsset] = useState('')
   const [reCreatingUnitAssets, setReCreatingUnitAssets] = useState<string[]>([])
 
@@ -204,17 +203,14 @@ const Batch: React.FC<{
     sz: number
     leverage: number
   }) => {
-    setIsCreating(true)
     invoke('create_unit', {
       account1: getBatchAccount(account_1, getAccountProxy(account_1)),
       account2: getBatchAccount(account_2, getAccountProxy(account_2)),
       asset: form.asset,
       sz: Number(form.sz),
       leverage: Number(form.leverage),
-    }).then(() => {
-      setModalId(null)
-      setIsCreating(false)
     })
+    setModalId(null)
   }
 
   const toolbar = () => {
@@ -313,7 +309,6 @@ const Batch: React.FC<{
       <CreateUnitModal
         handleCreateUnit={handleCreateUnit}
         open={modalId === 'createUnitModal'}
-        isCreating={isCreating}
         handleClose={() => setModalId(null)}
       />
       <Box
