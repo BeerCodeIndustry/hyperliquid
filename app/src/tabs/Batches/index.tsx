@@ -1,4 +1,5 @@
-import { Box, Button, Paper, Typography } from '@mui/material'
+import { LoadingButton } from '@mui/lab'
+import { Box, Button, CircularProgress, Paper, Typography } from '@mui/material'
 import { invoke } from '@tauri-apps/api'
 import React, { useContext, useEffect, useMemo, useState } from 'react'
 
@@ -7,23 +8,39 @@ import { CreateUnitModal } from '../../components/CreateUnitModal'
 import { Row, Table } from '../../components/Table'
 import { GlobalContext } from '../../context'
 import { AccountState, HeadCell, Unit } from '../../types'
-import { convertMsToTime, getBatchAccount, transformAccountStatesToUnits } from '../../utils'
+import {
+  convertMsToTime,
+  getBatchAccount,
+  transformAccountStatesToUnits,
+} from '../../utils'
+
+const UNIT_RECREATE_TIMIMG = 3600000
 
 const createRows = (
   units: Unit[],
+  closingUnitAsset: string,
+  reCreatingUnitAssets: string[],
   handleAction?: (type: 'close_unit', unit: Unit) => void,
 ): Row[] => {
-  console.log(units)
   return units.map(unit => ({
     id: unit.base_unit_info.asset,
     data: [
       <div>
         <strong>{unit.base_unit_info.asset}</strong>
-        <div>Time opened: {convertMsToTime(Date.now() - unit.base_unit_info.timestamp)}</div>
+        {reCreatingUnitAssets.includes(unit.base_unit_info.asset) ? (
+          <div>
+            Recreating <CircularProgress size={28} />
+          </div>
+        ) : (
+          <div>
+            Time opened:{' '}
+            {convertMsToTime(Date.now() - unit.base_unit_info.timestamp)}
+          </div>
+        )}
       </div>,
       <div>
         <div>Amount: {unit.positions.length}</div>
-        
+
         <div>
           Sizes: {unit.positions?.[0]?.info.szi} /{' '}
           {unit.positions?.[1]?.info.szi}
@@ -45,13 +62,14 @@ const createRows = (
         </div>
       </div>,
       <Box sx={{ display: 'flex', width: '100%', justifyContent: 'center' }}>
-        <Button
+        <LoadingButton
           variant='contained'
           color='error'
+          loading={unit.base_unit_info.asset === closingUnitAsset}
           onClick={() => handleAction && handleAction('close_unit', unit)}
         >
           Close Unit
-        </Button>
+        </LoadingButton>
       </Box>,
     ],
   }))
@@ -93,6 +111,9 @@ const Batch: React.FC<{
   const { accounts, getAccountProxy, closeBatch } = useContext(GlobalContext)
 
   const [loading, setLoading] = useState(true)
+  const [isCreating, setIsCreating] = useState(false)
+  const [closingUnitAsset, setClosingUnitAsset] = useState('')
+  const [reCreatingUnitAssets, setReCreatingUnitAssets] = useState<string[]>([])
 
   const account_1 = accounts.find(({ id }) => id === account_id_1)!
   const account_2 = accounts.find(({ id }) => id === account_id_2)!
@@ -117,7 +138,10 @@ const Batch: React.FC<{
   )
 
   useEffect(() => {
-    if (accountStates[account_1.public_address] && accountStates[account_2.public_address]) {
+    if (
+      accountStates[account_1.public_address] &&
+      accountStates[account_2.public_address]
+    ) {
       setLoading(false)
     }
   }, [accountStates])
@@ -127,29 +151,68 @@ const Batch: React.FC<{
     [accountStates],
   )
 
+  useEffect(() => {
+    units.forEach(unit => {
+      if (
+        unit.base_unit_info.timestamp &&
+        Date.now() - unit.base_unit_info.timestamp >= UNIT_RECREATE_TIMIMG
+      ) {
+        if (
+          reCreatingUnitAssets.includes(unit.base_unit_info.asset) ||
+          closingUnitAsset === unit.base_unit_info.asset
+        ) {
+          return
+        }
+        setReCreatingUnitAssets(prev => [...prev, unit.base_unit_info.asset])
+        invoke('close_and_create_same_unit', {
+          account1: getBatchAccount(account_1, getAccountProxy(account_1)),
+          account2: getBatchAccount(account_2, getAccountProxy(account_2)),
+          asset: unit.base_unit_info.asset,
+          sz: unit.base_unit_info.size,
+          leverage: unit.base_unit_info.leverage,
+        }).then(() => {
+          setReCreatingUnitAssets(prev =>
+            prev.filter(asset => asset !== unit.base_unit_info.asset),
+          )
+        })
+      }
+    })
+  }, [units, reCreatingUnitAssets])
+
   const handleAction = (type: 'close_unit', unit: Unit) => {
     if (type === 'close_unit') {
+      setClosingUnitAsset(unit.base_unit_info.asset)
       invoke('close_unit', {
         account1: getBatchAccount(account_1, getAccountProxy(account_1)),
         account2: getBatchAccount(account_2, getAccountProxy(account_2)),
         asset: unit.base_unit_info.asset,
+      }).then(() => {
+        setClosingUnitAsset('')
       })
     }
   }
 
-  const rows = useMemo(() => createRows(units, handleAction), [units])
+  const rows = useMemo(
+    () =>
+      createRows(units, closingUnitAsset, reCreatingUnitAssets, handleAction),
+    [units, closingUnitAsset, reCreatingUnitAssets],
+  )
 
   const handleCreateUnit = (form: {
     asset: string
     sz: number
     leverage: number
   }) => {
+    setIsCreating(true)
     invoke('create_unit', {
       account1: getBatchAccount(account_1, getAccountProxy(account_1)),
       account2: getBatchAccount(account_2, getAccountProxy(account_2)),
       asset: form.asset,
       sz: Number(form.sz),
       leverage: Number(form.leverage),
+    }).then(() => {
+      setModalId(null)
+      setIsCreating(false)
     })
   }
 
@@ -186,7 +249,7 @@ const Batch: React.FC<{
         con.close()
       }
     }
-    
+
     connect('1')
     connect('2')
   }, [])
@@ -249,6 +312,7 @@ const Batch: React.FC<{
       <CreateUnitModal
         handleCreateUnit={handleCreateUnit}
         open={modalId === 'createUnitModal'}
+        isCreating={isCreating}
         handleClose={() => setModalId(null)}
       />
       <Box
