@@ -2,15 +2,13 @@ import { createContext, useCallback, useEffect, useMemo, useState } from 'react'
 
 import { SUPABASE_DB } from './db/SUPABASE_DB'
 import { Account, Batch, Proxy } from './types'
-import { connectSocket } from './utils'
 
 interface GlobalContextType {
   proxies: Proxy[]
   accounts: Account[]
   batches: Batch[]
-  socket: WebSocket | null
   addAccount: (account: Account) => void
-  getAccountProxy: (account: Account) => Proxy | null
+  getAccountProxy: (account: Account) => Proxy | undefined
   removeAccounts: (accountIds: string[]) => void
   removeProxies: (proxyIds: string[]) => void
   addProxy: (proxy: Proxy) => void
@@ -25,13 +23,13 @@ interface GlobalContextType {
     account_1_id: string
     account_2_id: string
   }) => void
+  closeBatch: (batchId: string) => void
 }
 
 export const GlobalContext = createContext<GlobalContextType>({
   proxies: [],
   accounts: [],
   batches: [],
-  socket: null,
   addAccount: () => {},
   addProxy: () => {},
   removeAccounts: () => {},
@@ -39,12 +37,12 @@ export const GlobalContext = createContext<GlobalContextType>({
   getAccountProxy: () => ({}) as Proxy,
   linkAccountsProxy: () => {},
   createBatch: () => {},
+  closeBatch: () => {},
 })
 
 const db = new SUPABASE_DB()
 
 export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
-  const [socket, setSocket] = useState<WebSocket | null>(null)
   const [proxies, setProxies] = useState<Proxy[]>([])
   const [accounts, setAccounts] = useState<Account[]>([])
   const [batches, setBatches] = useState<Batch[]>([])
@@ -74,7 +72,7 @@ export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
   }, [])
 
   const getAccountProxy = (account: Account) => {
-    return proxies.find(proxy => proxy.id === account.proxy_id) ?? null
+    return proxies.find(proxy => proxy.id === account.proxy_id)
   }
 
   const getAccounts = useCallback(() => {
@@ -85,6 +83,7 @@ export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
 
   const getBatches = useCallback(() => {
     db.getBatches().then(batches => {
+      console.log(batches, 'batches')
       setBatches(batches)
     })
   }, [])
@@ -119,10 +118,17 @@ export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
     [proxies],
   )
 
+  const closeBatch = useCallback((batchId: string) => {
+    db.closeBatch(batchId).then(() => {
+      getBatches()
+    })
+  }, [])
+
   const value = useMemo(
     () => ({
       proxies,
       accounts,
+      batches,
       addAccount,
       addProxy,
       removeAccounts,
@@ -130,18 +136,15 @@ export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
       getAccountProxy,
       linkAccountsProxy,
       createBatch,
-      socket,
-      batches,
+      closeBatch,
     }),
-    [proxies, accounts, socket],
+    [proxies, accounts, batches],
   )
 
   useEffect(() => {
     getAccounts()
     getProxies()
     getBatches()
-
-    connectSocket(setSocket)
   }, [])
 
   return (

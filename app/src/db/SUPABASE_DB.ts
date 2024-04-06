@@ -66,7 +66,7 @@ export class SUPABASE_DB {
     return this.client.from('batches').insert({ account_1_id, account_2_id })
   }
 
-  public deleteBatch = async (batchId: string) => {
+  public closeBatch = async (batchId: string) => {
     return this.client.from('batches').delete().eq('id', batchId)
   }
 }

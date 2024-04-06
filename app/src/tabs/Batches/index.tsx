@@ -1,147 +1,311 @@
+import { Box, Button, Paper, Typography } from '@mui/material'
+import { invoke } from '@tauri-apps/api'
+import React, { useContext, useEffect, useMemo, useState } from 'react'
 
-import React, { useContext, useEffect, useMemo, useState } from "react";
-
-import { CreateBatchModal } from "../../components/CreateBatchModal";
-import { GlobalContext } from "../../context";
-import { HeadCell, Order, Position } from "../../types";
-import { Row, Table } from "../../components/Table";
-
-import { Button, Paper, Tooltip, Box, Typography } from "@mui/material";
-import HelpIcon from '@mui/icons-material/Help';
-import { dataDir } from "@tauri-apps/api/path";
+import { CreateBatchModal } from '../../components/CreateBatchModal'
+import { CreateUnitModal } from '../../components/CreateUnitModal'
+import { Row, Table } from '../../components/Table'
+import { GlobalContext } from '../../context'
+import { AccountState, HeadCell, Unit } from '../../types'
+import { getBatchAccount, transformAccountStatesToUnits } from '../../utils'
 
 const createRows = (
-  positions: Record<string, Position[]>,
-  account_1_public: string,
-  account_2_public: string,
-  orders: Record<string, Order[]>,
-  assets: string[]
+  units: Unit[],
+  handleAction?: (type: 'close_unit', unit: Unit) => void,
 ): Row[] => {
-  return assets.map(asset => {
-    const assetPositions = positions.filter(p => p.position.asset === asset);
-    return {
-      id: asset,
-      data: [
-        asset,
-        `${positions[account_1_public]}`,
-        ``,
-        asset,
-        asset,
-      ],
-    }
-  })
+  return units.map(unit => ({
+    id: unit.base_unit_info.asset,
+    data: [
+      unit.base_unit_info.asset,
+      <div>
+        <div>Amount: {unit.positions.length}</div>
+        <div>
+          Sizes: {unit.positions?.[0]?.info.szi} /{' '}
+          {unit.positions?.[1]?.info.szi}
+        </div>
+        <div>
+          Liq price: {unit.positions?.[0]?.info.liquidationPx} /{' '}
+          {unit.positions?.[1]?.info.liquidationPx}
+        </div>
+      </div>,
+      <div>
+        <div>Amount: {unit.orders.length}</div>
+        <div>
+          Sizes: {unit.orders?.[0]?.info.origSz} /{' '}
+          {unit.orders?.[1]?.info.origSz}
+        </div>
+        <div>
+          Limit px: {unit.orders?.[0]?.info.limitPx} /{' '}
+          {unit.orders?.[1]?.info.limitPx}
+        </div>
+      </div>,
+      <Box sx={{ display: 'flex', width: '100%', justifyContent: 'center' }}>
+        <Button
+          variant='contained'
+          color='error'
+          onClick={() => handleAction && handleAction('close_unit', unit)}
+        >
+          Close Unit
+        </Button>
+      </Box>,
+    ],
+  }))
 }
 
 const headCells: HeadCell[] = [
   {
-    id: "asset",
-    align: "left",
+    id: 'asset',
+    align: 'left',
     disablePadding: false,
     label: <Typography>Asset</Typography>,
   },
   {
-    id: "positions_size",
-    align: "center",
+    id: 'positions',
+    align: 'center',
     disablePadding: false,
-    label: <Typography>Positions sizes</Typography>,
+    label: <Typography>Opened positions</Typography>,
   },
   {
-    id: "orders_size",
-    align: "center",
+    id: 'orders',
+    align: 'center',
     disablePadding: false,
-    label: <Typography>Orders sizes</Typography>,
+    label: <Typography>Opened limit orders</Typography>,
   },
   {
-    id: "positions",
-    align: "center",
+    id: 'actions',
+    align: 'center',
     disablePadding: false,
-    label: <Typography>Positions ratio <Tooltip title='ACCOUNT1_POSITIONS / ACCOUNT2_POSITIONS' placement="top"><HelpIcon /></Tooltip></Typography>,
+    label: <Typography>Actions</Typography>,
   },
-  {
-    id: "orders",
-    align: "center",
-    disablePadding: false,
-    label: <Typography>Orders ratio <Tooltip title='ACCOUNT1_ORDERS / ACCOUNT2_ORDERS' placement="top"><HelpIcon /></Tooltip></Typography>,
-  },
-];
+]
 
-const Batch: React.FC<{account_id_1: string, account_id_2: string, id: string}> = ({account_id_1, account_id_2, id}) => {
-  const { socket, accounts } = useContext(GlobalContext);
+const Batch: React.FC<{
+  account_id_1: string
+  account_id_2: string
+  id: string
+}> = ({ account_id_1, account_id_2, id }) => {
+  const [modalId, setModalId] = useState<string | null>(null)
+  const { accounts, getAccountProxy, closeBatch } = useContext(GlobalContext)
 
-  const account_1 = accounts.find(({id}) => id === account_id_1)!
-  const account_2 = accounts.find(({id}) => id === account_id_2)!
+  const account_1 = accounts.find(({ id }) => id === account_id_1)!
+  const account_2 = accounts.find(({ id }) => id === account_id_2)!
 
-  const [positions, setPositions] = useState<Record<string, Position[]>>({})
   const [balances, setBalances] = useState<Record<string, string>>({})
-  const [orders, setOrders] = useState<Record<string, Order[]>>({})
+
+  const [accountStates, setAccountState] = useState<
+    Record<string, AccountState>
+  >({})
+
+  const [sockets, setSockets] = useState<Record<string, WebSocket | null>>({
+    [account_1.public_address]: null,
+    [account_2.public_address]: null,
+  })
+
+  const [socket_1, socket_2] = useMemo(
+    () => [
+      sockets[account_1.public_address],
+      sockets[account_2.public_address],
+    ],
+    [sockets],
+  )
+
+  const units = useMemo(
+    () => transformAccountStatesToUnits(Object.values(accountStates)),
+    [accountStates],
+  )
+
+  const handleAction = (type: 'close_unit', unit: Unit) => {
+    if (type === 'close_unit') {
+      invoke('close_unit', {
+        account1: getBatchAccount(account_1, getAccountProxy(account_1)),
+        account2: getBatchAccount(account_2, getAccountProxy(account_2)),
+        asset: unit.base_unit_info.asset,
+      })
+    }
+  }
+
+  const rows = useMemo(() => createRows(units, handleAction), [units])
+
+  const handleCreateUnit = (form: {
+    asset: string
+    sz: number
+    leverage: number
+  }) => {
+    invoke('create_unit', {
+      account1: getBatchAccount(account_1, getAccountProxy(account_1)),
+      account2: getBatchAccount(account_2, getAccountProxy(account_2)),
+      asset: form.asset,
+      sz: Number(form.sz),
+      leverage: Number(form.leverage),
+    })
+  }
+
+  const toolbar = () => {
+    return (
+      <Box sx={{ width: '100%', display: 'flex', justifyContent: 'flex-end' }}>
+        <Button
+          variant='contained'
+          color='primary'
+          onClick={() => setModalId('createUnitModal')}
+        >
+          Create Unit
+        </Button>
+      </Box>
+    )
+  }
 
   useEffect(() => {
-    if (socket) {
-      socket.send(JSON.stringify({ "method": "subscribe", "subscription": { "type": "webData2", "user": account_1.public_address }}))
-      socket.send(JSON.stringify({ "method": "subscribe", "subscription": { "type": "webData2", "user": account_2.public_address }}))
+    const con_1 = new WebSocket('wss://api.hyperliquid.xyz/ws')
+    const con_2 = new WebSocket('wss://api.hyperliquid.xyz/ws')
 
-      socket.onmessage = (ev: MessageEvent<any>) => {
-        setPositions(prev => ({
-          ...prev,
-          [ev.data.user]: ev.data.clearinghouseState.assetPositions
-        }))
+    con_1.onopen = () => {
+      setSockets(prev => ({ ...prev, [account_1.public_address]: con_1 }))
+    }
 
-        setOrders(prev => ({
-          ...prev,
-          [ev.data.user]: ev.data.openOrders
-        }))
+    con_2.onopen = () => {
+      setSockets(prev => ({ ...prev, [account_2.public_address]: con_2 }))
+    }
+  }, [])
 
-        setBalances(prev => ({
-          ...prev,
-          [ev.data.user]: ev.data.clearinghouseState.marginSummary.accountValue
-        }))
+  useEffect(() => {
+    if (socket_2) {
+      socket_2.send(
+        JSON.stringify({
+          method: 'subscribe',
+          subscription: { type: 'webData2', user: account_2.public_address },
+        }),
+      )
+
+      socket_2.onmessage = (ev: MessageEvent<any>) => {
+        const data = JSON.parse(ev.data)
+        if (data?.channel === 'webData2') {
+          const accountState = data.data as AccountState
+          setAccountState(prev => ({
+            ...prev,
+            [account_2.public_address]: accountState,
+          }))
+          setBalances(prev => ({
+            ...prev,
+            [account_2.public_address]:
+              accountState.clearinghouseState.marginSummary.accountValue,
+          }))
+        }
       }
     }
-  }, [socket])
+  }, [socket_2])
 
-  const rows = useMemo(() => {
-    const allPositions = [...positions[account_1.public_address], ...positions[account_2.public_address]]
-    const allOrders = [...orders[account_1.public_address], ...orders[account_2.public_address]]
+  useEffect(() => {
+    if (socket_1) {
+      socket_1.send(
+        JSON.stringify({
+          method: 'subscribe',
+          subscription: { type: 'webData2', user: account_1.public_address },
+        }),
+      )
+      socket_1.onmessage = (ev: MessageEvent<any>) => {
+        const data = JSON.parse(ev.data)
+        if (data?.channel === 'webData2') {
+          const accountState = data.data as AccountState
+          setAccountState(prev => ({
+            ...prev,
+            [account_1.public_address]: accountState,
+          }))
+          setBalances(prev => ({
+            ...prev,
+            [account_1.public_address]:
+              accountState.clearinghouseState.marginSummary.accountValue,
+          }))
+        }
+      }
+    }
+  }, [socket_1])
 
-    const assets = Array.from(new Set([...allPositions.map(p => p.position.coin), ...allOrders.map(p => p.coin)]))
-    return createRows(positions, orders, assets)
-  }, [positions, orders])
+  return (
+    <Paper sx={{ width: '100%', p: 2 }}>
+      <CreateUnitModal
+        handleCreateUnit={handleCreateUnit}
+        open={modalId === 'createUnitModal'}
+        handleClose={() => setModalId(null)}
+      />
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          width: '100%',
+          justifyContent: 'space-between',
+        }}
+      >
+        <Typography>
+          Batch ID: <strong>{id}</strong>
+        </Typography>
+        <Box>
+          <Button
+            variant='contained'
+            color='error'
+            onClick={() => closeBatch(id)}
+            // disabled={!form.asset || !form.sz || !form.leverage}
+          >
+            Close Batch
+          </Button>
+        </Box>
+      </Box>
 
-  return <Paper sx={{ width: "100%", p: 2 }}>
-      <Typography>ID: <strong>{id}</strong></Typography>
-      <Typography>Account 1 public_address: <strong>{account_1.public_address}</strong> balance: {balances[account_1.public_address]}$</Typography>
-      <Typography>Account 2 public_address: <strong>{account_2.public_address}</strong> balance: {balances[account_2.public_address]}$</Typography>
-      <Table 
+      <Typography>
+        Account 1 public_address: <strong>{account_1.public_address}</strong>{' '}
+        balance: {balances[account_1.public_address]}$
+      </Typography>
+      <Typography>
+        Account 2 public_address: <strong>{account_2.public_address}</strong>{' '}
+        balance: {balances[account_2.public_address]}$
+      </Typography>
+      <Table
         headCells={headCells}
         rows={rows}
         pagination={false}
+        toolbar={toolbar()}
       />
-    </Paper>;
-};
+    </Paper>
+  )
+}
 
 export const Batches: React.FC = () => {
-  const { batches } = useContext(GlobalContext);
+  const { batches } = useContext(GlobalContext)
 
-  const [modalId, setModalId] = React.useState<string | null>(null);
+  const [modalId, setModalId] = React.useState<string | null>(null)
 
   return (
-    <Box sx={{ width: "100%" }}>
+    <Box sx={{ width: '100%' }}>
       <CreateBatchModal
-        open={modalId === "createBatchModal"}
+        open={modalId === 'createBatchModal'}
         handleClose={() => setModalId(null)}
       />
       <Button
-        variant="contained"
-        color="primary"
-        onClick={() => setModalId("createBatchModal")}
+        variant='contained'
+        color='primary'
+        onClick={() => setModalId('createBatchModal')}
       >
         Create Batch
       </Button>
-      <Box sx={{ width: "100%", mt: 2 }}>
-        {batches.map((batch) => {
-          return <Batch account_id_1={batch.account_1_id!} account_id_2={batch.account_2_id!} id={batch.id!} key={batch.id} />
+      <Box
+        sx={{
+          width: '100%',
+          mt: 2,
+          gap: 5,
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
+        {batches.map(batch => {
+          return (
+            <Batch
+              account_id_1={batch.account_1_id!}
+              account_id_2={batch.account_2_id!}
+              id={batch.id!}
+              key={batch.id}
+            />
+          )
         })}
       </Box>
     </Box>
-  );
-};
+  )
+}

@@ -1,4 +1,5 @@
 import {
+  Box,
   Button,
   FormControl,
   InputLabel,
@@ -6,9 +7,8 @@ import {
   Modal,
   Paper,
   Select,
-  Box,
 } from '@mui/material'
-import { useContext, useState } from 'react'
+import { useContext, useMemo, useState } from 'react'
 
 import { GlobalContext } from '../../context'
 
@@ -16,7 +16,7 @@ export const CreateBatchModal: React.FC<{
   open: boolean
   handleClose: () => void
 }> = ({ open, handleClose }) => {
-  const { accounts, createBatch } = useContext(GlobalContext)
+  const { accounts, createBatch, batches } = useContext(GlobalContext)
   const [batchAccounts, setBatchAccounts] = useState<{
     account_1_id: string
     account_2_id: string
@@ -24,6 +24,12 @@ export const CreateBatchModal: React.FC<{
     account_1_id: '',
     account_2_id: '',
   })
+
+  const filteredAccounts = useMemo(() => {
+    const allBatches = batches.map(b => [b.account_1_id, b.account_2_id]).flat()
+
+    return accounts.filter(a => !allBatches.includes(a.id!))
+  }, [accounts, batches])
 
   const onConfirm = () => {
     if (batchAccounts.account_1_id && batchAccounts.account_2_id) {
@@ -56,13 +62,15 @@ export const CreateBatchModal: React.FC<{
                 label='Account 1'
                 onChange={e => onChange('account_1_id', e.target.value)}
               >
-                <MenuItem value=''>
+                <MenuItem value='' key='none'>
                   <em>None</em>
                 </MenuItem>
-                {accounts
+                {filteredAccounts
                   .filter(a => a.id !== batchAccounts.account_2_id)
                   .map(a => (
-                    <MenuItem value={a.id}>{a.public_address}</MenuItem>
+                    <MenuItem value={a.id} key={a.id}>
+                      {a.public_address}
+                    </MenuItem>
                   ))}
               </Select>
             </FormControl>
@@ -75,13 +83,15 @@ export const CreateBatchModal: React.FC<{
                 label='Account 2'
                 onChange={e => onChange('account_2_id', e.target.value)}
               >
-                <MenuItem value=''>
+                <MenuItem value='' key='none'>
                   <em>None</em>
                 </MenuItem>
-                {accounts
+                {filteredAccounts
                   .filter(a => a.id !== batchAccounts.account_1_id)
                   .map(a => (
-                    <MenuItem value={a.id}>{a.public_address}</MenuItem>
+                    <MenuItem value={a.id} key={a.id}>
+                      {a.public_address}
+                    </MenuItem>
                   ))}
               </Select>
             </FormControl>

@@ -78,7 +78,7 @@ pub async fn create_unit(
     ];
     let sz = sz * leverage as f64;
     let Handlers {
-        info_client: mut info_client_1,
+        info_client: info_client_1,
         exchange_client: exchange_client_1,
         public_address: public_address_1,
     } = handler_1;

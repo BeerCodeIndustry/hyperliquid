@@ -57,6 +57,7 @@ export const Table: React.FC<Props> = ({
   }
 
   const handleClick = (event: React.MouseEvent<unknown>, id: string) => {
+    if (!withCheckbox) return
     const selectedIndex = selected.indexOf(id)
     let newSelected: string[] = []
 
@@ -138,10 +139,11 @@ export const Table: React.FC<Props> = ({
                     if (cellIdx === 0) {
                       return (
                         <TableCell
+                          key={labelId}
                           component='th'
                           id={labelId}
                           scope='row'
-                          padding='none'
+                          padding={withCheckbox ? 'none' : 'normal'}
                           align='left'
                         >
                           {cell}
@@ -149,7 +151,11 @@ export const Table: React.FC<Props> = ({
                       )
                     }
 
-                    return <TableCell align='center'>{cell}</TableCell>
+                    return (
+                      <TableCell key={cellIdx} align='center'>
+                        {cell}
+                      </TableCell>
+                    )
                   })}
                 </TableRow>
               )
@@ -166,15 +172,17 @@ export const Table: React.FC<Props> = ({
           </TableBody>
         </MuiTable>
       </TableContainer>
-      {pagination && <TablePagination
-        rowsPerPageOptions={[5, 10, 25]}
-        component='div'
-        count={rows.length}
-        rowsPerPage={rowsPerPage}
-        page={page}
-        onPageChange={handleChangePage}
-        onRowsPerPageChange={handleChangeRowsPerPage}
-      />}
+      {pagination && (
+        <TablePagination
+          rowsPerPageOptions={[5, 10, 25]}
+          component='div'
+          count={rows.length}
+          rowsPerPage={rowsPerPage}
+          page={page}
+          onPageChange={handleChangePage}
+          onRowsPerPageChange={handleChangeRowsPerPage}
+        />
+      )}
     </Paper>
   )
 }
