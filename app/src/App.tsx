@@ -3,6 +3,9 @@ import MuiTabs from '@mui/material/Tabs'
 import Box from '@mui/material/Box'
 import { useState } from 'react'
 
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
 import { Accounts, Batches, Proxy } from './tabs'
 
 const Tabs = {
@@ -41,6 +44,7 @@ const App = () => {
         {tabId === Tabs.Proxy.id && <Proxy />}
         {tabId === Tabs.Batches.id && <Batches />}
       </Box>
+      <ToastContainer position='bottom-left'  />
     </Box>
   )
 }
