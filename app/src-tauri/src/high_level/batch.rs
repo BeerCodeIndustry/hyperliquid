@@ -176,8 +176,8 @@ pub async fn create_unit(
         return;
     }
 
-    open_limit_order(&pos_2, &exchange_client_1, &info_client_1).await;
-    open_limit_order(&pos_1, &exchange_client_2, &info_client_2).await;
+    // open_limit_order(&pos_2, &exchange_client_1, &info_client_1).await;
+    // open_limit_order(&pos_1, &exchange_client_2, &info_client_2).await;
 }
 
 #[tauri::command]

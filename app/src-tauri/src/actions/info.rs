@@ -50,7 +50,7 @@ pub async fn slippage_price(
     is_buy: bool,
     px: Option<f64>,
 ) -> f64 {
-    const DEFAULT_SLIPPAGE: f64 = 0.001;
+    const DEFAULT_SLIPPAGE: f64 = 0.001; // 0.1%
 
     let coin_mid_price = &get_all_mids(info_client).await[asset];
 
