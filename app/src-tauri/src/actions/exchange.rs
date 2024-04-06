@@ -2,7 +2,7 @@ use hyperliquid_rust_sdk::{
     AssetPosition, ClientLimit, ClientOrder, ClientOrderRequest, ExchangeClient,
     ExchangeResponseStatus, InfoClient,
 };
-use log::info;
+use log::{error, info};
 use uuid::Uuid;
 
 use crate::actions::info::slippage_price;
@@ -45,7 +45,11 @@ pub async fn open_order(
     let response = exchange_client.order(order, None).await.unwrap();
     let response = match response {
         ExchangeResponseStatus::Ok(exchange_response) => exchange_response,
-        ExchangeResponseStatus::Err(e) => panic!("error with exchange response: {e}"),
+        ExchangeResponseStatus::Err(e) => {
+            error!("error with exchange response: {e}");
+
+            return;
+        }
     };
     info!("{}: {response:?}", order_type.title());
 }
