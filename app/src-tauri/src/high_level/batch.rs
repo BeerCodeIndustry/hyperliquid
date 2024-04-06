@@ -129,6 +129,8 @@ pub async fn create_unit(
 
     if before_pos_1.is_some() || before_pos_2.is_some() {
         error!("Unit already exists for {public_address_1}, {public_address_2}");
+
+        return;
     }
 
     let Position {
