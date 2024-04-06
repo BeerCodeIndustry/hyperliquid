@@ -14,6 +14,7 @@ import {
   getBatchAccount,
   transformAccountStatesToUnits,
 } from '../../utils'
+import { toast } from 'react-toastify'
 
 const UNIT_RECREATE_TIMIMG = 3600000
 
@@ -155,11 +156,10 @@ const Batch: React.FC<{
 
   useEffect(() => {
     units.forEach(unit => {
+      console.log(unit)
       const timestamp = Number(localStorage.getItem(`${id}-${unit.base_unit_info.asset}`))
       if (
-        (timestamp &&
-        Date.now() - timestamp >= UNIT_RECREATE_TIMIMG) ||
-        unit.positions.length === 1
+        (timestamp && Date.now() - timestamp >= UNIT_RECREATE_TIMIMG)
       ) {
         if (
           reCreatingUnits.includes(unit.base_unit_info.asset) ||
@@ -168,8 +168,8 @@ const Batch: React.FC<{
         ) {
           return
         }
-        setCreatingUnits(prev => [...prev, unit.base_unit_info.asset])
-        invoke('close_and_create_same_unit', {
+        setReCreatingUnits(prev => [...prev, unit.base_unit_info.asset])
+        const promise = invoke('close_and_create_same_unit', {
           account1: getBatchAccount(account_1, getAccountProxy(account_1)),
           account2: getBatchAccount(account_2, getAccountProxy(account_2)),
           asset: unit.base_unit_info.asset,
@@ -179,10 +179,36 @@ const Batch: React.FC<{
           setReCreatingUnits(prev =>
             prev.filter(asset => asset !== unit.base_unit_info.asset),
           )
+          localStorage.setItem(`${id}-${unit.base_unit_info.asset}`, Date.now().toString())
+        })
+
+        toast.promise(promise, {
+          pending: `Re-creating unit with asset ${unit.base_unit_info.asset}`,
+          success: `Unit with asset ${unit.base_unit_info.asset} re-created 👌`,
+          error: `Error while re-creating unit with asset ${unit.base_unit_info.asset} error 🤯`
         })
       }
     })
   }, [units, reCreatingUnits, closingUnits, creatingUnits])
+
+  const removeUnit = (asset: string) => {
+    setAccountState((prev) => ({
+      [account_1.public_address]: {
+        ...prev[account_1.public_address],
+        clearinghouseState: {
+          ...prev[account_1.public_address].clearinghouseState,
+          assetPositions: prev[account_1.public_address].clearinghouseState.assetPositions.filter((pos) => pos.position.coin !== asset)
+        }
+      },
+      [account_2.public_address]: {
+        ...prev[account_2.public_address],
+        clearinghouseState: {
+          ...prev[account_2.public_address].clearinghouseState,
+          assetPositions: prev[account_2.public_address].clearinghouseState.assetPositions.filter((pos) => pos.position.coin !== asset)
+        }
+      }
+    }))
+  }
 
   const handleAction = (type: 'close_unit', unit: Unit) => {
     if (type === 'close_unit') {
@@ -195,6 +221,7 @@ const Batch: React.FC<{
         setClosingUnits(prev =>
           prev.filter(asset => asset !== unit.base_unit_info.asset),
         )
+        removeUnit(unit.base_unit_info.asset)
         localStorage.removeItem(`${id}-${unit.base_unit_info.asset}`)
       })
     }
@@ -211,7 +238,8 @@ const Batch: React.FC<{
     sz: number
     leverage: number
   }) => {
-    invoke('create_unit', {
+    setCreatingUnits(prev => [...prev, form.asset])
+    const promise = invoke('create_unit', {
       account1: getBatchAccount(account_1, getAccountProxy(account_1)),
       account2: getBatchAccount(account_2, getAccountProxy(account_2)),
       asset: form.asset,
@@ -219,6 +247,14 @@ const Batch: React.FC<{
       leverage: Number(form.leverage),
     }).then(() => {
       localStorage.setItem(`${id}-${form.asset}`, Date.now().toString())
+      setCreatingUnits(prev =>
+        prev.filter(asset => asset !== form.asset),
+      )
+    })
+    toast.promise(promise, {
+      pending: `Creating unit with asset ${form.asset}`,
+      success: `Unit with asset ${form.asset} created 👌`,
+      error: `Error while creating unit with asset ${form.asset} error 🤯`
     })
     setModalId(null)
   }
@@ -262,11 +298,17 @@ const Batch: React.FC<{
   }, [])
 
   useEffect(() => {
-    if (socket_2) {
+    if (socket_2 && socket_1) {
       socket_2.send(
         JSON.stringify({
           method: 'subscribe',
           subscription: { type: 'webData2', user: account_2.public_address },
+        }),
+      )
+      socket_1.send(
+        JSON.stringify({
+          method: 'subscribe',
+          subscription: { type: 'webData2', user: account_1.public_address },
         }),
       )
 
@@ -280,22 +322,11 @@ const Batch: React.FC<{
           }))
           setBalances(prev => ({
             ...prev,
-            [account_2.public_address]:
-              accountState.clearinghouseState.marginSummary.accountValue,
+            [account_2.public_address]: accountState.clearinghouseState.marginSummary.accountValue,
           }))
         }
       }
-    }
-  }, [socket_2])
 
-  useEffect(() => {
-    if (socket_1) {
-      socket_1.send(
-        JSON.stringify({
-          method: 'subscribe',
-          subscription: { type: 'webData2', user: account_1.public_address },
-        }),
-      )
       socket_1.onmessage = (ev: MessageEvent<any>) => {
         const data = JSON.parse(ev.data)
         if (data?.channel === 'webData2') {
@@ -306,13 +337,12 @@ const Batch: React.FC<{
           }))
           setBalances(prev => ({
             ...prev,
-            [account_1.public_address]:
-              accountState.clearinghouseState.marginSummary.accountValue,
+            [account_1.public_address]: accountState.clearinghouseState.marginSummary.accountValue,
           }))
         }
       }
     }
-  }, [socket_1])
+  }, [socket_2, socket_1])
 
   return (
     <Paper sx={{ width: '100%', p: 2 }}>

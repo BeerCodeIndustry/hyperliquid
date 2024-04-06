@@ -10,6 +10,7 @@
   "importOrderSeparation": true,
   "importOrder": [
     "<THIRD_PARTY_MODULES>",
+    "@mui/material/Box",
     "^@/context/(.*)$",
     "^@/layouts/(.*)$",
     "^@/supabase/(.*)$",
