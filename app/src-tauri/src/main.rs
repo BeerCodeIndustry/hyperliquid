@@ -8,6 +8,7 @@ mod utils;
 
 use fern::colors::{Color, ColoredLevelConfig};
 use high_level::batch::{close_and_create_same_unit, close_unit, create_unit};
+use high_level::logs::get_logs;
 use log::LevelFilter;
 
 fn setup_logger() -> Result<(), fern::InitError> {
@@ -42,7 +43,8 @@ async fn main() {
         .invoke_handler(tauri::generate_handler![
             create_unit,
             close_unit,
-            close_and_create_same_unit
+            close_and_create_same_unit,
+            get_logs
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

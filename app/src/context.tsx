@@ -7,7 +7,6 @@ interface GlobalContextType {
   proxies: Proxy[]
   accounts: Account[]
   batches: Batch[]
-  logs: string[]
   addAccount: (account: Account) => void
   getAccountProxy: (account: Account) => Proxy | undefined
   removeAccounts: (accountIds: string[]) => void
@@ -31,7 +30,6 @@ export const GlobalContext = createContext<GlobalContextType>({
   proxies: [],
   accounts: [],
   batches: [],
-  logs: [],
   addAccount: () => {},
   addProxy: () => {},
   removeAccounts: () => {},
@@ -48,8 +46,6 @@ export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
   const [proxies, setProxies] = useState<Proxy[]>([])
   const [accounts, setAccounts] = useState<Account[]>([])
   const [batches, setBatches] = useState<Batch[]>([])
-
-  const [logs, setLogs] = useState<string[]>([]);
 
   const addAccount = useCallback((account: Account) => {
     db.addAccount(account).then(() => {
@@ -133,7 +129,6 @@ export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
       proxies,
       accounts,
       batches,
-      logs,
       addAccount,
       addProxy,
       removeAccounts,
@@ -143,17 +138,13 @@ export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
       createBatch,
       closeBatch,
     }),
-    [proxies, accounts, batches, logs],
+    [proxies, accounts, batches],
   )
 
   useEffect(() => {
     getAccounts()
     getProxies()
     getBatches()
-
-    window.addEventListener('log-event', (event: any) => {
-      setLogs(prev => [...prev, event.detail])
-    });
   }, [])
 
   return (

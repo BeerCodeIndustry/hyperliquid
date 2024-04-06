@@ -1,12 +1,14 @@
-import MuiTab from '@mui/material/Tab'
+// prettier-ignore
+import MuiTab from '@mui/material/Tab';
 import MuiTabs from '@mui/material/Tabs'
-import Box from '@mui/material/Box'
 import { useState } from 'react'
+import { ToastContainer } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
 
-import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import Box from '@mui/material/Box'
 
-import { Accounts, Batches, Proxy } from './tabs'
+import { LogsProvider } from './logsContext'
+import { Accounts, Batches, Logs, Proxy } from './tabs'
 
 const Tabs = {
   Accounts: {
@@ -20,6 +22,10 @@ const Tabs = {
   Batches: {
     label: 'Batches',
     id: 'Batches',
+  },
+  Logs: {
+    label: 'Logs',
+    id: 'Logs',
   },
 } as const
 
@@ -43,8 +49,9 @@ const App = () => {
         {tabId === Tabs.Accounts.id && <Accounts />}
         {tabId === Tabs.Proxy.id && <Proxy />}
         {tabId === Tabs.Batches.id && <Batches />}
+        <LogsProvider>{tabId === Tabs.Logs.id && <Logs />}</LogsProvider>
       </Box>
-      <ToastContainer position='bottom-left'  />
+      <ToastContainer position='bottom-left' />
     </Box>
   )
 }
