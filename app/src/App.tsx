@@ -1,6 +1,6 @@
-import Box from '@mui/material/Box'
 import MuiTab from '@mui/material/Tab'
 import MuiTabs from '@mui/material/Tabs'
+import Box from '@mui/material/Box'
 import { useState } from 'react'
 
 import { Accounts, Batches, Proxy } from './tabs'
