@@ -159,7 +159,8 @@ const Batch: React.FC<{
       console.log(unit)
       const timestamp = Number(localStorage.getItem(`${id}-${unit.base_unit_info.asset}`))
       if (
-        (timestamp && Date.now() - timestamp >= UNIT_RECREATE_TIMIMG)
+        (timestamp && Date.now() - timestamp >= UNIT_RECREATE_TIMIMG) ||
+        (Date.now() - timestamp >= 5000 && unit.positions.length === 1)
       ) {
         if (
           reCreatingUnits.includes(unit.base_unit_info.asset) ||
@@ -218,9 +219,11 @@ const Batch: React.FC<{
         account2: getBatchAccount(account_2, getAccountProxy(account_2)),
         asset: unit.base_unit_info.asset,
       }).then(() => {
-        setClosingUnits(prev =>
-          prev.filter(asset => asset !== unit.base_unit_info.asset),
-        )
+        setTimeout(() => {
+          setClosingUnits(prev =>
+            prev.filter(asset => asset !== unit.base_unit_info.asset),
+          )
+        }, 5000)
         removeUnit(unit.base_unit_info.asset)
         localStorage.removeItem(`${id}-${unit.base_unit_info.asset}`)
       })
