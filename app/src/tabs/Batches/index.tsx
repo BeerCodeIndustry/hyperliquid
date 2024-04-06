@@ -156,7 +156,6 @@ const Batch: React.FC<{
 
   useEffect(() => {
     units.forEach(unit => {
-      console.log(unit)
       const timestamp = Number(localStorage.getItem(`${id}-${unit.base_unit_info.asset}`))
       if (
         (timestamp && Date.now() - timestamp >= UNIT_RECREATE_TIMIMG) ||
@@ -177,9 +176,11 @@ const Batch: React.FC<{
           sz: unit.base_unit_info.size,
           leverage: unit.base_unit_info.leverage,
         }).then(() => {
-          setReCreatingUnits(prev =>
-            prev.filter(asset => asset !== unit.base_unit_info.asset),
-          )
+          setTimeout(() => {
+            setReCreatingUnits(prev =>
+              prev.filter(asset => asset !== unit.base_unit_info.asset),
+            )
+          }, 5000)
           localStorage.setItem(`${id}-${unit.base_unit_info.asset}`, Date.now().toString())
         })
 
@@ -386,7 +387,6 @@ const Batch: React.FC<{
             color='error'
             onClick={() => closeBatch(id)}
             disabled={Boolean(loading || units.length)}
-            //disabled={!form.asset || !form.sz || !form.leverage}
           >
             Close Batch
           </Button>
