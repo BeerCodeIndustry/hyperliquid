@@ -45,7 +45,7 @@ export const transformAccountStatesToUnits = (
       const { coin } = position.position
       if (!unitsMap[coin]) {
         unitsMap[coin] = {
-          base_unit_info: { asset: coin },
+          base_unit_info: { asset: coin, timestamp: 0 },
           positions: [],
           orders: [],
         }
@@ -63,10 +63,12 @@ export const transformAccountStatesToUnits = (
     accountState.openOrders.forEach(order => {
       if (!unitsMap[order.coin]) {
         unitsMap[order.coin] = {
-          base_unit_info: { asset: order.coin },
+          base_unit_info: { asset: order.coin, timestamp: order.timestamp },
           positions: [],
           orders: [],
         }
+      } else {
+        unitsMap[order.coin].base_unit_info.timestamp = order.timestamp
       }
       unitsMap[order.coin].orders.push({
         public_address: accountState.user,
@@ -89,4 +91,22 @@ export const getBatchAccount = (
     account,
     proxy,
   }
+}
+
+export function convertMsToTime(milliseconds: number) {
+  let seconds = Math.floor(milliseconds / 1000);
+  let minutes = Math.floor(seconds / 60);
+  let hours = Math.floor(minutes / 60);
+
+  function padTo2Digits(num: number) {
+    return num.toString().padStart(2, '0');
+  }
+
+  seconds = seconds % 60;
+  minutes = minutes % 60;
+  hours = hours % 24;
+
+  return `${padTo2Digits(hours)}:${padTo2Digits(minutes)}:${padTo2Digits(
+    seconds,
+  )}`;
 }

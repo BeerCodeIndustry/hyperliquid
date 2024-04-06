@@ -1,5 +1,6 @@
 import {
   Checkbox,
+  CircularProgress,
   Table as MuiTable,
   Paper,
   TableBody,
@@ -25,6 +26,7 @@ interface Props {
   toolbar?: React.ReactNode
   withCheckbox?: boolean
   pagination?: boolean
+  loading?: boolean
   rows: Row[]
 }
 
@@ -34,6 +36,7 @@ export const Table: React.FC<Props> = ({
   toolbar,
   withCheckbox,
   pagination,
+  loading,
   rows,
 }) => {
   const [selected, setSelected] = React.useState<string[]>([])
@@ -108,7 +111,7 @@ export const Table: React.FC<Props> = ({
             rowCount={rows.length}
             withCheckbox={withCheckbox}
           />
-          <TableBody>
+          {!loading ? <TableBody>
             {visibleRows.map((row, index) => {
               const isItemSelected = isSelected(row.id)
               const labelId = `enhanced-table-checkbox-${index}`
@@ -169,7 +172,7 @@ export const Table: React.FC<Props> = ({
                 <TableCell colSpan={6} />
               </TableRow>
             )}
-          </TableBody>
+          </TableBody> : <CircularProgress size={20} />}
         </MuiTable>
       </TableContainer>
       {pagination && (

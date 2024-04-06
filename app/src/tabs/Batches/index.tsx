@@ -7,18 +7,23 @@ import { CreateUnitModal } from '../../components/CreateUnitModal'
 import { Row, Table } from '../../components/Table'
 import { GlobalContext } from '../../context'
 import { AccountState, HeadCell, Unit } from '../../types'
-import { getBatchAccount, transformAccountStatesToUnits } from '../../utils'
+import { convertMsToTime, getBatchAccount, transformAccountStatesToUnits } from '../../utils'
 
 const createRows = (
   units: Unit[],
   handleAction?: (type: 'close_unit', unit: Unit) => void,
 ): Row[] => {
+  console.log(units)
   return units.map(unit => ({
     id: unit.base_unit_info.asset,
     data: [
-      unit.base_unit_info.asset,
+      <div>
+        <strong>{unit.base_unit_info.asset}</strong>
+        <div>Time opened: {convertMsToTime(Date.now() - unit.base_unit_info.timestamp)}</div>
+      </div>,
       <div>
         <div>Amount: {unit.positions.length}</div>
+        
         <div>
           Sizes: {unit.positions?.[0]?.info.szi} /{' '}
           {unit.positions?.[1]?.info.szi}
@@ -87,6 +92,8 @@ const Batch: React.FC<{
   const [modalId, setModalId] = useState<string | null>(null)
   const { accounts, getAccountProxy, closeBatch } = useContext(GlobalContext)
 
+  const [loading, setLoading] = useState(true)
+
   const account_1 = accounts.find(({ id }) => id === account_id_1)!
   const account_2 = accounts.find(({ id }) => id === account_id_2)!
 
@@ -108,6 +115,12 @@ const Batch: React.FC<{
     ],
     [sockets],
   )
+
+  useEffect(() => {
+    if (accountStates[account_1.public_address] && accountStates[account_2.public_address]) {
+      setLoading(false)
+    }
+  }, [accountStates])
 
   const units = useMemo(
     () => transformAccountStatesToUnits(Object.values(accountStates)),
@@ -146,6 +159,7 @@ const Batch: React.FC<{
         <Button
           variant='contained'
           color='primary'
+          disabled={loading}
           onClick={() => setModalId('createUnitModal')}
         >
           Create Unit
@@ -155,16 +169,26 @@ const Batch: React.FC<{
   }
 
   useEffect(() => {
-    const con_1 = new WebSocket('wss://api.hyperliquid.xyz/ws')
-    const con_2 = new WebSocket('wss://api.hyperliquid.xyz/ws')
+    const connect = (conId: '1' | '2') => {
+      const con = new WebSocket('wss://api.hyperliquid.xyz/ws')
+      const account = conId === '1' ? account_1 : account_2
 
-    con_1.onopen = () => {
-      setSockets(prev => ({ ...prev, [account_1.public_address]: con_1 }))
-    }
+      con.onopen = () => {
+        setSockets(prev => ({ ...prev, [account.public_address]: con }))
+      }
 
-    con_2.onopen = () => {
-      setSockets(prev => ({ ...prev, [account_2.public_address]: con_2 }))
+      con.onclose = () => {
+        setSockets(prev => ({ ...prev, [account.public_address]: null }))
+        connect(conId)
+      }
+
+      con.onerror = () => {
+        con.close()
+      }
     }
+    
+    connect('1')
+    connect('2')
   }, [])
 
   useEffect(() => {
@@ -243,7 +267,8 @@ const Batch: React.FC<{
             variant='contained'
             color='error'
             onClick={() => closeBatch(id)}
-            // disabled={!form.asset || !form.sz || !form.leverage}
+            disabled={Boolean(loading || units.length)}
+            //disabled={!form.asset || !form.sz || !form.leverage}
           >
             Close Batch
           </Button>
@@ -260,6 +285,7 @@ const Batch: React.FC<{
       </Typography>
       <Table
         headCells={headCells}
+        loading={loading}
         rows={rows}
         pagination={false}
         toolbar={toolbar()}

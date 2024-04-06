@@ -43,6 +43,7 @@ export interface Order {
   limitPx: string
   origSz: string
   orderType: string
+  timestamp: number
 }
 
 export interface AccountState {
@@ -58,6 +59,7 @@ export interface AccountState {
 export interface Unit {
   base_unit_info: {
     asset: string
+    timestamp: number
   }
   positions: {
     public_address: string
