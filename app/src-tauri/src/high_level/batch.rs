@@ -1,6 +1,7 @@
+use async_recursion::async_recursion;
 use ethers::prelude::*;
 use hyperliquid_rust_sdk::{BaseUrl, ExchangeClient, InfoClient};
-use log::{info, warn};
+use log::{error, info, warn};
 use reqwest::{Client, Proxy};
 
 use crate::actions::exchange::{close_position, open_limit_order, open_position};
@@ -73,8 +74,8 @@ pub async fn create_unit(
     leverage: u32,
 ) {
     let [handler_1, handler_2] = [
-        get_batch_handler(account1).await,
-        get_batch_handler(account2).await,
+        get_batch_handler(account1.clone()).await,
+        get_batch_handler(account2.clone()).await,
     ];
     let sz = sz * leverage as f64;
     let Handlers {
@@ -161,8 +162,22 @@ pub async fn create_unit(
         return;
     }
 
-    open_limit_order(&pos_2.unwrap(), &exchange_client_1, &info_client_1).await;
-    open_limit_order(&pos_1.unwrap(), &exchange_client_2, &info_client_2).await;
+    let pos_1 = pos_1.unwrap();
+    let pos_2 = pos_2.unwrap();
+
+    if pos_1.position.szi.parse::<f64>().unwrap_or(0.0).abs()
+        != pos_2.position.szi.parse::<f64>().unwrap_or(0.0).abs()
+    {
+        error!(
+            "Positions for {public_address_1} & {public_address_2} on asset {asset} are not equal"
+        );
+        close_unit(account1, account2, asset).await;
+
+        return;
+    }
+
+    open_limit_order(&pos_2, &exchange_client_1, &info_client_1).await;
+    open_limit_order(&pos_1, &exchange_client_2, &info_client_2).await;
 }
 
 #[tauri::command]
