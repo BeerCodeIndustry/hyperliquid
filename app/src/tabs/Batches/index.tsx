@@ -297,17 +297,6 @@ const Batch: React.FC<{
     connect('2')
   }, [])
 
-  const handleData = (accountState1: AccountState, accountState2: AccountState) => {
-    setAccountState({
-      [account_2.public_address]: accountState2,
-      [account_1.public_address]: accountState1,
-    })
-    setBalances({
-      [account_2.public_address]: accountState2.clearinghouseState.marginSummary.accountValue,
-      [account_1.public_address]: accountState1.clearinghouseState.marginSummary.accountValue,
-    })
-  }
-
   useEffect(() => {
     if (socket_2 && socket_1) {
       socket_2.send(
@@ -323,21 +312,18 @@ const Batch: React.FC<{
         }),
       )
 
-      let state: AccountState | null = null
-
       socket_2.onmessage = (ev: MessageEvent<any>) => {
         const data = JSON.parse(ev.data)
         if (data?.channel === 'webData2') {
           const accountState = data.data as AccountState
-          if (!state) {
-            state = accountState
-            return;
-          }
-
-          if (state) {
-            handleData(state, accountState)
-            state = null
-          }
+          setAccountState(prev => ({
+            ...prev,
+            [account_2.public_address]: accountState,
+          }))
+          setBalances(prev => ({
+            ...prev,
+            [account_2.public_address]: accountState.clearinghouseState.marginSummary.accountValue,
+          }))
         }
       }
 
@@ -345,15 +331,14 @@ const Batch: React.FC<{
         const data = JSON.parse(ev.data)
         if (data?.channel === 'webData2') {
           const accountState = data.data as AccountState
-          if (!state) {
-            state = accountState
-            return;
-          }
-
-          if (state) {
-            handleData(accountState, state)
-            state = null
-          }
+          setAccountState(prev => ({
+            ...prev,
+            [account_1.public_address]: accountState,
+          }))
+          setBalances(prev => ({
+            ...prev,
+            [account_1.public_address]: accountState.clearinghouseState.marginSummary.accountValue,
+          }))
         }
       }
     }
