@@ -6,22 +6,24 @@ import { Account } from '../../types'
 export const AddAccountModal: React.FC<{
   open: boolean
   handleClose: () => void
-  handleAddAccount: (account: Account) => void
+  handleAddAccount: (account: Account, proxy?: string) => void
 }> = ({ open, handleClose, handleAddAccount }) => {
-  const [account, setAccount] = useState<Account>({
+  const [account, setAccount] = useState<Account & {proxy: string}>({
     name: '',
     public_address: '',
     api_private_key: '',
+    proxy: '',
   })
 
   const onConfirm = () => {
     if (account.api_private_key && account.public_address) {
-      handleAddAccount(account)
+      const {proxy, ...accountData} = account
+      handleAddAccount(accountData, proxy ? 'auto_name:' + account.proxy : '')
       handleClose()
     }
   }
 
-  const onChange = (key: keyof Account, v: string) => {
+  const onChange = (key: keyof (Account & {proxy: string}), v: string) => {
     setAccount(prev => ({ ...prev, [key]: v }))
   }
 
@@ -50,6 +52,11 @@ export const AddAccountModal: React.FC<{
               label='Api private key'
               variant='outlined'
               onChange={e => onChange('api_private_key', e.target.value)}
+            />
+            <TextField
+              label='Proxy'
+              variant='outlined'
+              onChange={e => onChange('proxy', e.target.value)}
             />
           </Box>
 

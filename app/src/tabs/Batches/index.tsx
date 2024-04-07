@@ -16,13 +16,11 @@ import {
 } from '../../utils'
 import { toast } from 'react-toastify'
 
-const UNIT_RECREATE_TIMIMG = 3600000
-
 const createRows = (
   units: Unit[],
   closingUnitAsset: string[],
   reCreatingUnitAssets: string[],
-  batchId: string,
+  getUnitTimingOpened: (asset: string) => number,
   handleAction?: (type: 'close_unit', unit: Unit) => void,
 ): Row[] => {
   return units.map(unit => ({
@@ -36,8 +34,8 @@ const createRows = (
           </div>
         ) : (
           <div>
-            Time opened:{' '}
-            {convertMsToTime(Date.now() - Number(localStorage.getItem(`${batchId}-${unit.base_unit_info.asset}`)))}
+            Time opened:
+            {convertMsToTime(Date.now() - getUnitTimingOpened(unit.base_unit_info.asset))}
           </div>
         )}
       </div>,
@@ -108,10 +106,15 @@ const headCells: HeadCell[] = [
 const Batch: React.FC<{
   account_id_1: string
   account_id_2: string
+  constant_timing: number
   id: string
-}> = ({ account_id_1, account_id_2, id }) => {
+}> = ({ account_id_1, account_id_2, id, constant_timing }) => {
   const [modalId, setModalId] = useState<string | null>(null)
-  const { accounts, getAccountProxy, closeBatch } = useContext(GlobalContext)
+  const { accounts, getAccountProxy, closeBatch, setUnitInitTimings, getUnitTimings } = useContext(GlobalContext)
+
+  const [unitTimings, setUnitTimings] = useState<Record<string, {openedTiming: number; recreateTiming: number}>>({})
+
+  console.log(unitTimings)
 
   const [loading, setLoading] = useState(true)
   const [closingUnits, setClosingUnits] = useState<string[]>([])
@@ -141,6 +144,20 @@ const Batch: React.FC<{
   )
 
   useEffect(() => {
+    getUnitTimings(id).then((timings) => {
+      setUnitTimings(timings)
+    })
+  }, [])
+
+  const getUnitTimingOpened = (asset: string): number => {
+    return unitTimings[asset as keyof typeof unitTimings]?.openedTiming
+  }
+
+  const getUnitTimingReacreation = (asset: string): number => {
+    return unitTimings[asset as keyof typeof unitTimings]?.recreateTiming
+  }
+
+  useEffect(() => {
     if (
       accountStates[account_1.public_address] &&
       accountStates[account_2.public_address]
@@ -156,9 +173,9 @@ const Batch: React.FC<{
 
   useEffect(() => {
     units.forEach(unit => {
-      const timestamp = Number(localStorage.getItem(`${id}-${unit.base_unit_info.asset}`))
+      const timestamp = getUnitTimingOpened(unit.base_unit_info.asset)
       if (
-        (timestamp && Date.now() - timestamp >= UNIT_RECREATE_TIMIMG) ||
+        (timestamp && Date.now() - timestamp >= getUnitTimingReacreation(unit.base_unit_info.asset)) ||
         (Date.now() - timestamp >= 5000 && unit.positions.length === 1)
       ) {
         if (
@@ -168,6 +185,11 @@ const Batch: React.FC<{
         ) {
           return
         }
+
+        setUnitTimings((prev) => {
+          delete prev[unit.base_unit_info.asset]
+          return prev;
+        })
         setReCreatingUnits(prev => [...prev, unit.base_unit_info.asset])
         const promise = invoke('close_and_create_same_unit', {
           account1: getBatchAccount(account_1, getAccountProxy(account_1)),
@@ -175,13 +197,17 @@ const Batch: React.FC<{
           asset: unit.base_unit_info.asset,
           sz: unit.base_unit_info.size,
           leverage: unit.base_unit_info.leverage,
-        }).then(() => {
-          setTimeout(() => {
+        }).then(async () => {
+          setTimeout(async () => {
             setReCreatingUnits(prev =>
               prev.filter(asset => asset !== unit.base_unit_info.asset),
             )
+
+            await setUnitInitTimings(id, unit.base_unit_info.asset, getUnitTimingReacreation(unit.base_unit_info.asset), Date.now())
+            getUnitTimings(id).then((timings) => {
+              setUnitTimings(timings)
+            })
           }, 5000)
-          localStorage.setItem(`${id}-${unit.base_unit_info.asset}`, Date.now().toString())
         })
 
         toast.promise(promise, {
@@ -191,7 +217,7 @@ const Batch: React.FC<{
         })
       }
     })
-  }, [units, reCreatingUnits, closingUnits, creatingUnits])
+  }, [units, reCreatingUnits, closingUnits, creatingUnits, unitTimings])
 
   const removeUnit = (asset: string) => {
     setAccountState((prev) => ({
@@ -225,22 +251,22 @@ const Batch: React.FC<{
           setClosingUnits(prev =>
             prev.filter(asset => asset !== unit.base_unit_info.asset),
           )
-        }, 5500)
-        localStorage.removeItem(`${id}-${unit.base_unit_info.asset}`)
+        }, 6000)
       })
     }
   }
 
   const rows = useMemo(
     () =>
-      createRows(units, closingUnits, reCreatingUnits, id, handleAction),
-    [units, closingUnits, reCreatingUnits, id],
+      createRows(units, closingUnits, reCreatingUnits, getUnitTimingOpened, handleAction),
+    [units, closingUnits, reCreatingUnits],
   )
 
-  const handleCreateUnit = (form: {
+  const handleCreateUnit = async (form: {
     asset: string
     sz: number
     leverage: number
+    timing: number
   }) => {
     setCreatingUnits(prev => [...prev, form.asset])
     const promise = invoke('create_unit', {
@@ -249,11 +275,14 @@ const Batch: React.FC<{
       asset: form.asset,
       sz: Number(form.sz),
       leverage: Number(form.leverage),
-    }).then(() => {
-      localStorage.setItem(`${id}-${form.asset}`, Date.now().toString())
+    }).then(async () => {
       setCreatingUnits(prev =>
         prev.filter(asset => asset !== form.asset),
       )
+      await setUnitInitTimings(id, form.asset, form.timing, Date.now())
+      await getUnitTimings(id).then((timings) => {
+        setUnitTimings(timings)
+      })
     })
     toast.promise(promise, {
       pending: `Creating unit with asset ${form.asset}`,
@@ -369,6 +398,7 @@ const Batch: React.FC<{
         handleCreateUnit={handleCreateUnit}
         open={modalId === 'createUnitModal'}
         handleClose={() => setModalId(null)}
+        defaultTiming={constant_timing}
       />
       <Box
         sx={{
@@ -444,6 +474,7 @@ export const Batches: React.FC = () => {
             <Batch
               account_id_1={batch.account_1_id!}
               account_id_2={batch.account_2_id!}
+              constant_timing={batch.constant_timing}
               id={batch.id!}
               key={batch.id}
             />
