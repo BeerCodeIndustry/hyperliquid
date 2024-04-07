@@ -1,8 +1,7 @@
+use ethers::signers::LocalWallet;
 use hyperliquid_rust_sdk::{AssetPosition, ExchangeClient, InfoClient};
-use reqwest::Proxy;
+use reqwest::Client;
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
-use tokio::task::JoinHandle;
 use uuid::Uuid;
 
 #[derive(Clone)]
@@ -36,8 +35,8 @@ pub struct Position {
 
 pub struct Account {
     pub public_address: String,
-    pub private_api_key: String,
-    pub proxy: Proxy,
+    pub wallet: LocalWallet,
+    pub client: Client,
 }
 
 pub struct Handlers {
@@ -47,14 +46,14 @@ pub struct Handlers {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FileAccount {
+pub struct AccountDTO {
     pub name: String,
     pub public_address: String,
-    pub api_private_key: String,
+    pub private_api_key: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct FileProxy {
+pub struct ProxyDTO {
     pub name: String,
     pub host: String,
     pub port: String,
@@ -64,8 +63,8 @@ pub struct FileProxy {
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct BatchAccount {
-    pub account: FileAccount,
-    pub proxy: Option<FileProxy>,
+    pub account: AccountDTO,
+    pub proxy: Option<ProxyDTO>,
 }
 
 #[derive(Clone, Debug)]

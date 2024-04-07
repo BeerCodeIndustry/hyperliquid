@@ -1,69 +1,9 @@
-use async_recursion::async_recursion;
-use ethers::prelude::*;
-use hyperliquid_rust_sdk::{BaseUrl, ExchangeClient, InfoClient};
 use log::{error, info, warn};
-use reqwest::{Client, Proxy};
 
-use crate::actions::exchange::{close_position, open_limit_order, open_position};
+use crate::actions::account::get_batch_account_handlers;
+use crate::actions::exchange::{close_position, open_position};
 use crate::actions::info::{can_open_position, get_position};
-use crate::types::{Account, BatchAccount, DefaultPair, FileProxy, Handlers, Position};
-use crate::utils::str::private_key_slice;
-
-async fn init_account(account: Account) -> Handlers {
-    let Account {
-        public_address,
-        private_api_key,
-        proxy,
-    } = account;
-    info!("Initializing Account: {public_address}");
-    let wallet: LocalWallet = private_api_key.parse().unwrap();
-    let proxy_req_client = Client::builder().proxy(proxy.clone()).build().unwrap();
-    let info_client = InfoClient::new(Some(proxy_req_client.clone()), Some(BaseUrl::Mainnet))
-        .await
-        .unwrap();
-    let exchange_client = ExchangeClient::new(
-        Some(proxy_req_client.clone()),
-        wallet,
-        Some(BaseUrl::Mainnet),
-        None,
-        None,
-    )
-    .await
-    .unwrap();
-
-    Handlers {
-        info_client,
-        exchange_client,
-        public_address,
-    }
-}
-
-pub async fn get_batch_handler(account: BatchAccount) -> Handlers {
-    let default_proxy = FileProxy {
-        name: "default_proxy".to_string(),
-        host: "89.40.223.107".to_string(),
-        port: "6143".to_string(),
-        username: "gljdskgd".to_string(),
-        password: "7qrarsn88jhk".to_string(),
-    };
-
-    let BatchAccount { account, proxy } = account;
-
-    let proxy = proxy.unwrap_or(default_proxy.clone());
-
-    let proxy = Proxy::all(format!("{}:{}", proxy.host, proxy.port))
-        .unwrap()
-        .basic_auth(&proxy.username, &proxy.password);
-
-    let private_api_key = private_key_slice(&account.api_private_key);
-
-    init_account(Account {
-        public_address: account.public_address.to_string(),
-        private_api_key: private_api_key.to_string(),
-        proxy: proxy.clone(),
-    })
-    .await
-}
+use crate::types::{BatchAccount, DefaultPair, Handlers, Position};
 
 #[tauri::command]
 pub async fn create_unit(
@@ -77,22 +17,22 @@ pub async fn create_unit(
         "Creating unit for {}, {} asset: {}",
         account1.account.public_address, account2.account.public_address, asset
     );
-    let [handler_1, handler_2] = [
-        get_batch_handler(account1.clone()).await,
-        get_batch_handler(account2.clone()).await,
+    let [handlers_1, handlers_2] = [
+        get_batch_account_handlers(account1.clone()).await,
+        get_batch_account_handlers(account2.clone()).await,
     ];
     let sz = sz * leverage as f64;
     let Handlers {
         info_client: info_client_1,
         exchange_client: exchange_client_1,
         public_address: public_address_1,
-    } = handler_1;
+    } = handlers_1;
 
     let Handlers {
         info_client: info_client_2,
         exchange_client: exchange_client_2,
         public_address: public_address_2,
-    } = handler_2;
+    } = handlers_2;
 
     let can_open_1 = can_open_position(&info_client_1, &public_address_1, &asset, sz).await;
     let can_open_2 = can_open_position(&info_client_2, &public_address_2, &asset, sz).await;
@@ -192,22 +132,22 @@ pub async fn close_unit(account1: BatchAccount, account2: BatchAccount, asset: S
         "Closing unit for {}, {} asset: {}",
         account1.account.public_address, account2.account.public_address, asset
     );
-    let [handler_1, handler_2] = [
-        get_batch_handler(account1).await,
-        get_batch_handler(account2).await,
+    let [handlers_1, handlers_2] = [
+        get_batch_account_handlers(account1).await,
+        get_batch_account_handlers(account2).await,
     ];
 
     let Handlers {
         info_client: info_client_1,
         exchange_client: exchange_client_1,
         public_address: public_address_1,
-    } = handler_1;
+    } = handlers_1;
 
     let Handlers {
         info_client: info_client_2,
         exchange_client: exchange_client_2,
         public_address: public_address_2,
-    } = handler_2;
+    } = handlers_2;
 
     let pos_1 = get_position(&info_client_1, &public_address_1, &asset).await;
 
@@ -231,22 +171,22 @@ pub async fn close_and_create_same_unit(
     leverage: u32,
 ) {
     warn!("Invoke close_and_create_same_unit");
-    let [handler_1, handler_2] = [
-        get_batch_handler(account1.clone()).await,
-        get_batch_handler(account2.clone()).await,
+    let [handlers_1, handlers_2] = [
+        get_batch_account_handlers(account1.clone()).await,
+        get_batch_account_handlers(account2.clone()).await,
     ];
 
     let Handlers {
         info_client: info_client_1,
         exchange_client: exchange_client_1,
         public_address: public_address_1,
-    } = handler_1;
+    } = handlers_1;
 
     let Handlers {
         info_client: info_client_2,
         exchange_client: exchange_client_2,
         public_address: public_address_2,
-    } = handler_2;
+    } = handlers_2;
 
     let pos_1 = get_position(&info_client_1, &public_address_1, &asset).await;
     let pos_2 = get_position(&info_client_2, &public_address_2, &asset).await;

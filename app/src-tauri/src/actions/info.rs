@@ -1,5 +1,5 @@
 use ethers::types::H160;
-use hyperliquid_rust_sdk::{AssetPosition, InfoClient, Message, Subscription};
+use hyperliquid_rust_sdk::{AssetPosition, InfoClient, Message, Subscription, UserStateResponse};
 use itertools::Itertools;
 use log::info;
 use std::{collections::HashMap, str::FromStr};
@@ -10,6 +10,13 @@ use tokio::{
 };
 
 use crate::utils::num::round_num_by_hyper_liquid;
+
+pub async fn get_user_state(info_client: &InfoClient, public_address: &str) -> UserStateResponse {
+    let user: String = public_address.parse().unwrap();
+    let user = H160::from_str(&user).unwrap();
+
+    info_client.user_state(user).await.unwrap()
+}
 
 pub async fn get_position(
     info_client: &InfoClient,
