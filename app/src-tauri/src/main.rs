@@ -10,6 +10,7 @@ mod utils;
 
 use fern::colors::{Color, ColoredLevelConfig};
 use high_level::batch::{close_and_create_same_unit, close_unit, create_unit};
+use high_level::info::get_asset_price;
 use high_level::logs::get_logs;
 use high_level::unit::get_unit_user_states;
 use log::LevelFilter;
@@ -48,7 +49,8 @@ async fn main() {
             close_unit,
             close_and_create_same_unit,
             get_logs,
-            get_unit_user_states
+            get_unit_user_states,
+            get_asset_price
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
