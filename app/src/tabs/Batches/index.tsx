@@ -221,11 +221,11 @@ const Batch: React.FC<{
         asset: unit.base_unit_info.asset,
       }).then(() => {
         setTimeout(() => {
+          removeUnit(unit.base_unit_info.asset)
           setClosingUnits(prev =>
             prev.filter(asset => asset !== unit.base_unit_info.asset),
           )
-        }, 5000)
-        removeUnit(unit.base_unit_info.asset)
+        }, 5500)
         localStorage.removeItem(`${id}-${unit.base_unit_info.asset}`)
       })
     }
