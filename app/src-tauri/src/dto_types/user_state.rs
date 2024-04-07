@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct UserStateResponse {
+pub struct UserState {
     pub asset_positions: Vec<AssetPosition>,
     pub cross_margin_summary: MarginSummary,
     pub margin_summary: MarginSummary,

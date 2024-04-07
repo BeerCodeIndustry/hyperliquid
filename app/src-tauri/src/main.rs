@@ -2,8 +2,8 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod actions;
+mod dto_types;
 mod high_level;
-mod hyper_types;
 mod types;
 mod utils;
 
