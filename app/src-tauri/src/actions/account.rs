@@ -22,7 +22,7 @@ pub fn get_account(account: BatchAccount) -> Account {
         .unwrap()
         .basic_auth(&proxy.username, &proxy.password);
 
-    let private_api_key = private_key_slice(&account.private_api_key);
+    let private_api_key = private_key_slice(&account.api_private_key);
 
     let wallet: LocalWallet = private_api_key.parse().unwrap();
     let client = Client::builder().proxy(proxy.clone()).build().unwrap();
@@ -54,8 +54,9 @@ pub async fn get_exchange_client(account: &Account) -> ExchangeClient {
 
 pub async fn get_batch_account_handlers(batch_account: BatchAccount) -> Handlers {
     let account = get_account(batch_account);
-    let info_client = get_info_client(&account).await;
-    let exchange_client = get_exchange_client(&account).await;
+
+    let (info_client, exchange_client) =
+        tokio::join!(get_info_client(&account), get_exchange_client(&account));
 
     Handlers {
         info_client,

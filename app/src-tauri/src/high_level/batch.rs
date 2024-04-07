@@ -17,10 +17,10 @@ pub async fn create_unit(
         "Creating unit for {}, {} asset: {}",
         account1.account.public_address, account2.account.public_address, asset
     );
-    let [handlers_1, handlers_2] = [
-        get_batch_account_handlers(account1.clone()).await,
-        get_batch_account_handlers(account2.clone()).await,
-    ];
+    let (handlers_1, handlers_2) = tokio::join!(
+        get_batch_account_handlers(account1.clone()),
+        get_batch_account_handlers(account2.clone())
+    );
     let sz = sz * leverage as f64;
     let Handlers {
         info_client: info_client_1,
@@ -34,8 +34,10 @@ pub async fn create_unit(
         public_address: public_address_2,
     } = handlers_2;
 
-    let can_open_1 = can_open_position(&info_client_1, &public_address_1, &asset, sz).await;
-    let can_open_2 = can_open_position(&info_client_2, &public_address_2, &asset, sz).await;
+    let (can_open_1, can_open_2) = tokio::join!(
+        can_open_position(&info_client_1, &public_address_1, &asset, sz),
+        can_open_position(&info_client_2, &public_address_2, &asset, sz)
+    );
 
     if !can_open_1 {
         warn!("Cannot open position for {public_address_1}, not enough balance");
@@ -49,13 +51,10 @@ pub async fn create_unit(
         return;
     }
 
-    let _ = exchange_client_1
-        .update_leverage(leverage, &asset, false, None)
-        .await;
-
-    let _ = exchange_client_2
-        .update_leverage(leverage, &asset, false, None)
-        .await;
+    let (_, _) = tokio::join!(
+        exchange_client_1.update_leverage(leverage, &asset, false, None),
+        exchange_client_2.update_leverage(leverage, &asset, false, None)
+    );
 
     let position_pair = DefaultPair {
         asset: asset.to_string(),
@@ -64,8 +63,10 @@ pub async fn create_unit(
         order_type: "FrontendMarket".to_string(),
     };
 
-    let before_pos_1 = get_position(&info_client_1, &public_address_1, &asset).await;
-    let before_pos_2 = get_position(&info_client_2, &public_address_2, &asset).await;
+    let (before_pos_1, before_pos_2) = tokio::join!(
+        get_position(&info_client_1, &public_address_1, &asset),
+        get_position(&info_client_2, &public_address_2, &asset)
+    );
 
     if before_pos_1.is_some() || before_pos_2.is_some() {
         error!("Unit already exists for {public_address_1}, {public_address_2}");
@@ -73,10 +74,7 @@ pub async fn create_unit(
         return;
     }
 
-    let Position {
-        asset_position: pos_1,
-        id: id_pos_1,
-    } = open_position(
+    let pos_1 = open_position(
         &exchange_client_1,
         &info_client_1,
         position_pair.clone(),
@@ -90,10 +88,7 @@ pub async fn create_unit(
         return;
     }
 
-    let Position {
-        asset_position: pos_2,
-        id: id_pos_2,
-    } = open_position(
+    let pos_2 = open_position(
         &exchange_client_2,
         &info_client_2,
         position_pair.clone(),
@@ -132,10 +127,10 @@ pub async fn close_unit(account1: BatchAccount, account2: BatchAccount, asset: S
         "Closing unit for {}, {} asset: {}",
         account1.account.public_address, account2.account.public_address, asset
     );
-    let [handlers_1, handlers_2] = [
-        get_batch_account_handlers(account1).await,
-        get_batch_account_handlers(account2).await,
-    ];
+    let (handlers_1, handlers_2) = tokio::join!(
+        get_batch_account_handlers(account1.clone()),
+        get_batch_account_handlers(account2.clone())
+    );
 
     let Handlers {
         info_client: info_client_1,
@@ -171,10 +166,10 @@ pub async fn close_and_create_same_unit(
     leverage: u32,
 ) {
     warn!("Invoke close_and_create_same_unit");
-    let [handlers_1, handlers_2] = [
-        get_batch_account_handlers(account1.clone()).await,
-        get_batch_account_handlers(account2.clone()).await,
-    ];
+    let (handlers_1, handlers_2) = tokio::join!(
+        get_batch_account_handlers(account1.clone()),
+        get_batch_account_handlers(account2.clone())
+    );
 
     let Handlers {
         info_client: info_client_1,
@@ -188,19 +183,27 @@ pub async fn close_and_create_same_unit(
         public_address: public_address_2,
     } = handlers_2;
 
-    let pos_1 = get_position(&info_client_1, &public_address_1, &asset).await;
-    let pos_2 = get_position(&info_client_2, &public_address_2, &asset).await;
+    let (pos_1, pos_2) = tokio::join!(
+        get_position(&info_client_1, &public_address_1, &asset),
+        get_position(&info_client_2, &public_address_2, &asset)
+    );
 
     if pos_1.is_none() && pos_2.is_none() {
         warn!("No position to close");
         return;
     }
 
-    if pos_1.is_some() {
-        close_position(&pos_1.unwrap(), &exchange_client_1, &info_client_1).await;
-    }
+    if pos_1.is_some() && pos_2.is_some() {
+        let pos_1 = pos_1.unwrap();
+        let pos_2 = pos_2.unwrap();
 
-    if pos_2.is_some() {
+        tokio::join!(
+            close_position(&pos_1, &exchange_client_1, &info_client_1),
+            close_position(&pos_2, &exchange_client_2, &info_client_2)
+        );
+    } else if pos_1.is_some() {
+        close_position(&pos_1.unwrap(), &exchange_client_1, &info_client_1).await;
+    } else if pos_2.is_some() {
         close_position(&pos_2.unwrap(), &exchange_client_2, &info_client_2).await;
     }
 

@@ -12,13 +12,16 @@ pub async fn get_unit_user_states(
     let account_1 = get_account(account1);
     let account_2 = get_account(account2);
 
-    let info_client_1 = get_info_client(&account_1).await;
-    let info_client_2 = get_info_client(&account_2).await;
+    let (info_client_1, info_client_2) =
+        tokio::join!(get_info_client(&account_1), get_info_client(&account_2));
 
-    let user_state_1 =
-        convert_user_state(get_user_state(&info_client_1, &account_1.public_address).await);
-    let user_state_2 =
-        convert_user_state(get_user_state(&info_client_2, &account_2.public_address).await);
+    let (user_state_1, user_state_2) = tokio::join!(
+        get_user_state(&info_client_1, &account_1.public_address),
+        get_user_state(&info_client_2, &account_2.public_address)
+    );
 
-    Ok([user_state_1, user_state_2])
+    Ok([
+        convert_user_state(user_state_1),
+        convert_user_state(user_state_2),
+    ])
 }

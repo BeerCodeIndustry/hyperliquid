@@ -49,7 +49,7 @@ pub struct Handlers {
 pub struct AccountDTO {
     pub name: String,
     pub public_address: String,
-    pub private_api_key: String,
+    pub api_private_key: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

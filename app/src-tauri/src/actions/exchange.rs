@@ -113,7 +113,7 @@ pub async fn open_position(
     position_pair: DefaultPair,
     public_address: String,
     is_buy: bool,
-) -> Position {
+) -> Option<AssetPosition> {
     open_order(
         position_pair.clone(),
         exchange_client,
@@ -123,12 +123,6 @@ pub async fn open_position(
         OrderType::Position,
     )
     .await;
-    let id = Uuid::new_v4();
 
-    let position = get_position(info_client, &public_address, &position_pair.asset).await;
-
-    Position {
-        asset_position: position,
-        id,
-    }
+    get_position(info_client, &public_address, &position_pair.asset).await
 }

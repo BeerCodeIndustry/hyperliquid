@@ -1,13 +1,9 @@
 use ethers::types::H160;
 use hyperliquid_rust_sdk::{AssetPosition, InfoClient, Message, Subscription, UserStateResponse};
-use itertools::Itertools;
+
 use log::info;
 use std::{collections::HashMap, str::FromStr};
-use tokio::{
-    spawn,
-    sync::mpsc::unbounded_channel,
-    time::{sleep, Duration},
-};
+use tokio::sync::mpsc::unbounded_channel;
 
 use crate::utils::num::round_num_by_hyper_liquid;
 
@@ -87,8 +83,11 @@ pub async fn can_open_position(
     const BALANCE_LIMIT: f64 = 10.0; // TODO: change to 50.0
     const DEFAULT_SLIPPAGE: f64 = 0.001;
     const FEES: f64 = 0.000336;
-    let asset_mid_price = &get_all_mids(info_client).await[asset];
-    let balance = get_account_balance(info_client, public_address).await;
+    let (asset_mid_price, balance) = tokio::join!(
+        get_all_mids(info_client),
+        get_account_balance(info_client, public_address)
+    );
+    let asset_mid_price = &asset_mid_price[asset];
     let price_by_asset = (1.0 + DEFAULT_SLIPPAGE) * asset_mid_price.parse::<f64>().unwrap();
     let full_amount = sz * FEES * price_by_asset + BALANCE_LIMIT;
 
