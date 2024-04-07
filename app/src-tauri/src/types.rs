@@ -72,3 +72,9 @@ pub struct GlobalAccount {
     pub sub_id: Option<u32>,
     pub account: BatchAccount,
 }
+
+pub struct Unit {
+    pub asset: String,
+    pub sz: f64,
+    pub leverage: u32,
+}

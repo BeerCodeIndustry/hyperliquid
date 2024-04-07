@@ -2,15 +2,19 @@ use log::{error, warn};
 
 use crate::actions::exchange::{close_position, open_position};
 use crate::actions::info::{can_open_position, get_position};
-use crate::types::{DefaultPair, Handlers};
+use crate::types::{DefaultPair, Handlers, Unit};
 
 pub async fn create_unit_service(
     handlers_1: &Handlers,
     handlers_2: &Handlers,
-    asset: String,
-    sz: f64,
-    leverage: u32,
+    unit: Unit,
 ) -> Result<(), String> {
+    let Unit {
+        asset,
+        sz,
+        leverage,
+    } = unit;
+
     warn!(
         "Creating unit for {}, {} asset: {}",
         handlers_1.public_address, handlers_2.public_address, asset
@@ -168,10 +172,13 @@ pub async fn close_unit_service(
 pub async fn close_and_create_unit_service(
     handlers_1: &Handlers,
     handlers_2: &Handlers,
-    asset: String,
-    sz: f64,
-    leverage: u32,
+    unit: Unit,
 ) -> Result<(), String> {
+    let Unit {
+        asset,
+        sz,
+        leverage,
+    } = unit;
     warn!("Invoke ReCreating unit");
 
     let Handlers {
@@ -211,5 +218,14 @@ pub async fn close_and_create_unit_service(
         close_position(&pos_2.unwrap(), &exchange_client_2, &info_client_2).await;
     }
 
-    create_unit_service(&handlers_1, &handlers_2, asset, sz, leverage).await
+    create_unit_service(
+        &handlers_1,
+        &handlers_2,
+        Unit {
+            asset,
+            sz,
+            leverage,
+        },
+    )
+    .await
 }

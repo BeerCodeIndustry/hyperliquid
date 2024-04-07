@@ -2,7 +2,7 @@ use crate::actions::account::get_batch_account_handlers;
 use crate::services::unit::{
     close_and_create_unit_service, close_unit_service, create_unit_service,
 };
-use crate::types::BatchAccount;
+use crate::types::{BatchAccount, Unit};
 
 #[tauri::command]
 pub async fn create_unit(
@@ -17,7 +17,16 @@ pub async fn create_unit(
         get_batch_account_handlers(account2.clone())
     );
 
-    create_unit_service(&handlers_1, &handlers_2, asset, sz, leverage).await
+    create_unit_service(
+        &handlers_1,
+        &handlers_2,
+        Unit {
+            asset,
+            sz,
+            leverage,
+        },
+    )
+    .await
 }
 
 #[tauri::command]
@@ -47,5 +56,14 @@ pub async fn close_and_create_same_unit(
         get_batch_account_handlers(account2.clone())
     );
 
-    close_and_create_unit_service(&handlers_1, &handlers_2, asset, sz, leverage).await
+    close_and_create_unit_service(
+        &handlers_1,
+        &handlers_2,
+        Unit {
+            asset,
+            sz,
+            leverage,
+        },
+    )
+    .await
 }
