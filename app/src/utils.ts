@@ -41,7 +41,7 @@ export const transformAccountStatesToUnits = (
   const unitsMap: { [key: string]: Unit } = {}
 
   accountStates.forEach(accountState => {
-    accountState.clearinghouseState.assetPositions.forEach(position => {
+    accountState.assetPositions.forEach(position => {
       const { coin, leverage, szi } = position.position
       if (!unitsMap[coin]) {
         unitsMap[coin] = {
@@ -51,28 +51,13 @@ export const transformAccountStatesToUnits = (
             size: Math.floor(Math.abs(Number(szi) / leverage.value)),
           },
           positions: [],
-          orders: [],
         }
       }
       unitsMap[coin].positions.push({
-        public_address: accountState.user,
         info: {
           szi: position.position.szi,
           positionValue: position.position.positionValue,
           liquidationPx: position.position.liquidationPx,
-        },
-      })
-    })
-
-    accountState.openOrders.forEach(order => {
-      if (!unitsMap[order.coin]) {
-        throw new Error('No position for order')
-      }
-      unitsMap[order.coin].orders.push({
-        public_address: accountState.user,
-        info: {
-          limitPx: order.limitPx,
-          origSz: order.origSz,
         },
       })
     })

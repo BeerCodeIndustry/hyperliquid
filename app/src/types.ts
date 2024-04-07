@@ -43,23 +43,9 @@ export interface Position {
   }
 }
 
-export interface Order {
-  coin: string
-  limitPx: string
-  origSz: string
-  orderType: string
-  timestamp: number
-}
-
 export interface AccountState {
-  channel: string
-  clearinghouseState: {
-    assetPositions: Position[]
-    marginSummary: { accountValue: string; totalRawUsd: string }
-  }
-  timestamp: number
-  openOrders: Order[]
-  user: string
+  assetPositions: Position[]
+  marginSummary: { accountValue: string; totalRawUsd: string }
 }
 
 export interface Unit {
@@ -69,18 +55,10 @@ export interface Unit {
     size: number
   }
   positions: {
-    public_address: string
     info: {
       szi: string
       positionValue: string
       liquidationPx: string
-    }
-  }[]
-  orders: {
-    public_address: string
-    info: {
-      limitPx: string
-      origSz: string
     }
   }[]
 }

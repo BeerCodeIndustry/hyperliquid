@@ -12,57 +12,57 @@ import {
 import { useState } from 'react'
 
 const AllowedAssets = [
-  "BTC",
-  "ETH",
-  "SOL",
-  "DOGE",
-  "FTM",
-  "WIF",
-  "OP",
-  "kPEPE",
-  "ENA",
-  "MKR",
-  "ARB",
-  "TAO",
-  "PENDLE",
-  "STX",
-  "NEAR",
-  "INJ",
-  "BNB",
-  "FIL",
-  "AR",
-  "AVAX",
-  "MATIC",
-  "SEI",
-  "RUNE",
-  "LTC",
-  "W",
-  "LINK",
-  "SUI",
-  "RNDR",
-  "BCH",
-  "TIA",
-  "APT",
-  "ONDO",
-  "ORDI",
-  "WLD",
-  "JUP",
-  "TON",
-  "LDO",
-  "kBONK",
-  "JTO",
-  "FXS",
-  "ADA",
-  "AAVE",
-  "kSHIB",
-  "DYM",
-  "DYDX",
-  "STRK",
-  "XRP",
-  "ATOM",
-  "SNX",
-  "MEME",
-  "BLUR"
+  'BTC',
+  'ETH',
+  'SOL',
+  'DOGE',
+  'FTM',
+  'WIF',
+  'OP',
+  'kPEPE',
+  'ENA',
+  'MKR',
+  'ARB',
+  'TAO',
+  'PENDLE',
+  'STX',
+  'NEAR',
+  'INJ',
+  'BNB',
+  'FIL',
+  'AR',
+  'AVAX',
+  'MATIC',
+  'SEI',
+  'RUNE',
+  'LTC',
+  'W',
+  'LINK',
+  'SUI',
+  'RNDR',
+  'BCH',
+  'TIA',
+  'APT',
+  'ONDO',
+  'ORDI',
+  'WLD',
+  'JUP',
+  'TON',
+  'LDO',
+  'kBONK',
+  'JTO',
+  'FXS',
+  'ADA',
+  'AAVE',
+  'kSHIB',
+  'DYM',
+  'DYDX',
+  'STRK',
+  'XRP',
+  'ATOM',
+  'SNX',
+  'MEME',
+  'BLUR',
 ]
 
 export const CreateUnitModal: React.FC<{
@@ -84,10 +84,14 @@ export const CreateUnitModal: React.FC<{
   })
 
   const onConfirm = () => {
-    if (form.asset && form.sz && form.leverage && form.timing) handleCreateUnit(form)
+    if (form.asset && form.sz && form.leverage && form.timing)
+      handleCreateUnit(form)
   }
 
-  const onChange = (key: 'asset' | 'sz' | 'leverage' | 'timing', v: string | number) => {
+  const onChange = (
+    key: 'asset' | 'sz' | 'leverage' | 'timing',
+    v: string | number,
+  ) => {
     setForm(prev => ({ ...prev, [key]: v }))
   }
 
@@ -120,7 +124,9 @@ export const CreateUnitModal: React.FC<{
                 <em>No asset</em>
               </MenuItem>
               {AllowedAssets.map(a => (
-                <MenuItem value={a} key={a}>{a}</MenuItem>
+                <MenuItem value={a} key={a}>
+                  {a}
+                </MenuItem>
               ))}
             </Select>
           </FormControl>
@@ -150,7 +156,7 @@ export const CreateUnitModal: React.FC<{
             <TextField
               label='Unit re-create timing (ms)'
               type='number'
-              placeholder={defaultTiming.toString()}
+              placeholder={String(defaultTiming)}
               defaultValue={defaultTiming}
               variant='outlined'
               onChange={e => onChange('timing', Number(e.target.value))}
