@@ -2,12 +2,14 @@ import { createContext, useCallback, useEffect, useMemo, useState } from 'react'
 
 import { SUPABASE_DB } from './db/SUPABASE_DB'
 import { Account, Batch, Proxy } from './types'
+import { parseProxy } from './utils'
+import { CircularProgress } from '@mui/material'
 
 interface GlobalContextType {
   proxies: Proxy[]
   accounts: Account[]
   batches: Batch[]
-  addAccount: (account: Account) => void
+  addAccount: (account: Account, proxy?: string) => void
   getAccountProxy: (account: Account) => Proxy | undefined
   removeAccounts: (accountIds: string[]) => void
   removeProxies: (proxyIds: string[]) => void
@@ -19,11 +21,15 @@ interface GlobalContextType {
   createBatch: ({
     account_1_id,
     account_2_id,
+    timing,
   }: {
     account_1_id: string
     account_2_id: string
+    timing: number
   }) => void
   closeBatch: (batchId: string) => void
+  getUnitTimings: (batchId: string) => Promise<Record<string, {openedTiming: number; recreateTiming: number}>>
+  setUnitInitTimings: (batchId: string, asset: string, recreateTiming: number, openedTiming: number) => Promise<void>
 }
 
 export const GlobalContext = createContext<GlobalContextType>({
@@ -38,6 +44,8 @@ export const GlobalContext = createContext<GlobalContextType>({
   linkAccountsProxy: () => {},
   createBatch: () => {},
   closeBatch: () => {},
+  getUnitTimings: async () => ({}) as Record<string, {openedTiming: number; recreateTiming: number}>,
+  setUnitInitTimings: async () => {},
 })
 
 const db = new SUPABASE_DB()
@@ -47,7 +55,16 @@ export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
   const [accounts, setAccounts] = useState<Account[]>([])
   const [batches, setBatches] = useState<Batch[]>([])
 
-  const addAccount = useCallback((account: Account) => {
+  const [loading, setLoading] = useState(true);
+
+  const addAccount = useCallback((account: Account, proxy?: string) => {
+    if (proxy) {
+      db.addAccountWithProxy(account, parseProxy(proxy)).then(() => {
+        getProxies()
+        getAccounts()
+      })
+      return;
+    }
     db.addAccount(account).then(() => {
       getAccounts()
     })
@@ -76,22 +93,29 @@ export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
   }
 
   const getAccounts = useCallback(() => {
-    db.getAccounts().then(accounts => {
+    return db.getAccounts().then(accounts => {
       setAccounts(accounts)
     })
   }, [])
 
   const getBatches = useCallback(() => {
-    db.getBatches().then(batches => {
-      console.log(batches, 'batches')
+    return db.getBatches().then(batches => {
       setBatches(batches)
     })
   }, [])
 
   const getProxies = useCallback(() => {
-    db.getProxies().then(proxies => {
+    return db.getProxies().then(proxies => {
       setProxies(proxies)
     })
+  }, [])
+
+  const getUnitTimings = useCallback((batchId: string): Promise<Record<string, {openedTiming: number; recreateTiming: number}>> => {
+    return db.getUnitTimings(batchId)
+  }, [])
+
+  const setUnitInitTimings = useCallback((batchId: string, asset: string, recreateTiming: number, openedTiming: number): Promise<void> => {
+    return db.setUnitInitTiming(batchId, asset, recreateTiming, openedTiming) as unknown as Promise<void>
   }, [])
 
   const linkAccountsProxy = useCallback(
@@ -107,11 +131,13 @@ export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
     ({
       account_1_id,
       account_2_id,
+      timing
     }: {
       account_1_id: string
       account_2_id: string
+      timing: number
     }) => {
-      db.createBatch(account_1_id, account_2_id).then(() => {
+      db.createBatch(account_1_id, account_2_id, timing).then(() => {
         getBatches()
       })
     },
@@ -137,15 +163,24 @@ export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
       linkAccountsProxy,
       createBatch,
       closeBatch,
+      getUnitTimings,
+      setUnitInitTimings,
     }),
     [proxies, accounts, batches],
   )
 
   useEffect(() => {
-    getAccounts()
-    getProxies()
-    getBatches()
+    Promise.all(
+      [getAccounts(),
+      getProxies(),
+      getBatches()]).then(() => {
+        setLoading(false)
+      })
   }, [])
+
+  if (loading) {
+    return <CircularProgress size={64} />
+  }
 
   return (
     <GlobalContext.Provider value={value}>{children}</GlobalContext.Provider>

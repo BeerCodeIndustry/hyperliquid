@@ -7,6 +7,7 @@ import {
   Modal,
   Paper,
   Select,
+  TextField,
 } from '@mui/material'
 import { useContext, useMemo, useState } from 'react'
 
@@ -20,9 +21,11 @@ export const CreateBatchModal: React.FC<{
   const [batchAccounts, setBatchAccounts] = useState<{
     account_1_id: string
     account_2_id: string
+    timing: number
   }>({
     account_1_id: '',
     account_2_id: '',
+    timing: 3600000
   })
 
   const filteredAccounts = useMemo(() => {
@@ -38,7 +41,7 @@ export const CreateBatchModal: React.FC<{
     }
   }
 
-  const onChange = (id: 'account_1_id' | 'account_2_id', v: string) => {
+  const onChange = (id: 'account_1_id' | 'account_2_id' | 'timing', v: string | number) => {
     setBatchAccounts(prev => ({ ...prev, [id]: v ?? '' }))
   }
 
@@ -94,6 +97,15 @@ export const CreateBatchModal: React.FC<{
                     </MenuItem>
                   ))}
               </Select>
+            </FormControl>
+            <FormControl>
+              <TextField
+                  label='Default unit re-create timing (ms)'
+                  type='number'
+                  placeholder='3600000'
+                  variant='outlined'
+                  onChange={e => onChange('timing', Number(e.target.value))}
+              />
             </FormControl>
           </Box>
 

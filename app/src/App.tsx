@@ -48,7 +48,7 @@ const App = () => {
       <Box sx={{ p: 2 }}>
         {tabId === Tabs.Accounts.id && <Accounts />}
         {tabId === Tabs.Proxy.id && <Proxy />}
-        {tabId === Tabs.Batches.id && <Batches />}
+        <div style={{ display: tabId === Tabs.Batches.id ? 'block': 'none'}}><Batches /></div>
         <LogsProvider>{tabId === Tabs.Logs.id && <Logs />}</LogsProvider>
       </Box>
       <ToastContainer position='bottom-left' />

@@ -26,6 +26,8 @@ export interface Batch {
   id?: string
   account_1_id: string
   account_2_id: string
+  unit_timings: string
+  constant_timing: number
 }
 
 export interface Position {
