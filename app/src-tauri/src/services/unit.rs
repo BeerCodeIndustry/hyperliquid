@@ -10,7 +10,7 @@ pub async fn create_unit_service(
     asset: String,
     sz: f64,
     leverage: u32,
-) {
+) -> Result<(), String> {
     warn!(
         "Creating unit for {}, {} asset: {}",
         handlers_1.public_address, handlers_2.public_address, asset
@@ -35,15 +35,19 @@ pub async fn create_unit_service(
     );
 
     if !can_open_1 {
-        warn!("Cannot open position for {public_address_1}, not enough balance");
+        error!("Cannot open position for {public_address_1}, not enough balance");
 
-        return;
+        return Err(format!(
+            "Cannot open position for {public_address_1}, not enough balance"
+        ));
     }
 
     if !can_open_2 {
-        warn!("Cannot open position for {public_address_1}, not enough balance");
+        error!("Cannot open position for {public_address_1}, not enough balance");
 
-        return;
+        return Err(format!(
+            "Cannot open position for {public_address_1}, not enough balance"
+        ));
     }
 
     let (_, _) = tokio::join!(
@@ -66,7 +70,9 @@ pub async fn create_unit_service(
     if before_pos_1.is_some() || before_pos_2.is_some() {
         error!("Unit already exists for {public_address_1}, {public_address_2}");
 
-        return;
+        return Err(format!(
+            "Unit already exists for {public_address_1}, {public_address_2}"
+        ));
     }
 
     let pos_1 = open_position(
@@ -79,8 +85,9 @@ pub async fn create_unit_service(
     .await;
 
     if pos_1.is_none() {
-        warn!("Position not opened for {public_address_1}");
-        return;
+        error!("Position not opened for {public_address_1}");
+
+        return Err(format!("Position not opened for {public_address_1}"));
     }
 
     let pos_2 = open_position(
@@ -93,9 +100,10 @@ pub async fn create_unit_service(
     .await;
 
     if pos_2.is_none() {
-        warn!("Position not opened for {public_address_2}");
+        error!("Position not opened for {public_address_2}");
         close_position(&pos_1.unwrap(), &exchange_client_1, &info_client_1).await;
-        return;
+
+        return Err(format!("Position not opened for {public_address_2}"));
     }
 
     let pos_1 = pos_1.unwrap();
@@ -107,16 +115,24 @@ pub async fn create_unit_service(
         error!(
             "Positions for {public_address_1} & {public_address_2} on asset {asset} are not equal"
         );
-        // close_unit(account1, account2, asset).await;
+        close_unit_service(&handlers_1, &handlers_2, asset.clone()).await;
 
-        return;
+        return Err(format!(
+            "Positions for {public_address_1} & {public_address_2} on asset {asset} are not equal"
+        ));
     }
+
+    Ok(())
 
     // open_limit_order(&pos_2, &exchange_client_1, &info_client_1).await;
     // open_limit_order(&pos_1, &exchange_client_2, &info_client_2).await;
 }
 
-pub async fn close_unit_service(handlers_1: &Handlers, handlers_2: &Handlers, asset: String) {
+pub async fn close_unit_service(
+    handlers_1: &Handlers,
+    handlers_2: &Handlers,
+    asset: String,
+) -> Result<(), String> {
     warn!(
         "Closing unit for {}, {} asset: {}",
         handlers_1.public_address, handlers_2.public_address, asset
@@ -145,6 +161,8 @@ pub async fn close_unit_service(handlers_1: &Handlers, handlers_2: &Handlers, as
     if pos_2.is_some() {
         close_position(&pos_2.unwrap(), &exchange_client_2, &info_client_2).await;
     }
+
+    Ok(())
 }
 
 pub async fn close_and_create_unit_service(
@@ -153,7 +171,7 @@ pub async fn close_and_create_unit_service(
     asset: String,
     sz: f64,
     leverage: u32,
-) {
+) -> Result<(), String> {
     warn!("Invoke ReCreating unit");
 
     let Handlers {
@@ -174,8 +192,9 @@ pub async fn close_and_create_unit_service(
     );
 
     if pos_1.is_none() && pos_2.is_none() {
-        warn!("No position to close");
-        return;
+        error!("No position to close");
+
+        return Err(format!("No position to close"));
     }
 
     if pos_1.is_some() && pos_2.is_some() {
@@ -192,5 +211,5 @@ pub async fn close_and_create_unit_service(
         close_position(&pos_2.unwrap(), &exchange_client_2, &info_client_2).await;
     }
 
-    create_unit_service(&handlers_1, &handlers_2, asset, sz, leverage).await;
+    create_unit_service(&handlers_1, &handlers_2, asset, sz, leverage).await
 }
