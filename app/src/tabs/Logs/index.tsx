@@ -14,7 +14,7 @@ const colors = {
 export const Logs = () => {
   const { logs } = useContext(LogsContext)
 
-  const [showInfo, setShowInfo] = useState(true)
+  const [showInfo, setShowInfo] = useState(false)
 
   const lastLogRef = useRef<HTMLSpanElement>(null)
   const getLogColor = (log: string) => {

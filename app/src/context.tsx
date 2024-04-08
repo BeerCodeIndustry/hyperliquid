@@ -41,6 +41,7 @@ interface GlobalContextType {
     recreateTiming: number,
     openedTiming: number,
   ) => Promise<void>
+  logout: () => void
 }
 
 export const GlobalContext = createContext<GlobalContextType>({
@@ -48,6 +49,7 @@ export const GlobalContext = createContext<GlobalContextType>({
   accounts: [],
   batches: [],
   isAuth: false,
+  logout: () => {},
   login: async () => {},
   addAccount: () => {},
   addProxy: () => {},
@@ -72,6 +74,7 @@ export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
   const [isAuth, setIsAuth] = useState(db.isAuth())
 
   const [loading, setLoading] = useState(true)
+  const [authenticating, setAuthenticating] = useState(true)
 
   const addAccount = useCallback((account: Account, proxy?: string) => {
     if (proxy) {
@@ -194,6 +197,11 @@ export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
     })
   }, [])
 
+  const logout = useCallback(() => {
+    db.logout()
+    setIsAuth(false)
+  }, [])
+
   const value = useMemo(
     () => ({
       proxies,
@@ -211,13 +219,10 @@ export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
       closeBatch,
       getUnitTimings,
       setUnitInitTimings,
+      logout,
     }),
     [proxies, accounts, batches, isAuth],
   )
-
-  useEffect(() => {
-    setIsAuth(db.isAuth())
-  }, [db.isAuth()])
 
   useEffect(() => {
     if (!isAuth) {
@@ -229,11 +234,20 @@ export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
     })
   }, [isAuth])
 
-  if (loading) {
-    return <CircularProgress size={64} />
-  }
+  useEffect(() => {
+    const email = localStorage.getItem('email')
+    const password = localStorage.getItem('password')
+
+    if (email && password) {
+      login(email, password).finally(() => {
+        setAuthenticating(false)
+      })
+    }
+  }, [])
 
   return (
-    <GlobalContext.Provider value={value}>{children}</GlobalContext.Provider>
+    <GlobalContext.Provider value={value}>
+      {loading || authenticating ? <CircularProgress size={64} /> : children}
+    </GlobalContext.Provider>
   )
 }

@@ -160,8 +160,8 @@ export const useBatch = ({
   }, [])
 
   const setTimings = useCallback(
-    (asset: string, recreateTiming: number, openedTiming: number) => {
-      setUnitInitTimings(id, asset, recreateTiming, openedTiming)
+    async (asset: string, recreateTiming: number, openedTiming: number) => {
+      await setUnitInitTimings(id, asset, recreateTiming, openedTiming)
       setUnitTimings(prev => ({
         ...prev,
         [asset]: {
@@ -185,8 +185,6 @@ export const useBatch = ({
     async ({ asset, sz, leverage, timing }: CreateUnitPayload) => {
       setCreatingUnits(prev => [...prev, asset])
 
-      setTimings(asset, timing, Date.now())
-
       return invoke('create_unit', {
         account1: getBatchAccount(account_1, getAccountProxy(account_1)),
         account2: getBatchAccount(account_2, getAccountProxy(account_2)),
@@ -196,7 +194,7 @@ export const useBatch = ({
           leverage,
         },
       }).finally(async () => {
-        setTimings(asset, timing, Date.now())
+        await setTimings(asset, timing, Date.now())
         fetchUserStates()
         setCreatingUnits(prev => prev.filter(coin => coin !== asset))
       })
@@ -234,9 +232,9 @@ export const useBatch = ({
           sz,
           leverage,
         },
-      }).finally(() => {
+      }).finally(async () => {
         const unitRecreateTiming = getUnitTimingReacreate(asset)
-        setTimings(asset, unitRecreateTiming, Date.now())
+        await setTimings(asset, unitRecreateTiming, Date.now())
         fetchUserStates()
         setRecreatingUnits(prev => prev.filter(asset => asset !== asset))
       })

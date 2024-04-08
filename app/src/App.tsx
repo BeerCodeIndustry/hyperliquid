@@ -1,3 +1,4 @@
+import { Button } from '@mui/material'
 import MuiTab from '@mui/material/Tab'
 import MuiTabs from '@mui/material/Tabs'
 import { useContext, useState } from 'react'
@@ -31,7 +32,7 @@ const Tabs = {
 } as const
 
 const App = () => {
-  const { isAuth } = useContext(GlobalContext)
+  const { isAuth, logout } = useContext(GlobalContext)
   const [tabId, setTabId] = useState<keyof typeof Tabs>(Tabs.Accounts.id)
 
   if (!isAuth) {
@@ -40,7 +41,15 @@ const App = () => {
 
   return (
     <Box>
-      <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+      <Box
+        sx={{
+          borderBottom: 1,
+          borderColor: 'divider',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}
+      >
         <MuiTabs
           value={tabId}
           onChange={(_, newTabId) => setTabId(newTabId)}
@@ -50,6 +59,15 @@ const App = () => {
             <MuiTab label={label} value={id} key={id} />
           ))}
         </MuiTabs>
+        <Button
+          sx={{ mr: 2, height: '40px' }}
+          color='error'
+          variant='contained'
+          size='small'
+          onClick={logout}
+        >
+          Logout
+        </Button>
       </Box>
       <Box sx={{ p: 2 }}>
         {tabId === Tabs.Accounts.id && <Accounts />}

@@ -1,4 +1,10 @@
-import { Session, SupabaseClient, User, WeakPassword, createClient } from '@supabase/supabase-js'
+import {
+  Session,
+  SupabaseClient,
+  User,
+  WeakPassword,
+  createClient,
+} from '@supabase/supabase-js'
 import { v4 as uuidv4 } from 'uuid'
 
 import { Account, Batch, Proxy } from '../types'
@@ -12,7 +18,10 @@ if (
 
 export class SUPABASE_DB {
   client: SupabaseClient
-  unitTimingChanges: Record<string, {openedTiming: number, recreateTiming: number}>
+  unitTimingChanges: Record<
+    string,
+    { openedTiming: number; recreateTiming: number }
+  >
   unitTimingTimeoutId: NodeJS.Timeout | null
   auth: {
     user: User
@@ -38,21 +47,33 @@ export class SUPABASE_DB {
 
   public authenticate = async (email: string, password: string) => {
     return new Promise((resolve, reject) => {
-      this.client.auth.signInWithPassword({
-        email,
-        password,
-      }).then((res) => {
-        if (res.error) {
-          reject(res.error.message)
-          return;
-        }
-        if (res.data.user && res.data.session) {
-          this.auth = res.data
-        }
-        
-        resolve(res)
-      })
+      this.client.auth
+        .signInWithPassword({
+          email,
+          password,
+        })
+        .then(res => {
+          if (res.error) {
+            reject(res.error.message)
+            return
+          }
+          if (res.data.user && res.data.session) {
+            localStorage.setItem('email', email)
+            localStorage.setItem('password', password)
+            this.auth = res.data
+          }
+
+          resolve(res)
+        })
     })
+  }
+
+  public logout = () => {
+    localStorage.removeItem('email')
+    localStorage.removeItem('password')
+
+    this.auth = null
+    this.client.auth.signOut()
   }
 
   public addAccount = async (account: Account) => {
@@ -60,7 +81,9 @@ export class SUPABASE_DB {
       throw new Error('401')
     }
 
-    return this.client.from('accounts').insert({...account, user_id: this.auth.user.id})
+    return this.client
+      .from('accounts')
+      .insert({ ...account, user_id: this.auth.user.id })
   }
 
   public addAccountWithProxy = async (account: Account, proxy: Proxy) => {
@@ -78,7 +101,9 @@ export class SUPABASE_DB {
       throw new Error('401')
     }
 
-    return this.client.from('proxies').insert<Proxy>({...proxy, user_id: this.auth.user.id})
+    return this.client
+      .from('proxies')
+      .insert<Proxy>({ ...proxy, user_id: this.auth.user.id })
   }
 
   public removeProxies = (proxyIds: string[]) => {
@@ -122,9 +147,13 @@ export class SUPABASE_DB {
       throw new Error('401')
     }
 
-    return this.client
-      .from('batches')
-      .insert({ name, account_1_id, account_2_id, constant_timing: timing, user_id: this.auth.user.id })
+    return this.client.from('batches').insert({
+      name,
+      account_1_id,
+      account_2_id,
+      constant_timing: timing,
+      user_id: this.auth.user.id,
+    })
   }
 
   public setUnitInitTiming = async (
@@ -138,7 +167,7 @@ export class SUPABASE_DB {
       [asset]: {
         openedTiming,
         recreateTiming,
-      }
+      },
     }
 
     if (this.unitTimingTimeoutId) {
@@ -155,7 +184,7 @@ export class SUPABASE_DB {
       .from('batches')
       .select<string, Batch>()
       .eq('id', batchId)
-    
+
     if (!batch.data?.[0]) {
       throw new Error('setUnitRecreateTiming')
     }
