@@ -1,5 +1,6 @@
 // prettier-ignore
-import MuiTab from '@mui/material/Tab';
+import { ThemeProvider, createTheme } from '@mui/material';
+import MuiTab from '@mui/material/Tab'
 import MuiTabs from '@mui/material/Tabs'
 import { useState } from 'react'
 import { ToastContainer } from 'react-toastify'
@@ -48,7 +49,9 @@ const App = () => {
       <Box sx={{ p: 2 }}>
         {tabId === Tabs.Accounts.id && <Accounts />}
         {tabId === Tabs.Proxy.id && <Proxy />}
-        <div style={{ display: tabId === Tabs.Batches.id ? 'block': 'none'}}><Batches /></div>
+        <div style={{ display: tabId === Tabs.Batches.id ? 'block' : 'none' }}>
+          <Batches />
+        </div>
         <LogsProvider>{tabId === Tabs.Logs.id && <Logs />}</LogsProvider>
       </Box>
       <ToastContainer position='bottom-left' />

@@ -1,5 +1,6 @@
-import { Typography } from "@mui/material"
-import { HeadCell } from "../../../types"
+import { Typography } from '@mui/material'
+
+import { HeadCell } from '../../../types'
 
 export const headCells: HeadCell[] = [
   {

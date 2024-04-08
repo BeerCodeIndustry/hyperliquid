@@ -1,5 +1,7 @@
-import { Box, Button, Modal, Paper, TextField } from '@mui/material'
+import { Button, Modal, Paper, TextField } from '@mui/material'
 import { useState } from 'react'
+
+import Box from '@mui/material/Box'
 
 import { Proxy as ProxyType } from '../../types'
 

@@ -1,8 +1,9 @@
-import { Box, CircularProgress } from "@mui/material"
-import { Row } from "../../../components/Table"
-import { Unit } from "../../../types"
-import { convertMsToTime } from "../../../utils"
-import { LoadingButton } from "@mui/lab"
+import { LoadingButton } from '@mui/lab'
+import { Box, CircularProgress } from '@mui/material'
+
+import { Row } from '../../../components/Table'
+import { Unit } from '../../../types'
+import { convertMsToTime } from '../../../utils'
 
 export const createRows = (
   units: Unit[],
@@ -45,7 +46,10 @@ export const createRows = (
         <LoadingButton
           variant='contained'
           color='error'
-          loading={closingUnitAsset.includes(unit.base_unit_info.asset)}
+          loading={
+            closingUnitAsset.includes(unit.base_unit_info.asset) ||
+            reCreatingUnitAssets.includes(unit.base_unit_info.asset)
+          }
           onClick={() => handleAction && handleAction('close_unit', unit)}
         >
           Close Unit

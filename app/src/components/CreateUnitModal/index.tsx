@@ -1,6 +1,6 @@
 import LoadingButton from '@mui/lab/LoadingButton'
 import {
-  Box,
+  CircularProgress,
   FormControl,
   InputLabel,
   MenuItem,
@@ -8,8 +8,14 @@ import {
   Paper,
   Select,
   TextField,
+  Typography,
 } from '@mui/material'
+import { invoke } from '@tauri-apps/api'
 import { useState } from 'react'
+
+import Box from '@mui/material/Box'
+
+import { BatchAccount } from '../../types'
 
 const AllowedAssets = [
   'BTC',
@@ -67,6 +73,7 @@ const AllowedAssets = [
 
 export const CreateUnitModal: React.FC<{
   open: boolean
+  account: BatchAccount
   handleClose: () => void
   handleCreateUnit: (form: {
     asset: string
@@ -75,7 +82,7 @@ export const CreateUnitModal: React.FC<{
     timing: number
   }) => void
   defaultTiming: number
-}> = ({ open, handleClose, handleCreateUnit, defaultTiming }) => {
+}> = ({ open, handleClose, handleCreateUnit, defaultTiming, account }) => {
   const [form, setForm] = useState({
     asset: '',
     timing: defaultTiming,
@@ -83,15 +90,38 @@ export const CreateUnitModal: React.FC<{
     leverage: 1,
   })
 
+  const [assetPrice, setAssetPrice] = useState(0)
+  const [assetPriceLoading, setAssetPriceLoading] = useState(false)
+
   const onConfirm = () => {
     if (form.asset && form.sz && form.leverage && form.timing)
-      handleCreateUnit(form)
+      handleCreateUnit({
+        ...form,
+        timing: form.timing * 60000,
+      })
+  }
+
+  const getAssetPrice = (asset: string): Promise<string> => {
+    return invoke<string>('get_asset_price', {
+      batchAccount: account,
+      asset,
+    })
   }
 
   const onChange = (
     key: 'asset' | 'sz' | 'leverage' | 'timing',
     v: string | number,
   ) => {
+    if (key === 'asset' && typeof v === 'string') {
+      setAssetPriceLoading(true)
+      getAssetPrice(v)
+        .then((price: string) => {
+          setAssetPrice(Number(price))
+        })
+        .finally(() => {
+          setAssetPriceLoading(false)
+        })
+    }
     setForm(prev => ({ ...prev, [key]: v }))
   }
 
@@ -139,7 +169,7 @@ export const CreateUnitModal: React.FC<{
               label='Size'
               variant='outlined'
               type='number'
-              onChange={e => onChange('sz', e.target.value)}
+              onChange={e => onChange('sz', Number(e.target.value))}
             />
           </Box>
           <Box sx={{ width: '100%' }}>
@@ -149,19 +179,30 @@ export const CreateUnitModal: React.FC<{
               label='Leverage'
               variant='outlined'
               type='number'
-              onChange={e => onChange('leverage', e.target.value)}
+              onChange={e => onChange('leverage', Number(e.target.value))}
             />
           </Box>
           <Box sx={{ width: '100%' }}>
             <TextField
-              label='Unit re-create timing (ms)'
+              label='Re-create timing (mins)'
               type='number'
+              size='small'
               placeholder={String(defaultTiming)}
               defaultValue={defaultTiming}
               variant='outlined'
               onChange={e => onChange('timing', Number(e.target.value))}
             />
           </Box>
+        </Box>
+        <Box>
+          <Typography>
+            Summary:{' '}
+            {assetPriceLoading ? (
+              <CircularProgress size={12} />
+            ) : (
+              <strong>{(assetPrice * form.sz).toFixed(2)} $</strong>
+            )}
+          </Typography>
         </Box>
         <Box
           sx={{

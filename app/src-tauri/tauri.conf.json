@@ -21,7 +21,8 @@
       {
         "title": "app",
         "width": 1280,
-        "height": 920
+        "height": 920,
+        "theme": "Dark"
       }
     ],
     "security": {

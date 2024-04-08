@@ -24,6 +24,7 @@ export interface HeadCell {
 
 export interface Batch {
   id?: string
+  name: string
   account_1_id: string
   account_2_id: string
   unit_timings: string

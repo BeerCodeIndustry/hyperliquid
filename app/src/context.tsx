@@ -1,9 +1,9 @@
+import { CircularProgress } from '@mui/material'
 import { createContext, useCallback, useEffect, useMemo, useState } from 'react'
 
 import { SUPABASE_DB } from './db/SUPABASE_DB'
 import { Account, Batch, Proxy } from './types'
 import { parseProxy } from './utils'
-import { CircularProgress } from '@mui/material'
 
 interface GlobalContextType {
   proxies: Proxy[]
@@ -19,17 +19,26 @@ interface GlobalContextType {
     stringifyProxy: string,
   ) => void
   createBatch: ({
+    name,
     account_1_id,
     account_2_id,
     timing,
   }: {
+    name: string
     account_1_id: string
     account_2_id: string
     timing: number
   }) => void
   closeBatch: (batchId: string) => void
-  getUnitTimings: (batchId: string) => Promise<Record<string, {openedTiming: number; recreateTiming: number}>>
-  setUnitInitTimings: (batchId: string, asset: string, recreateTiming: number, openedTiming: number) => Promise<void>
+  getUnitTimings: (
+    batchId: string,
+  ) => Promise<Record<string, { openedTiming: number; recreateTiming: number }>>
+  setUnitInitTimings: (
+    batchId: string,
+    asset: string,
+    recreateTiming: number,
+    openedTiming: number,
+  ) => Promise<void>
 }
 
 export const GlobalContext = createContext<GlobalContextType>({
@@ -44,7 +53,8 @@ export const GlobalContext = createContext<GlobalContextType>({
   linkAccountsProxy: () => {},
   createBatch: () => {},
   closeBatch: () => {},
-  getUnitTimings: async () => ({}) as Record<string, {openedTiming: number; recreateTiming: number}>,
+  getUnitTimings: async () =>
+    ({}) as Record<string, { openedTiming: number; recreateTiming: number }>,
   setUnitInitTimings: async () => {},
 })
 
@@ -55,7 +65,7 @@ export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
   const [accounts, setAccounts] = useState<Account[]>([])
   const [batches, setBatches] = useState<Batch[]>([])
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true)
 
   const addAccount = useCallback((account: Account, proxy?: string) => {
     if (proxy) {
@@ -63,7 +73,7 @@ export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
         getProxies()
         getAccounts()
       })
-      return;
+      return
     }
     db.addAccount(account).then(() => {
       getAccounts()
@@ -110,13 +120,33 @@ export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
     })
   }, [])
 
-  const getUnitTimings = useCallback((batchId: string): Promise<Record<string, {openedTiming: number; recreateTiming: number}>> => {
-    return db.getUnitTimings(batchId)
-  }, [])
+  const getUnitTimings = useCallback(
+    (
+      batchId: string,
+    ): Promise<
+      Record<string, { openedTiming: number; recreateTiming: number }>
+    > => {
+      return db.getUnitTimings(batchId)
+    },
+    [],
+  )
 
-  const setUnitInitTimings = useCallback((batchId: string, asset: string, recreateTiming: number, openedTiming: number): Promise<void> => {
-    return db.setUnitInitTiming(batchId, asset, recreateTiming, openedTiming) as unknown as Promise<void>
-  }, [])
+  const setUnitInitTimings = useCallback(
+    (
+      batchId: string,
+      asset: string,
+      recreateTiming: number,
+      openedTiming: number,
+    ): Promise<void> => {
+      return db.setUnitInitTiming(
+        batchId,
+        asset,
+        recreateTiming,
+        openedTiming,
+      ) as unknown as Promise<void>
+    },
+    [],
+  )
 
   const linkAccountsProxy = useCallback(
     (accountIds: string[], proxyId: string) => {
@@ -129,15 +159,17 @@ export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
 
   const createBatch = useCallback(
     ({
+      name,
       account_1_id,
       account_2_id,
-      timing
+      timing,
     }: {
+      name: string
       account_1_id: string
       account_2_id: string
       timing: number
     }) => {
-      db.createBatch(account_1_id, account_2_id, timing).then(() => {
+      db.createBatch(name, account_1_id, account_2_id, timing).then(() => {
         getBatches()
       })
     },
@@ -170,12 +202,9 @@ export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
   )
 
   useEffect(() => {
-    Promise.all(
-      [getAccounts(),
-      getProxies(),
-      getBatches()]).then(() => {
-        setLoading(false)
-      })
+    Promise.all([getAccounts(), getProxies(), getBatches()]).then(() => {
+      setLoading(false)
+    })
   }, [])
 
   if (loading) {

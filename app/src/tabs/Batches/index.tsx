@@ -35,6 +35,7 @@ export const Batches: React.FC = () => {
         {batches.map(batch => {
           return (
             <Batch
+              name={batch.name}
               account_id_1={batch.account_1_id!}
               account_id_2={batch.account_2_id!}
               constant_timing={batch.constant_timing}

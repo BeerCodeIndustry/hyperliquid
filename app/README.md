@@ -14,4 +14,3 @@ This template should help get you started developing with Tauri, React and Types
 - run: `npx supabase start`
 
 - to stop db run: `npx supabase stop`
-

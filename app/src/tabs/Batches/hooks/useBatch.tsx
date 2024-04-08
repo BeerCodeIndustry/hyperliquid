@@ -10,6 +10,7 @@ interface Props {
   account_id_1: string
   account_id_2: string
   id: string
+  name: string
 }
 
 interface CreateUnitPayload {
@@ -26,16 +27,20 @@ interface ReturnType {
   balances: Record<string, string>
   unitTimings: Record<string, { openedTiming: number; recreateTiming: number }>
   closingUnits: string[]
-  reCreatingUnits: string[]
+  recreatingUnits: string[]
   initialLoading: boolean
+  getUnitTimingOpened: (asset: string) => number
   createUnit: (payload: CreateUnitPayload) => Promise<void>
   closeUnit: (unit: Unit) => Promise<void>
 }
+
+const UPDATE_INTERVAL = 2500
 
 export const useBatch = ({
   account_id_1,
   account_id_2,
   id,
+  name,
 }: Props): ReturnType => {
   const { accounts, getAccountProxy, getUnitTimings, setUnitInitTimings } =
     useContext(GlobalContext)
@@ -53,7 +58,7 @@ export const useBatch = ({
 
   const [closingUnits, setClosingUnits] = useState<string[]>([])
   const [creatingUnits, setCreatingUnits] = useState<string[]>([])
-  const [reCreatingUnits, setReCreatingUnits] = useState<string[]>([])
+  const [recreatingUnits, setRecreatingUnits] = useState<string[]>([])
 
   const [balances, setBalances] = useState<Record<string, string>>({})
 
@@ -69,12 +74,27 @@ export const useBatch = ({
     return transformAccountStatesToUnits(Object.values(accountStates))
   }, [accountStates])
 
-  const fetchUserStates = useCallback(() => {
+  const getUnitTimingOpened = useCallback(
+    (asset: string): number => {
+      return unitTimings[asset as keyof typeof unitTimings]?.openedTiming
+    },
+    [unitTimings],
+  )
+
+  const getUnitTimingReacreate = useCallback(
+    (asset: string): number => {
+      return unitTimings[asset as keyof typeof unitTimings]?.recreateTiming
+    },
+    [unitTimings],
+  )
+
+  const fetchUserStates = useCallback((): Promise<
+    [AccountState, AccountState]
+  > => {
     return invoke<[AccountState, AccountState]>('get_unit_user_states', {
       account1: getBatchAccount(account_1, getAccountProxy(account_1)),
       account2: getBatchAccount(account_2, getAccountProxy(account_2)),
     }).then((res: [AccountState, AccountState]) => {
-      console.log(res)
       setAccountState({
         [account_1.public_address]: res[0],
         [account_2.public_address]: res[1],
@@ -83,63 +103,148 @@ export const useBatch = ({
         [account_1.public_address]: res[0].marginSummary.accountValue,
         [account_2.public_address]: res[1].marginSummary.accountValue,
       })
+
+      return res
+    }) as Promise<[AccountState, AccountState]>
+  }, [account_1, account_2])
+
+  const updateLoop = useCallback(() => {
+    fetchUserStates().then((res: [AccountState, AccountState]) => {
+      const units = transformAccountStatesToUnits(res)
+
+      units.forEach((unit: Unit) => {
+        const unitOpenedTiming = getUnitTimingOpened(unit.base_unit_info.asset)
+        const unitRecreateTiming = getUnitTimingReacreate(
+          unit.base_unit_info.asset,
+        )
+
+        if (
+          closingUnits.includes(unit.base_unit_info.asset) ||
+          recreatingUnits.includes(unit.base_unit_info.asset) ||
+          creatingUnits.includes(unit.base_unit_info.asset)
+        ) {
+          return
+        }
+
+        if (
+          Date.now() - unitOpenedTiming >= unitRecreateTiming ||
+          unit.positions.length === 1
+        ) {
+          recreateUnit({
+            asset: unit.base_unit_info.asset,
+            sz: unit.base_unit_info.size,
+            leverage: unit.base_unit_info.leverage,
+          })
+        }
+      })
     })
-  }, [])
+  }, [
+    fetchUserStates,
+    closingUnits,
+    recreatingUnits,
+    creatingUnits,
+    getUnitTimingOpened,
+    getUnitTimingReacreate,
+  ])
 
   useEffect(() => {
-    fetchUserStates().then(() => {
-      setInitialLoading(false)
-    })
+    Promise.all([getUnitTimings(id), fetchUserStates()]).then(
+      ([unitTimings]) => {
+        setUnitTimings(unitTimings)
+        setInitialLoading(false)
+      },
+    )
 
     getUnitTimings(id).then(res => {
       setUnitTimings(res)
     })
   }, [])
 
+  useEffect(() => {
+    const interval = setInterval(updateLoop, UPDATE_INTERVAL)
+
+    return () => {
+      clearInterval(interval)
+    }
+  }, [updateLoop])
+
   const createUnit = useCallback(
-    ({ asset, sz, leverage, timing }: CreateUnitPayload) => {
+    async ({ asset, sz, leverage, timing }: CreateUnitPayload) => {
       setCreatingUnits(prev => [...prev, asset])
 
-      const promise = invoke('create_unit', {
+      await setUnitInitTimings(id, asset, timing, Date.now())
+      await getUnitTimings(id).then(timings => {
+        setUnitTimings(timings)
+      })
+
+      return invoke('create_unit', {
         account1: getBatchAccount(account_1, getAccountProxy(account_1)),
         account2: getBatchAccount(account_2, getAccountProxy(account_2)),
-        asset,
-        sz,
-        leverage,
+        unit: {
+          asset,
+          sz,
+          leverage,
+        },
       }).then(async () => {
-        setCreatingUnits(prev => prev.filter(coin => coin !== asset))
         await setUnitInitTimings(id, asset, timing, Date.now())
-        getUnitTimings(id).then(timings => {
-          setUnitTimings(timings)
-        })
         fetchUserStates()
+        return getUnitTimings(id).then(timings => {
+          setUnitTimings(timings)
+          setCreatingUnits(prev => prev.filter(coin => coin !== asset))
+        })
+      })
+    },
+    [account_1, account_2, fetchUserStates],
+  )
+
+  const closeUnit = useCallback(
+    (unit: Unit) => {
+      setClosingUnits(prev => [...prev, unit.base_unit_info.asset])
+
+      return invoke('close_unit', {
+        account1: getBatchAccount(account_1, getAccountProxy(account_1)),
+        account2: getBatchAccount(account_2, getAccountProxy(account_2)),
+        asset: unit.base_unit_info.asset,
+      }).then(() => {
+        setClosingUnits(prev =>
+          prev.filter(asset => asset !== unit.base_unit_info.asset),
+        )
+        fetchUserStates()
+      })
+    },
+    [account_1, account_2, fetchUserStates],
+  )
+
+  const recreateUnit = useCallback(
+    ({ asset, sz, leverage }: Omit<CreateUnitPayload, 'timing'>) => {
+      setRecreatingUnits(prev => [...prev, asset])
+
+      const promise = invoke('close_and_create_same_unit', {
+        account1: getBatchAccount(account_1, getAccountProxy(account_1)),
+        account2: getBatchAccount(account_2, getAccountProxy(account_2)),
+        unit: {
+          asset,
+          sz,
+          leverage,
+        },
+      }).then(async () => {
+        const unitRecreateTiming = getUnitTimingReacreate(asset)
+        await setUnitInitTimings(id, asset, unitRecreateTiming, Date.now())
+        fetchUserStates()
+        return getUnitTimings(id).then(timings => {
+          setUnitTimings(timings)
+          setRecreatingUnits(prev => prev.filter(coin => coin !== asset))
+        })
       })
 
       toast.promise(promise, {
-        pending: `${id} Creating unit with asset ${asset}`,
-        success: `${id} Unit with asset ${asset} created 👌`,
-        error: `${id} Error while creating unit with asset ${asset} error 🤯`,
+        pending: `${name}: Re-creating unit with asset ${asset}`,
+        success: `${name}: Unit with asset ${asset} re-created 👌`,
+        error: `${name}: Error while re-creating unit with asset ${asset} error 🤯`,
       })
-
-      return promise
     },
-    [],
+    [account_1, account_2, getUnitTimingReacreate, fetchUserStates],
   )
-
-  const closeUnit = useCallback((unit: Unit) => {
-    setClosingUnits(prev => [...prev, unit.base_unit_info.asset])
-
-    return invoke('close_unit', {
-      account1: getBatchAccount(account_1, getAccountProxy(account_1)),
-      account2: getBatchAccount(account_2, getAccountProxy(account_2)),
-      asset: unit.base_unit_info.asset,
-    }).then(() => {
-      setClosingUnits(prev =>
-        prev.filter(asset => asset !== unit.base_unit_info.asset),
-      )
-      fetchUserStates()
-    })
-  }, [])
 
   return {
     account_1,
@@ -148,8 +253,9 @@ export const useBatch = ({
     balances,
     unitTimings,
     closingUnits,
-    reCreatingUnits,
+    recreatingUnits,
     initialLoading,
+    getUnitTimingOpened,
     createUnit,
     closeUnit,
   }

@@ -1,5 +1,7 @@
-import { Box, Button, Modal, Paper, TextField } from '@mui/material'
+import { Button, Modal, Paper, TextField } from '@mui/material'
 import { useState } from 'react'
+
+import Box from '@mui/material/Box'
 
 import { Account } from '../../types'
 
@@ -8,7 +10,7 @@ export const AddAccountModal: React.FC<{
   handleClose: () => void
   handleAddAccount: (account: Account, proxy?: string) => void
 }> = ({ open, handleClose, handleAddAccount }) => {
-  const [account, setAccount] = useState<Account & {proxy: string}>({
+  const [account, setAccount] = useState<Account & { proxy: string }>({
     name: '',
     public_address: '',
     api_private_key: '',
@@ -17,13 +19,13 @@ export const AddAccountModal: React.FC<{
 
   const onConfirm = () => {
     if (account.api_private_key && account.public_address) {
-      const {proxy, ...accountData} = account
+      const { proxy, ...accountData } = account
       handleAddAccount(accountData, proxy ? 'auto_name:' + account.proxy : '')
       handleClose()
     }
   }
 
-  const onChange = (key: keyof (Account & {proxy: string}), v: string) => {
+  const onChange = (key: keyof (Account & { proxy: string }), v: string) => {
     setAccount(prev => ({ ...prev, [key]: v }))
   }
 

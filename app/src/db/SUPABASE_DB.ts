@@ -1,5 +1,5 @@
 import { SupabaseClient, createClient } from '@supabase/supabase-js'
-import { v4 as uuidv4 } from 'uuid';
+import { v4 as uuidv4 } from 'uuid'
 
 import { Account, Batch, Proxy } from '../types'
 
@@ -26,8 +26,8 @@ export class SUPABASE_DB {
 
   public addAccountWithProxy = async (account: Account, proxy: Proxy) => {
     const id = uuidv4()
-    await this.client.from('proxies').insert<Proxy>({...proxy, id})
-    return this.client.from('accounts').insert({...account, proxy_id: id})
+    await this.client.from('proxies').insert<Proxy>({ ...proxy, id })
+    return this.client.from('accounts').insert({ ...account, proxy_id: id })
   }
 
   public removeAccounts = (accountIds: string[]) => {
@@ -69,12 +69,27 @@ export class SUPABASE_DB {
     return data ?? []
   }
 
-  public createBatch = async (account_1_id: string, account_2_id: string, timing: number) => {
-    return this.client.from('batches').insert({ account_1_id, account_2_id, constant_timing: timing })
+  public createBatch = async (
+    name: string,
+    account_1_id: string,
+    account_2_id: string,
+    timing: number,
+  ) => {
+    return this.client
+      .from('batches')
+      .insert({ name, account_1_id, account_2_id, constant_timing: timing })
   }
 
-  public setUnitInitTiming = async (batchId: string, asset: string, recreateTiming: number, openedTiming: number) => {
-    const batch = await this.client.from('batches').select<string, Batch>().eq('id', batchId)
+  public setUnitInitTiming = async (
+    batchId: string,
+    asset: string,
+    recreateTiming: number,
+    openedTiming: number,
+  ) => {
+    const batch = await this.client
+      .from('batches')
+      .select<string, Batch>()
+      .eq('id', batchId)
 
     if (!batch.data?.[0]) {
       throw new Error('setUnitRecreateTiming')
@@ -85,15 +100,21 @@ export class SUPABASE_DB {
       ...prev_unit_timings,
       [asset]: {
         recreateTiming: recreateTiming,
-        openedTiming: openedTiming
-      }
+        openedTiming: openedTiming,
+      },
     })
 
-    return this.client.from('batches').update({ unit_timings }).eq('id', batchId)
+    return this.client
+      .from('batches')
+      .update({ unit_timings })
+      .eq('id', batchId)
   }
 
   public getUnitTimings = async (batchId: string) => {
-    const batch = await this.client.from('batches').select<string, Batch>().eq('id', batchId)
+    const batch = await this.client
+      .from('batches')
+      .select<string, Batch>()
+      .eq('id', batchId)
 
     if (!batch.data?.[0]) {
       throw new Error('setUnitRecreateTiming')

@@ -1,5 +1,4 @@
 import {
-  Box,
   Button,
   FormControl,
   InputLabel,
@@ -11,6 +10,8 @@ import {
 } from '@mui/material'
 import { useContext, useMemo, useState } from 'react'
 
+import Box from '@mui/material/Box'
+
 import { GlobalContext } from '../../context'
 
 export const CreateBatchModal: React.FC<{
@@ -19,13 +20,15 @@ export const CreateBatchModal: React.FC<{
 }> = ({ open, handleClose }) => {
   const { accounts, createBatch, batches } = useContext(GlobalContext)
   const [batchAccounts, setBatchAccounts] = useState<{
+    name: string
     account_1_id: string
     account_2_id: string
     timing: number
   }>({
+    name: '',
     account_1_id: '',
     account_2_id: '',
-    timing: 3600000
+    timing: 3600000,
   })
 
   const filteredAccounts = useMemo(() => {
@@ -41,7 +44,10 @@ export const CreateBatchModal: React.FC<{
     }
   }
 
-  const onChange = (id: 'account_1_id' | 'account_2_id' | 'timing', v: string | number) => {
+  const onChange = (
+    id: 'account_1_id' | 'account_2_id' | 'timing' | 'name',
+    v: string | number,
+  ) => {
     setBatchAccounts(prev => ({ ...prev, [id]: v ?? '' }))
   }
 
@@ -56,6 +62,14 @@ export const CreateBatchModal: React.FC<{
       <Paper sx={{ width: '500px', p: 2 }}>
         <Box sx={{ gap: 5, display: 'flex', flexDirection: 'column' }}>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <FormControl sx={{ m: 1, minWidth: 120 }}>
+              <TextField
+                label='Name'
+                type='text'
+                variant='outlined'
+                onChange={e => onChange('name', e.target.value)}
+              />
+            </FormControl>
             <FormControl sx={{ m: 1, minWidth: 120 }}>
               <InputLabel id='account-label'>Account 1</InputLabel>
               <Select
@@ -98,13 +112,13 @@ export const CreateBatchModal: React.FC<{
                   ))}
               </Select>
             </FormControl>
-            <FormControl>
+            <FormControl sx={{ m: 1, minWidth: 120 }}>
               <TextField
-                  label='Default unit re-create timing (ms)'
-                  type='number'
-                  placeholder='3600000'
-                  variant='outlined'
-                  onChange={e => onChange('timing', Number(e.target.value))}
+                label='Default unit re-create timing (mins)'
+                type='number'
+                placeholder='60'
+                variant='outlined'
+                onChange={e => onChange('timing', Number(e.target.value))}
               />
             </FormControl>
           </Box>
