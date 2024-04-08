@@ -8,25 +8,14 @@ use crate::types::{BatchAccount, Unit};
 pub async fn create_unit(
     account1: BatchAccount,
     account2: BatchAccount,
-    asset: String,
-    sz: f64,
-    leverage: u32,
+    unit: Unit,
 ) -> Result<(), String> {
     let (handlers_1, handlers_2) = tokio::join!(
         get_batch_account_handlers(account1.clone()),
         get_batch_account_handlers(account2.clone())
     );
 
-    create_unit_service(
-        &handlers_1,
-        &handlers_2,
-        Unit {
-            asset,
-            sz,
-            leverage,
-        },
-    )
-    .await
+    create_unit_service(&handlers_1, &handlers_2, unit).await
 }
 
 #[tauri::command]
@@ -47,23 +36,12 @@ pub async fn close_unit(
 pub async fn close_and_create_same_unit(
     account1: BatchAccount,
     account2: BatchAccount,
-    asset: String,
-    sz: f64,
-    leverage: u32,
+    unit: Unit,
 ) -> Result<(), String> {
     let (handlers_1, handlers_2) = tokio::join!(
         get_batch_account_handlers(account1.clone()),
         get_batch_account_handlers(account2.clone())
     );
 
-    close_and_create_unit_service(
-        &handlers_1,
-        &handlers_2,
-        Unit {
-            asset,
-            sz,
-            leverage,
-        },
-    )
-    .await
+    close_and_create_unit_service(&handlers_1, &handlers_2, unit).await
 }

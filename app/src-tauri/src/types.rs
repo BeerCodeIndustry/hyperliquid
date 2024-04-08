@@ -72,7 +72,7 @@ pub struct GlobalAccount {
     pub sub_id: Option<u32>,
     pub account: BatchAccount,
 }
-
+#[derive(Deserialize, Debug, Clone)]
 pub struct Unit {
     pub asset: String,
     pub sz: f64,
