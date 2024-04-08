@@ -76,6 +76,8 @@ export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true)
   const [authenticating, setAuthenticating] = useState(true)
 
+  console.log(authenticating, loading)
+
   const addAccount = useCallback((account: Account, proxy?: string) => {
     if (proxy) {
       db.addAccountWithProxy(account, parseProxy(proxy)).then(() => {
@@ -194,6 +196,7 @@ export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
   const login = useCallback(async (email: string, password: string) => {
     return db.authenticate(email, password).finally(() => {
       setIsAuth(db.isAuth())
+      setAuthenticating(false)
     })
   }, [])
 
@@ -239,10 +242,11 @@ export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
     const password = localStorage.getItem('password')
 
     if (email && password) {
-      login(email, password).finally(() => {
-        setAuthenticating(false)
-      })
+      login(email, password)
+      return
     }
+
+    setAuthenticating(false)
   }, [])
 
   return (

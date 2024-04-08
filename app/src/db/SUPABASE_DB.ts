@@ -64,6 +64,8 @@ export class SUPABASE_DB {
           }
 
           resolve(res)
+        }).finally(() => {
+          reject('')
         })
     })
   }
