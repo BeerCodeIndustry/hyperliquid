@@ -1,4 +1,4 @@
-import { SupabaseClient, createClient } from '@supabase/supabase-js'
+import { Session, SupabaseClient, User, WeakPassword, createClient } from '@supabase/supabase-js'
 import { v4 as uuidv4 } from 'uuid'
 
 import { Account, Batch, Proxy } from '../types'
@@ -14,6 +14,11 @@ export class SUPABASE_DB {
   client: SupabaseClient
   unitTimingChanges: Record<string, {openedTiming: number, recreateTiming: number}>
   unitTimingTimeoutId: NodeJS.Timeout | null
+  auth: {
+    user: User
+    session: Session
+    weakPassword?: WeakPassword
+  } | null
 
   constructor() {
     this.client = createClient(
@@ -23,10 +28,39 @@ export class SUPABASE_DB {
 
     this.unitTimingChanges = {}
     this.unitTimingTimeoutId = null
+
+    this.auth = null
+  }
+
+  public isAuth = () => {
+    return Boolean(this.auth)
+  }
+
+  public authenticate = async (email: string, password: string) => {
+    return new Promise((resolve, reject) => {
+      this.client.auth.signInWithPassword({
+        email,
+        password,
+      }).then((res) => {
+        if (res.error) {
+          reject(res.error.message)
+          return;
+        }
+        if (res.data.user && res.data.session) {
+          this.auth = res.data
+        }
+        
+        resolve(res)
+      })
+    })
   }
 
   public addAccount = async (account: Account) => {
-    return this.client.from('accounts').insert(account)
+    if (!this.auth) {
+      throw new Error('401')
+    }
+
+    return this.client.from('accounts').insert({...account, user_id: this.auth.user.id})
   }
 
   public addAccountWithProxy = async (account: Account, proxy: Proxy) => {
@@ -40,7 +74,11 @@ export class SUPABASE_DB {
   }
 
   public addProxy = (proxy: Proxy) => {
-    return this.client.from('proxies').insert<Proxy>(proxy)
+    if (!this.auth) {
+      throw new Error('401')
+    }
+
+    return this.client.from('proxies').insert<Proxy>({...proxy, user_id: this.auth.user.id})
   }
 
   public removeProxies = (proxyIds: string[]) => {
@@ -80,9 +118,13 @@ export class SUPABASE_DB {
     account_2_id: string,
     timing: number,
   ) => {
+    if (!this.auth) {
+      throw new Error('401')
+    }
+
     return this.client
       .from('batches')
-      .insert({ name, account_1_id, account_2_id, constant_timing: timing })
+      .insert({ name, account_1_id, account_2_id, constant_timing: timing, user_id: this.auth.user.id })
   }
 
   public setUnitInitTiming = async (

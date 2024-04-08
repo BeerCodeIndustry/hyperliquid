@@ -1,6 +1,7 @@
 export interface Account {
   id?: string
   name: string
+  user_id?: string
   public_address: string
   api_private_key: string
   proxy_id?: string
@@ -13,6 +14,7 @@ export interface Proxy {
   port: string
   username: string
   password: string
+  user_id?: string
 }
 
 export interface HeadCell {
@@ -29,6 +31,7 @@ export interface Batch {
   account_2_id: string
   unit_timings: string
   constant_timing: number
+  user_id?: string
 }
 
 export interface Position {

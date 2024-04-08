@@ -1,11 +1,13 @@
 import MuiTab from '@mui/material/Tab'
 import MuiTabs from '@mui/material/Tabs'
-import { useState } from 'react'
+import { useContext, useState } from 'react'
 import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 
 import Box from '@mui/material/Box'
 
+import { Login } from './components/Login'
+import { GlobalContext } from './context'
 import { LogsProvider } from './logsContext'
 import { Accounts, Batches, Logs, Proxy } from './tabs'
 
@@ -29,7 +31,12 @@ const Tabs = {
 } as const
 
 const App = () => {
+  const { isAuth } = useContext(GlobalContext)
   const [tabId, setTabId] = useState<keyof typeof Tabs>(Tabs.Accounts.id)
+
+  if (!isAuth) {
+    return <Login />
+  }
 
   return (
     <Box>

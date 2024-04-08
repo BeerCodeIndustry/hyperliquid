@@ -9,6 +9,8 @@ interface GlobalContextType {
   proxies: Proxy[]
   accounts: Account[]
   batches: Batch[]
+  isAuth: boolean
+  login: (username: string, password: string) => Promise<unknown>
   addAccount: (account: Account, proxy?: string) => void
   getAccountProxy: (account: Account) => Proxy | undefined
   removeAccounts: (accountIds: string[]) => void
@@ -45,6 +47,8 @@ export const GlobalContext = createContext<GlobalContextType>({
   proxies: [],
   accounts: [],
   batches: [],
+  isAuth: false,
+  login: async () => {},
   addAccount: () => {},
   addProxy: () => {},
   removeAccounts: () => {},
@@ -64,6 +68,8 @@ export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
   const [proxies, setProxies] = useState<Proxy[]>([])
   const [accounts, setAccounts] = useState<Account[]>([])
   const [batches, setBatches] = useState<Batch[]>([])
+
+  const [isAuth, setIsAuth] = useState(db.isAuth())
 
   const [loading, setLoading] = useState(true)
 
@@ -182,11 +188,19 @@ export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
     })
   }, [])
 
+  const login = useCallback(async (email: string, password: string) => {
+    return db.authenticate(email, password).finally(() => {
+      setIsAuth(db.isAuth())
+    })
+  }, [])
+
   const value = useMemo(
     () => ({
       proxies,
       accounts,
       batches,
+      isAuth,
+      login,
       addAccount,
       addProxy,
       removeAccounts,
@@ -198,14 +212,22 @@ export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
       getUnitTimings,
       setUnitInitTimings,
     }),
-    [proxies, accounts, batches],
+    [proxies, accounts, batches, isAuth],
   )
 
   useEffect(() => {
+    setIsAuth(db.isAuth())
+  }, [db.isAuth()])
+
+  useEffect(() => {
+    if (!isAuth) {
+      setLoading(false)
+      return
+    }
     Promise.all([getAccounts(), getProxies(), getBatches()]).then(() => {
       setLoading(false)
     })
-  }, [])
+  }, [isAuth])
 
   if (loading) {
     return <CircularProgress size={64} />
