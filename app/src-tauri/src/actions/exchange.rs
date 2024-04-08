@@ -3,11 +3,10 @@ use hyperliquid_rust_sdk::{
     ExchangeResponseStatus, InfoClient,
 };
 use log::{error, info};
-use uuid::Uuid;
 
 use crate::actions::info::slippage_price;
 
-use crate::types::{DefaultPair, OrderType, Position};
+use crate::types::{DefaultPair, OrderType};
 
 use crate::utils::num::next_decimal;
 use crate::utils::parsers::parse_liq_px;
@@ -28,8 +27,6 @@ pub async fn open_order(
     } else {
         slippage_price(info_client, &default_pair.asset, is_buy, None).await
     };
-
-    info!("limit_px: {limit_px}");
 
     let order = ClientOrderRequest {
         sz: default_pair.sz,
