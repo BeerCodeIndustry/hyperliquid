@@ -1,6 +1,6 @@
-import { Box, Typography } from '@mui/material'
+import { Box, Checkbox, Typography } from '@mui/material'
 import { blue, green, red, yellow } from '@mui/material/colors'
-import { useContext, useEffect, useRef } from 'react'
+import { useContext, useEffect, useRef, useState } from 'react'
 
 import { LogsContext } from '../../logsContext'
 
@@ -14,6 +14,8 @@ const colors = {
 export const Logs = () => {
   const { logs } = useContext(LogsContext)
 
+  const [showInfo, setShowInfo] = useState(true)
+
   const lastLogRef = useRef<HTMLSpanElement>(null)
   const getLogColor = (log: string) => {
     if (log.includes('ERROR')) return colors.ERROR
@@ -24,11 +26,15 @@ export const Logs = () => {
 
   useEffect(() => {
     lastLogRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [])
+  }, [showInfo])
+
+  const filteredLogs = logs.filter(
+    (log: string) => !(log.includes('DEBUG') && !showInfo),
+  )
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-      {logs.map((info, index) => (
+      {filteredLogs.map((info, index) => (
         <Typography
           color={getLogColor(info)}
           ref={index === logs.length - 1 ? lastLogRef : null}
@@ -36,6 +42,24 @@ export const Logs = () => {
           {info}
         </Typography>
       ))}
+
+      <Box
+        sx={{
+          position: 'fixed',
+          top: 62,
+          right: 12,
+          display: 'flex',
+          alignItems: 'center',
+          padding: '0 8px',
+          border: '1px solid black',
+        }}
+      >
+        <Typography>Show info logs</Typography>
+        <Checkbox
+          checked={showInfo}
+          onChange={e => setShowInfo(e.target.checked)}
+        />
+      </Box>
     </Box>
   )
 }
