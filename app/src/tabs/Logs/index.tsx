@@ -54,7 +54,7 @@ export const Logs = () => {
           border: '1px solid black',
         }}
       >
-        <Typography>Show info logs</Typography>
+        <Typography>Show DEBUG logs</Typography>
         <Checkbox
           checked={showInfo}
           onChange={e => setShowInfo(e.target.checked)}
