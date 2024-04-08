@@ -1,6 +1,6 @@
 import { Box, Typography } from '@mui/material'
 import { blue, green, red, yellow } from '@mui/material/colors'
-import { useContext } from 'react'
+import { useContext, useEffect, useRef } from 'react'
 
 import { LogsContext } from '../../logsContext'
 
@@ -13,6 +13,8 @@ const colors = {
 
 export const Logs = () => {
   const { logs } = useContext(LogsContext)
+
+  const lastLogRef = useRef<HTMLSpanElement>(null)
   const getLogColor = (log: string) => {
     if (log.includes('ERROR')) return colors.ERROR
     if (log.includes('WARN')) return colors.WARN
@@ -20,10 +22,19 @@ export const Logs = () => {
     if (log.includes('DEBUG')) return colors.DEBUG
   }
 
+  useEffect(() => {
+    lastLogRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [])
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-      {logs.map(info => (
-        <Typography color={getLogColor(info)}>{info}</Typography>
+      {logs.map((info, index) => (
+        <Typography
+          color={getLogColor(info)}
+          ref={index === logs.length - 1 ? lastLogRef : null}
+        >
+          {info}
+        </Typography>
       ))}
     </Box>
   )
