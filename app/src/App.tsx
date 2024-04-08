@@ -1,5 +1,3 @@
-// prettier-ignore
-import { ThemeProvider, createTheme } from '@mui/material';
 import MuiTab from '@mui/material/Tab'
 import MuiTabs from '@mui/material/Tabs'
 import { useState } from 'react'

@@ -12,12 +12,17 @@ if (
 
 export class SUPABASE_DB {
   client: SupabaseClient
+  unitTimingChanges: Record<string, {openedTiming: number, recreateTiming: number}>
+  unitTimingTimeoutId: NodeJS.Timeout | null
 
   constructor() {
     this.client = createClient(
       import.meta.env.VITE_SUPABASE_PROJECT_URL,
       import.meta.env.VITE_SUPABASE_ANON_KEY,
     )
+
+    this.unitTimingChanges = {}
+    this.unitTimingTimeoutId = null
   }
 
   public addAccount = async (account: Account) => {
@@ -86,23 +91,41 @@ export class SUPABASE_DB {
     recreateTiming: number,
     openedTiming: number,
   ) => {
+    this.unitTimingChanges = {
+      ...this.unitTimingChanges,
+      [asset]: {
+        openedTiming,
+        recreateTiming,
+      }
+    }
+
+    if (this.unitTimingTimeoutId) {
+      clearTimeout(this.unitTimingTimeoutId)
+    }
+
+    this.unitTimingTimeoutId = setTimeout(() => {
+      this.applyUnitTimingChanges(batchId)
+    }, 100)
+  }
+
+  private applyUnitTimingChanges = async (batchId: string) => {
     const batch = await this.client
       .from('batches')
       .select<string, Batch>()
       .eq('id', batchId)
-
+    
     if (!batch.data?.[0]) {
       throw new Error('setUnitRecreateTiming')
     }
+
     const prev_unit_timings = JSON.parse(batch.data[0].unit_timings)
 
     const unit_timings = JSON.stringify({
       ...prev_unit_timings,
-      [asset]: {
-        recreateTiming: recreateTiming,
-        openedTiming: openedTiming,
-      },
+      ...this.unitTimingChanges,
     })
+
+    this.unitTimingChanges = {}
 
     return this.client
       .from('batches')

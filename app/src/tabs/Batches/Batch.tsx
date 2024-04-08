@@ -31,6 +31,7 @@ export const Batch: React.FC<{
     recreatingUnits,
     initialLoading,
     getUnitTimingOpened,
+    getUnitTimingReacreate,
     createUnit,
     closeUnit,
   } = useBatch({ account_id_1, account_id_2, id, name })
@@ -78,6 +79,7 @@ export const Batch: React.FC<{
         closingUnits,
         recreatingUnits,
         getUnitTimingOpened,
+        getUnitTimingReacreate,
         handleAction,
       ),
     [units, closingUnits, recreatingUnits],

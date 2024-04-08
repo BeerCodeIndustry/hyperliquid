@@ -30,8 +30,9 @@ interface ReturnType {
   recreatingUnits: string[]
   initialLoading: boolean
   getUnitTimingOpened: (asset: string) => number
-  createUnit: (payload: CreateUnitPayload) => Promise<void>
-  closeUnit: (unit: Unit) => Promise<void>
+  getUnitTimingReacreate: (asset: string) => number
+  createUnit: (payload: CreateUnitPayload) => Promise<unknown>
+  closeUnit: (unit: Unit) => Promise<unknown>
 }
 
 const UPDATE_INTERVAL = 2500
@@ -69,6 +70,8 @@ export const useBatch = ({
   const [unitTimings, setUnitTimings] = useState<
     Record<string, { openedTiming: number; recreateTiming: number }>
   >({})
+
+  console.log(unitTimings)
 
   const units = useMemo(() => {
     return transformAccountStatesToUnits(Object.values(accountStates))
@@ -154,11 +157,21 @@ export const useBatch = ({
         setInitialLoading(false)
       },
     )
-
-    getUnitTimings(id).then(res => {
-      setUnitTimings(res)
-    })
   }, [])
+
+  const setTimings = useCallback(
+    (asset: string, recreateTiming: number, openedTiming: number) => {
+      setUnitInitTimings(id, asset, recreateTiming, openedTiming)
+      setUnitTimings(prev => ({
+        ...prev,
+        [asset]: {
+          openedTiming,
+          recreateTiming,
+        },
+      }))
+    },
+    [setUnitInitTimings, setUnitTimings],
+  )
 
   useEffect(() => {
     const interval = setInterval(updateLoop, UPDATE_INTERVAL)
@@ -172,10 +185,7 @@ export const useBatch = ({
     async ({ asset, sz, leverage, timing }: CreateUnitPayload) => {
       setCreatingUnits(prev => [...prev, asset])
 
-      await setUnitInitTimings(id, asset, timing, Date.now())
-      await getUnitTimings(id).then(timings => {
-        setUnitTimings(timings)
-      })
+      setTimings(asset, timing, Date.now())
 
       return invoke('create_unit', {
         account1: getBatchAccount(account_1, getAccountProxy(account_1)),
@@ -185,16 +195,13 @@ export const useBatch = ({
           sz,
           leverage,
         },
-      }).then(async () => {
-        await setUnitInitTimings(id, asset, timing, Date.now())
+      }).finally(async () => {
+        setTimings(asset, timing, Date.now())
         fetchUserStates()
-        return getUnitTimings(id).then(timings => {
-          setUnitTimings(timings)
-          setCreatingUnits(prev => prev.filter(coin => coin !== asset))
-        })
+        setCreatingUnits(prev => prev.filter(coin => coin !== asset))
       })
     },
-    [account_1, account_2, fetchUserStates],
+    [account_1, account_2, fetchUserStates, setTimings],
   )
 
   const closeUnit = useCallback(
@@ -205,7 +212,7 @@ export const useBatch = ({
         account1: getBatchAccount(account_1, getAccountProxy(account_1)),
         account2: getBatchAccount(account_2, getAccountProxy(account_2)),
         asset: unit.base_unit_info.asset,
-      }).then(() => {
+      }).finally(() => {
         setClosingUnits(prev =>
           prev.filter(asset => asset !== unit.base_unit_info.asset),
         )
@@ -227,14 +234,11 @@ export const useBatch = ({
           sz,
           leverage,
         },
-      }).then(async () => {
+      }).finally(() => {
         const unitRecreateTiming = getUnitTimingReacreate(asset)
-        await setUnitInitTimings(id, asset, unitRecreateTiming, Date.now())
+        setTimings(asset, unitRecreateTiming, Date.now())
         fetchUserStates()
-        return getUnitTimings(id).then(timings => {
-          setUnitTimings(timings)
-          setRecreatingUnits(prev => prev.filter(coin => coin !== asset))
-        })
+        setRecreatingUnits(prev => prev.filter(asset => asset !== asset))
       })
 
       toast.promise(promise, {
@@ -243,7 +247,7 @@ export const useBatch = ({
         error: `${name}: Error while re-creating unit with asset ${asset} error 🤯`,
       })
     },
-    [account_1, account_2, getUnitTimingReacreate, fetchUserStates],
+    [account_1, account_2, getUnitTimingReacreate, fetchUserStates, setTimings],
   )
 
   return {
@@ -256,6 +260,7 @@ export const useBatch = ({
     recreatingUnits,
     initialLoading,
     getUnitTimingOpened,
+    getUnitTimingReacreate,
     createUnit,
     closeUnit,
   }
