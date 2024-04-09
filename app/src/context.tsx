@@ -229,7 +229,6 @@ export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     if (!isAuth) {
-      setLoading(false)
       return
     }
     Promise.all([getAccounts(), getProxies(), getBatches()]).then(() => {
@@ -247,6 +246,7 @@ export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
     }
 
     setAuthenticating(false)
+    setLoading(false)
   }, [])
 
   return (

@@ -12,7 +12,10 @@ export const createRows = (
   reCreatingUnitAssets: string[],
   getUnitTimingOpened: (asset: string) => number,
   getUnitTimingReacreate: (asset: string) => number,
-  handleAction?: (type: 'close_unit', unit: Unit) => void,
+  handleAction?: (
+    type: 'close_unit' | 'update_unit_timing',
+    unit: Unit,
+  ) => void,
 ): Row[] => {
   return units.map(unit => ({
     id: unit.base_unit_info.asset,
@@ -20,7 +23,12 @@ export const createRows = (
       <div>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <strong>{unit.base_unit_info.asset}</strong>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+          <Box
+            sx={{ display: 'flex', alignItems: 'center', gap: '2px' }}
+            onClick={() =>
+              handleAction && handleAction('update_unit_timing', unit)
+            }
+          >
             <RefreshOutlined
               sx={{ width: '18px', height: '18px', marginTop: '-2px' }}
             />

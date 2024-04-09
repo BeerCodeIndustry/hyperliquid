@@ -5,6 +5,7 @@ import { toast } from 'react-toastify'
 import { CreateUnitModal } from '../../components/CreateUnitModal'
 import { FormUnit, ImportUnitsModal } from '../../components/ImportUnitsModal'
 import { Table } from '../../components/Table'
+import { UpdateUnitTimingModal } from '../../components/UpdateUnitTimingModal.tsx'
 import { GlobalContext } from '../../context'
 import { Unit } from '../../types'
 import { getBatchAccount } from '../../utils'
@@ -22,6 +23,8 @@ export const Batch: React.FC<{
   const [modalId, setModalId] = useState<string | null>(null)
   const { closeBatch, getAccountProxy } = useContext(GlobalContext)
 
+  const [updatingUnit, setUpdatingUnit] = useState('')
+
   const {
     account_1,
     account_2,
@@ -32,14 +35,30 @@ export const Batch: React.FC<{
     initialLoading,
     getUnitTimingOpened,
     getUnitTimingReacreate,
+    setTimings,
     createUnit,
     closeUnit,
   } = useBatch({ account_id_1, account_id_2, id, name })
 
-  const handleAction = (type: 'close_unit', unit: Unit) => {
+  const handleAction = (
+    type: 'close_unit' | 'update_unit_timing',
+    unit: Unit,
+  ) => {
     if (type === 'close_unit') {
       closeUnit(unit)
     }
+
+    if (type === 'update_unit_timing') {
+      setUpdatingUnit(unit.base_unit_info.asset)
+    }
+  }
+
+  const handleUpdateUnitTiming = (timing: number) => {
+    if (!updatingUnit) {
+      return
+    }
+    setTimings(updatingUnit, timing, getUnitTimingOpened(updatingUnit))
+    setUpdatingUnit('')
   }
 
   const handleCreateUnit = async (form: {
@@ -124,6 +143,15 @@ export const Batch: React.FC<{
           open
           handleClose={() => setModalId(null)}
           defaultTiming={constant_timing}
+        />
+      )}
+
+      {updatingUnit && (
+        <UpdateUnitTimingModal
+          handleUpdate={handleUpdateUnitTiming}
+          open
+          handleClose={() => setUpdatingUnit('')}
+          defaultValue={getUnitTimingReacreate(updatingUnit) / 60000}
         />
       )}
 

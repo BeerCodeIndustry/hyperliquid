@@ -29,6 +29,11 @@ interface ReturnType {
   closingUnits: string[]
   recreatingUnits: string[]
   initialLoading: boolean
+  setTimings: (
+    asset: string,
+    recreateTiming: number,
+    openedTiming: number,
+  ) => Promise<void>
   getUnitTimingOpened: (asset: string) => number
   getUnitTimingReacreate: (asset: string) => number
   createUnit: (payload: CreateUnitPayload) => Promise<unknown>
@@ -70,8 +75,6 @@ export const useBatch = ({
   const [unitTimings, setUnitTimings] = useState<
     Record<string, { openedTiming: number; recreateTiming: number }>
   >({})
-
-  console.log(unitTimings)
 
   const units = useMemo(() => {
     return transformAccountStatesToUnits(Object.values(accountStates))
@@ -259,6 +262,7 @@ export const useBatch = ({
     initialLoading,
     getUnitTimingOpened,
     getUnitTimingReacreate,
+    setTimings,
     createUnit,
     closeUnit,
   }
