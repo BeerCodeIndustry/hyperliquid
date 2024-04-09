@@ -73,10 +73,8 @@ export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
 
   const [isAuth, setIsAuth] = useState(db.isAuth())
 
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [authenticating, setAuthenticating] = useState(true)
-
-  console.log(authenticating, loading)
 
   const addAccount = useCallback((account: Account, proxy?: string) => {
     if (proxy) {
@@ -231,6 +229,7 @@ export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
     if (!isAuth) {
       return
     }
+    setLoading(true)
     Promise.all([getAccounts(), getProxies(), getBatches()]).then(() => {
       setLoading(false)
     })
@@ -242,11 +241,11 @@ export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
 
     if (email && password) {
       login(email, password)
+
       return
     }
 
     setAuthenticating(false)
-    setLoading(false)
   }, [])
 
   return (
