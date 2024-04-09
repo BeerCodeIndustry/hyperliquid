@@ -83,37 +83,52 @@ pub async fn create_unit_service(
         open_position(
             &exchange_client_1,
             &info_client_1,
-            position_pair.clone(),
+            DefaultPair {
+                asset: asset.to_string(),
+                sz: sz,
+                reduce_only: false,
+                order_type: "FrontendMarket".to_string(),
+            },
             public_address_1.clone(),
             true,
         ),
         open_position(
             &exchange_client_2,
             &info_client_2,
-            position_pair.clone(),
+            DefaultPair {
+                asset: asset.to_string(),
+                sz: sz,
+                reduce_only: false,
+                order_type: "FrontendMarket".to_string(),
+            },
             public_address_2.clone(),
             false,
         )
     );
 
-    let pos_1 = match pos_1 {
-        Ok(f) => f,
-        Err(e) => return Err(e),
-    };
+    if pos_1.is_err() || pos_2.is_err() {
+        error!("Error opening position for {public_address_1}, {public_address_2}, unit: {asset}");
 
-    let pos_2 = match pos_2 {
-        Ok(f) => f,
-        Err(e) => return Err(e),
-    };
+        let _ = close_unit_service(&handlers_1, &handlers_2, asset.clone()).await;
+
+        return Err(format!(
+            "Error opening position for {public_address_1}, {public_address_2}, unit: {asset}"
+        ));
+    }
+
+    let pos_1 = pos_1.unwrap();
+    let pos_2 = pos_2.unwrap();
 
     if pos_1.position.szi.parse::<f64>().unwrap_or(0.0).abs()
         != pos_2.position.szi.parse::<f64>().unwrap_or(0.0).abs()
     {
         error!(
-            "Positions for {public_address_1} & {public_address_2} on asset {asset} are not equal"
+            "Positions for {public_address_1} & {public_address_2} on asset {asset} are not equal, pos_1: {}, pos_2: {}",
+            pos_1.position.szi.parse::<f64>().unwrap_or(0.0).abs(),
+            pos_2.position.szi.parse::<f64>().unwrap_or(0.0).abs()
         );
 
-        close_unit_service(&handlers_1, &handlers_2, asset.clone()).await;
+        let _ = close_unit_service(&handlers_1, &handlers_2, asset.clone()).await;
 
         return Err(format!(
             "Positions for {public_address_1} & {public_address_2} on asset {asset} are not equal"
@@ -155,9 +170,9 @@ pub async fn close_unit_service(
 
     let (c_1, c_2) = tokio::join!(
         async {
-            if let Some(pos) = pos_1 {
+            if pos_1.is_some() {
                 close_position(
-                    &pos,
+                    &pos_1.unwrap(),
                     &exchange_client_1,
                     &info_client_1,
                     public_address_1.clone(),
@@ -168,9 +183,9 @@ pub async fn close_unit_service(
             }
         },
         async {
-            if let Some(pos) = pos_2 {
+            if pos_2.is_some() {
                 close_position(
-                    &pos,
+                    &pos_2.unwrap(),
                     &exchange_client_2,
                     &info_client_2,
                     public_address_2.clone(),
@@ -183,10 +198,12 @@ pub async fn close_unit_service(
     );
 
     if c_1.is_err() || c_2.is_err() {
-        error!("Error closing unit for {public_address_1}, {public_address_2}, unit: {asset}");
+        error!(
+            "Error closing unit e: {c_1:?} for {public_address_1}, {public_address_2}, unit: {asset}"
+        );
 
         return Err(format!(
-            "Error closing unit for {public_address_1}, {public_address_2}, unit: {asset}"
+            "Error closing unit e: {c_2:?} for {public_address_1}, {public_address_2}, unit: {asset}"
         ));
     }
 
@@ -213,7 +230,7 @@ pub async fn close_and_create_unit_service(
 
     match r {
         Ok(_) => {
-            info!("WTF?");
+            info!("Unit fully closed");
             create_unit_service(
                 handlers_1,
                 handlers_2,

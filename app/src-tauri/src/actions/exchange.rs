@@ -159,14 +159,14 @@ pub async fn open_position(
 
             if position_pair.sz == f.total_sz.parse::<f64>().unwrap() {
                 info!(
-                    "Position opened for {public_address}, unit: {}",
+                    "Position opened for {public_address}, unit: {}, filled: {f:?}",
                     position_pair.asset
                 );
 
                 return Ok(pos);
             } else {
                 error!(
-                    "Position not fully opened for {public_address}, unit: {}",
+                    "Position not fully opened for {public_address}, unit: {}, filled: {f:?}",
                     position_pair.asset
                 );
 

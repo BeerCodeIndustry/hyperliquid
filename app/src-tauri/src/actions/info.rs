@@ -10,7 +10,7 @@ use crate::utils::num::round_num_by_hyper_liquid;
 
 const DEFAULT_SLIPPAGE: f64 = 0.001; // 0.001 0.1%
 const FEES: f64 = 0.000336; // 0.000336
-const BALANCE_LIMIT: f64 = 0.0; // TODO: change to 50.0
+const BALANCE_LIMIT: f64 = 10.0; // TODO: change to 50.0
 
 pub async fn get_user_state(info_client: &InfoClient, public_address: &str) -> UserStateResponse {
     let user: String = public_address.parse().unwrap();
