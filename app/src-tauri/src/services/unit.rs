@@ -1,4 +1,4 @@
-use log::{error, warn};
+use log::{error, info, warn};
 
 use crate::actions::exchange::{close_position, open_position};
 use crate::actions::info::{can_open_position, get_position};
@@ -34,8 +34,8 @@ pub async fn create_unit_service(
     } = handlers_2;
 
     let (can_open_1, can_open_2) = tokio::join!(
-        can_open_position(&info_client_1, &public_address_1, &asset, sz),
-        can_open_position(&info_client_2, &public_address_2, &asset, sz)
+        can_open_position(&info_client_1, &public_address_1, &asset, sz, leverage),
+        can_open_position(&info_client_2, &public_address_2, &asset, sz, leverage)
     );
 
     if !can_open_1 {
@@ -79,43 +79,32 @@ pub async fn create_unit_service(
         ));
     }
 
-    let pos_1 = open_position(
-        &exchange_client_1,
-        &info_client_1,
-        position_pair.clone(),
-        public_address_1.clone(),
-        true,
-    )
-    .await;
+    let (pos_1, pos_2) = tokio::join!(
+        open_position(
+            &exchange_client_1,
+            &info_client_1,
+            position_pair.clone(),
+            public_address_1.clone(),
+            true,
+        ),
+        open_position(
+            &exchange_client_2,
+            &info_client_2,
+            position_pair.clone(),
+            public_address_2.clone(),
+            false,
+        )
+    );
 
-    if pos_1.is_none() {
-        error!("Position not opened for {public_address_1}, unit: {asset}");
+    let pos_1 = match pos_1 {
+        Ok(f) => f,
+        Err(e) => return Err(e),
+    };
 
-        return Err(format!(
-            "Position not opened for {public_address_1}, unit: {asset}"
-        ));
-    }
-
-    let pos_2 = open_position(
-        &exchange_client_2,
-        &info_client_2,
-        position_pair.clone(),
-        public_address_2.clone(),
-        false,
-    )
-    .await;
-
-    if pos_2.is_none() {
-        error!("Position not opened for {public_address_2}, unit: {asset}");
-        close_position(&pos_1.unwrap(), &exchange_client_1, &info_client_1).await;
-
-        return Err(format!(
-            "Position not opened for {public_address_2}, unit: {asset}"
-        ));
-    }
-
-    let pos_1 = pos_1.unwrap();
-    let pos_2 = pos_2.unwrap();
+    let pos_2 = match pos_2 {
+        Ok(f) => f,
+        Err(e) => return Err(e),
+    };
 
     if pos_1.position.szi.parse::<f64>().unwrap_or(0.0).abs()
         != pos_2.position.szi.parse::<f64>().unwrap_or(0.0).abs()
@@ -123,6 +112,7 @@ pub async fn create_unit_service(
         error!(
             "Positions for {public_address_1} & {public_address_2} on asset {asset} are not equal"
         );
+
         close_unit_service(&handlers_1, &handlers_2, asset.clone()).await;
 
         return Err(format!(
@@ -158,16 +148,46 @@ pub async fn close_unit_service(
         public_address: public_address_2,
     } = handlers_2;
 
-    let pos_1 = get_position(&info_client_1, &public_address_1, &asset).await;
+    let (pos_1, pos_2) = tokio::join!(
+        get_position(&info_client_1, &public_address_1, &asset),
+        get_position(&info_client_2, &public_address_2, &asset)
+    );
 
-    if pos_1.is_some() {
-        close_position(&pos_1.unwrap(), &exchange_client_1, &info_client_1).await;
-    }
+    let (c_1, c_2) = tokio::join!(
+        async {
+            if let Some(pos) = pos_1 {
+                close_position(
+                    &pos,
+                    &exchange_client_1,
+                    &info_client_1,
+                    public_address_1.clone(),
+                )
+                .await
+            } else {
+                Ok(())
+            }
+        },
+        async {
+            if let Some(pos) = pos_2 {
+                close_position(
+                    &pos,
+                    &exchange_client_2,
+                    &info_client_2,
+                    public_address_2.clone(),
+                )
+                .await
+            } else {
+                Ok(())
+            }
+        }
+    );
 
-    let pos_2 = get_position(&info_client_2, &public_address_2, &asset).await;
+    if c_1.is_err() || c_2.is_err() {
+        error!("Error closing unit for {public_address_1}, {public_address_2}, unit: {asset}");
 
-    if pos_2.is_some() {
-        close_position(&pos_2.unwrap(), &exchange_client_2, &info_client_2).await;
+        return Err(format!(
+            "Error closing unit for {public_address_1}, {public_address_2}, unit: {asset}"
+        ));
     }
 
     Ok(())
@@ -183,53 +203,31 @@ pub async fn close_and_create_unit_service(
         sz,
         leverage,
     } = unit;
-    warn!("Invoke ReCreating unit");
 
-    let Handlers {
-        info_client: info_client_1,
-        exchange_client: exchange_client_1,
-        public_address: public_address_1,
-    } = handlers_1;
-
-    let Handlers {
-        info_client: info_client_2,
-        exchange_client: exchange_client_2,
-        public_address: public_address_2,
-    } = handlers_2;
-
-    let (pos_1, pos_2) = tokio::join!(
-        get_position(&info_client_1, &public_address_1, &asset),
-        get_position(&info_client_2, &public_address_2, &asset)
+    warn!(
+        "Invoke ReCreating unit, for {} & {} unit: {}",
+        handlers_1.public_address, handlers_2.public_address, asset
     );
 
-    if pos_1.is_none() && pos_2.is_none() {
-        error!("No position to close, unit: {asset}");
+    let r = close_unit_service(handlers_1, handlers_2, asset.clone()).await;
 
-        return Err(format!("No position to close, unit: {asset}"));
+    match r {
+        Ok(_) => {
+            info!("WTF?");
+            create_unit_service(
+                handlers_1,
+                handlers_2,
+                Unit {
+                    asset,
+                    sz,
+                    leverage,
+                },
+            )
+            .await
+        }
+        Err(e) => panic!(
+            "panic! {e} for {}, {}, unit: {asset}",
+            handlers_1.public_address, handlers_2.public_address
+        ),
     }
-
-    if pos_1.is_some() && pos_2.is_some() {
-        let pos_1 = pos_1.unwrap();
-        let pos_2 = pos_2.unwrap();
-
-        tokio::join!(
-            close_position(&pos_1, &exchange_client_1, &info_client_1),
-            close_position(&pos_2, &exchange_client_2, &info_client_2)
-        );
-    } else if pos_1.is_some() {
-        close_position(&pos_1.unwrap(), &exchange_client_1, &info_client_1).await;
-    } else if pos_2.is_some() {
-        close_position(&pos_2.unwrap(), &exchange_client_2, &info_client_2).await;
-    }
-
-    create_unit_service(
-        &handlers_1,
-        &handlers_2,
-        Unit {
-            asset,
-            sz,
-            leverage,
-        },
-    )
-    .await
 }

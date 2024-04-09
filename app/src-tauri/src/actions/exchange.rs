@@ -1,12 +1,13 @@
+use async_recursion::async_recursion;
 use hyperliquid_rust_sdk::{
     AssetPosition, ClientLimit, ClientOrder, ClientOrderRequest, ExchangeClient,
-    ExchangeResponseStatus, InfoClient,
+    ExchangeDataStatus, ExchangeResponseStatus, FilledOrder, InfoClient,
 };
-use log::{error, info};
+use log::{error, info, warn};
 
 use crate::actions::info::slippage_price;
 
-use crate::types::{DefaultPair, OrderType};
+use crate::types::DefaultPair;
 
 use crate::utils::num::next_decimal;
 use crate::utils::parsers::parse_liq_px;
@@ -19,8 +20,7 @@ pub async fn open_order(
     info_client: &InfoClient,
     is_buy: bool,
     limit_px: Option<f64>,
-    order_type: OrderType,
-) {
+) -> Result<FilledOrder, String> {
     let is_limit = limit_px.is_some();
     let limit_px = if is_limit {
         next_decimal(limit_px.unwrap(), is_buy)
@@ -40,48 +40,79 @@ pub async fn open_order(
     };
 
     let response = exchange_client.order(order, None).await.unwrap();
-    let response = match response {
-        ExchangeResponseStatus::Ok(exchange_response) => exchange_response,
+    match response {
+        ExchangeResponseStatus::Ok(exchange_response) => {
+            match &exchange_response.data.unwrap().statuses[0] {
+                ExchangeDataStatus::Error(e) => return Err(e.clone()),
+                ExchangeDataStatus::Filled(f) => return Ok(f.clone()),
+                _ => return Err("Smth went wrong with order".to_string()),
+            }
+        }
         ExchangeResponseStatus::Err(e) => {
-            error!("error with exchange response: {e}");
+            error!("Exchange error: {e:?}",);
 
-            return;
+            return Err("Exchange error".to_string());
         }
     };
-    info!("{}: {response:?}", order_type.title());
 }
 
+#[async_recursion]
 pub async fn close_position(
     position: &AssetPosition,
     exchange_client: &ExchangeClient,
     info_client: &InfoClient,
-) {
+    public_address: String,
+) -> Result<(), String> {
     let asset = position.position.coin.clone();
-    let sz = position.position.szi.clone().parse::<f64>().unwrap();
-    let position_is_buy = if sz > 0.0 { true } else { false };
+    let szi = position.position.szi.clone().parse::<f64>().unwrap();
+    let position_is_buy = if szi > 0.0 { true } else { false };
     let position_pair = DefaultPair {
         asset: asset.to_string(),
-        sz: sz.abs(),
+        sz: szi.abs(),
         reduce_only: false,
         order_type: "FrontendMarket".to_string(),
     };
 
-    open_order(
+    let r = open_order(
         position_pair,
         exchange_client,
         info_client,
         !position_is_buy,
         None,
-        OrderType::ClosePosition("pos".to_string()),
     )
     .await;
+
+    match r {
+        Ok(f) => {
+            if f.total_sz.parse::<f64>().unwrap() == szi.abs() {
+                info!("Position closed for {public_address}, unit: {asset}, filled order: {f:?}");
+
+                Ok(())
+            } else {
+                let new_pos = get_position(&info_client, &public_address, &asset)
+                    .await
+                    .unwrap();
+                warn!("Position not fully closed for {public_address}, unit: {asset}, filled order: {f:?}");
+
+                return close_position(&new_pos, exchange_client, info_client, public_address)
+                    .await;
+            }
+        }
+        Err(e) => {
+            error!(
+                "Smth went wrong with closing position: {e} for {public_address}, unit: {asset}"
+            );
+
+            return close_position(position, exchange_client, info_client, public_address).await;
+        }
+    }
 }
 
 pub async fn open_limit_order(
     position: &AssetPosition,
     exchange_client: &ExchangeClient,
     info_client: &InfoClient,
-) {
+) -> Result<FilledOrder, String> {
     let asset = position.position.coin.clone();
     let sz = position.position.szi.clone().parse::<f64>().unwrap();
     let position_is_buy = if sz > 0.0 { true } else { false };
@@ -99,9 +130,9 @@ pub async fn open_limit_order(
         info_client,
         position_is_buy,
         Some(liq_px),
-        OrderType::Limit,
+        // OrderType::Limit,
     )
-    .await;
+    .await
 }
 
 pub async fn open_position(
@@ -110,16 +141,47 @@ pub async fn open_position(
     position_pair: DefaultPair,
     public_address: String,
     is_buy: bool,
-) -> Option<AssetPosition> {
-    open_order(
+) -> Result<AssetPosition, String> {
+    let r = open_order(
         position_pair.clone(),
         exchange_client,
         info_client,
         is_buy,
         None,
-        OrderType::Position,
     )
     .await;
 
-    get_position(info_client, &public_address, &position_pair.asset).await
+    match r {
+        Ok(f) => {
+            let pos = get_position(info_client, &public_address, &position_pair.asset)
+                .await
+                .unwrap();
+
+            if position_pair.sz == f.total_sz.parse::<f64>().unwrap() {
+                info!(
+                    "Position opened for {public_address}, unit: {}",
+                    position_pair.asset
+                );
+
+                return Ok(pos);
+            } else {
+                error!(
+                    "Position not fully opened for {public_address}, unit: {}",
+                    position_pair.asset
+                );
+
+                close_position(&pos, exchange_client, info_client, public_address.clone()).await;
+
+                return Err(format!(
+                    "Position not fully opened for {public_address}, unit: {}",
+                    position_pair.asset
+                ));
+            }
+        }
+        Err(e) => {
+            error!("{e} for {public_address} unit: {}", position_pair.asset);
+
+            return Err(e);
+        }
+    }
 }
