@@ -39,18 +39,18 @@ pub async fn create_unit_service(
     );
 
     if !can_open_1 {
-        error!("Cannot open position for {public_address_1}, not enough balance");
+        error!("Cannot open position for {public_address_1}, not enough balance, unit: {asset}");
 
         return Err(format!(
-            "Cannot open position for {public_address_1}, not enough balance"
+            "Cannot open position for {public_address_1}, not enough balance, unit: {asset}"
         ));
     }
 
     if !can_open_2 {
-        error!("Cannot open position for {public_address_1}, not enough balance");
+        error!("Cannot open position for {public_address_1}, not enough balance, unit: {asset}");
 
         return Err(format!(
-            "Cannot open position for {public_address_1}, not enough balance"
+            "Cannot open position for {public_address_1}, not enough balance, unit: {asset}"
         ));
     }
 
@@ -72,10 +72,10 @@ pub async fn create_unit_service(
     );
 
     if before_pos_1.is_some() || before_pos_2.is_some() {
-        error!("Unit already exists for {public_address_1}, {public_address_2}");
+        error!("Unit already exists for {public_address_1}, {public_address_2}, unit: {asset}");
 
         return Err(format!(
-            "Unit already exists for {public_address_1}, {public_address_2}"
+            "Unit already exists for {public_address_1}, {public_address_2}, unit: {asset}"
         ));
     }
 
@@ -89,9 +89,11 @@ pub async fn create_unit_service(
     .await;
 
     if pos_1.is_none() {
-        error!("Position not opened for {public_address_1}");
+        error!("Position not opened for {public_address_1}, unit: {asset}");
 
-        return Err(format!("Position not opened for {public_address_1}"));
+        return Err(format!(
+            "Position not opened for {public_address_1}, unit: {asset}"
+        ));
     }
 
     let pos_2 = open_position(
@@ -104,10 +106,12 @@ pub async fn create_unit_service(
     .await;
 
     if pos_2.is_none() {
-        error!("Position not opened for {public_address_2}");
+        error!("Position not opened for {public_address_2}, unit: {asset}");
         close_position(&pos_1.unwrap(), &exchange_client_1, &info_client_1).await;
 
-        return Err(format!("Position not opened for {public_address_2}"));
+        return Err(format!(
+            "Position not opened for {public_address_2}, unit: {asset}"
+        ));
     }
 
     let pos_1 = pos_1.unwrap();
@@ -199,9 +203,9 @@ pub async fn close_and_create_unit_service(
     );
 
     if pos_1.is_none() && pos_2.is_none() {
-        error!("No position to close");
+        error!("No position to close, unit: {asset}");
 
-        return Err(format!("No position to close"));
+        return Err(format!("No position to close, unit: {asset}"));
     }
 
     if pos_1.is_some() && pos_2.is_some() {

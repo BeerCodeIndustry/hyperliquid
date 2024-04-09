@@ -43,7 +43,7 @@ export const Logs = () => {
         </Typography>
       ))}
 
-      <Box
+      {/* <Box
         sx={{
           position: 'fixed',
           top: 62,
@@ -59,7 +59,7 @@ export const Logs = () => {
           checked={showInfo}
           onChange={e => setShowInfo(e.target.checked)}
         />
-      </Box>
+      </Box> */}
     </Box>
   )
 }

@@ -23,7 +23,7 @@ fn setup_logger() -> Result<(), fern::InitError> {
         .debug(Color::Blue);
 
     fern::Dispatch::new()
-        .level(LevelFilter::Debug)
+        .level(LevelFilter::Info)
         .format(move |out, message, record| {
             out.finish(format_args!(
                 "{}[{}][{}] {}",
