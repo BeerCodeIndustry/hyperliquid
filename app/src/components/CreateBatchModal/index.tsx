@@ -28,7 +28,7 @@ export const CreateBatchModal: React.FC<{
     name: '',
     account_1_id: '',
     account_2_id: '',
-    timing: 3600000,
+    timing: 60,
   })
 
   const filteredAccounts = useMemo(() => {
