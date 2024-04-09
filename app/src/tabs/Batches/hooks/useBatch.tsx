@@ -198,7 +198,7 @@ export const useBatch = ({
         },
       }).finally(async () => {
         await setTimings(asset, timing, Date.now())
-        fetchUserStates()
+        await fetchUserStates()
         setCreatingUnits(prev => prev.filter(coin => coin !== asset))
       })
     },
@@ -238,7 +238,7 @@ export const useBatch = ({
       }).finally(async () => {
         const unitRecreateTiming = getUnitTimingReacreate(asset)
         await setTimings(asset, unitRecreateTiming, Date.now())
-        fetchUserStates()
+        await fetchUserStates()
         setRecreatingUnits(prev => prev.filter(asset => asset !== asset))
       })
 
