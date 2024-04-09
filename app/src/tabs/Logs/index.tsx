@@ -1,4 +1,4 @@
-import { Box, Checkbox, Typography } from '@mui/material'
+import { Box, Typography } from '@mui/material'
 import { blue, green, red, yellow } from '@mui/material/colors'
 import { useContext, useEffect, useRef, useState } from 'react'
 
@@ -14,7 +14,7 @@ const colors = {
 export const Logs = () => {
   const { logs } = useContext(LogsContext)
 
-  const [showInfo, setShowInfo] = useState(false)
+  const [showInfo] = useState(false)
 
   const lastLogRef = useRef<HTMLSpanElement>(null)
   const getLogColor = (log: string) => {
