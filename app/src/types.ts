@@ -74,7 +74,7 @@ export interface BatchAccount {
 
 export interface LogRow {
   id: number
-  created_at: number
+  created_at: string
   user_id: string
   text: string
 }

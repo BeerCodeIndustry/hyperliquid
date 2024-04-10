@@ -1,4 +1,11 @@
-import { Account, AccountState, BatchAccount, Proxy, Unit } from './types'
+import {
+  Account,
+  AccountState,
+  BatchAccount,
+  LogRow,
+  Proxy,
+  Unit,
+} from './types'
 
 export const stringifyProxy = (proxy: Proxy) => {
   if (!proxy) {
@@ -92,4 +99,21 @@ export function convertMsToTime(milliseconds: number) {
   return `${padTo2Digits(hours)}:${padTo2Digits(minutes)}:${padTo2Digits(
     seconds,
   )}`
+}
+
+export const formatLogs = (
+  logs: string[],
+  user_id?: string,
+): { text: string; created_at?: string; user_id?: string }[] => {
+  const regex = /^\[([^\]]+)\]/
+
+  return logs.map(log => {
+    const match = log.match(regex)
+
+    if (!match) {
+      return { text: log, user_id }
+    }
+
+    return { text: log, created_at: match[1], user_id }
+  })
 }

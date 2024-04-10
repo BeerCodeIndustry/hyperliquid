@@ -8,6 +8,7 @@ import {
 import { v4 as uuidv4 } from 'uuid'
 
 import { Account, Batch, LogRow, Proxy } from '../types'
+import { formatLogs } from '../utils'
 
 if (
   !import.meta.env.VITE_SUPABASE_PROJECT_URL ||
@@ -225,7 +226,6 @@ export class SUPABASE_DB {
   }
 
   public getLogs = async (start: string, end: string) => {
-    console.log(start, end)
     return (
       await this.client
         .from('logs')
@@ -237,11 +237,6 @@ export class SUPABASE_DB {
   }
 
   public insertLogs = async (logs: string[]) => {
-    return this.client.from('logs').insert(
-      logs.map(log => ({
-        text: log,
-        user_id: this.auth?.user.id,
-      })),
-    )
+    return this.client.from('logs').insert(formatLogs(logs, this.auth?.user.id))
   }
 }

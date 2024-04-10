@@ -35,8 +35,8 @@ export const LogsProvider = ({ children }: { children: React.ReactNode }) => {
 
   const refetch = () => {
     db.getLogs(
-      dayjs(filters.start.valueOf()).toString(),
-      dayjs(filters.end.valueOf()).toString(),
+      dayjs(filters.start.valueOf()).format('YYYY-MM-DD HH:mm:ss'),
+      dayjs(filters.end.valueOf()).format('YYYY-MM-DD HH:mm:ss'),
     ).then(logs => {
       setLogs(logs?.map(log => log.text) ?? [])
     })

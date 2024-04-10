@@ -254,7 +254,6 @@ export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
 
     const insertLogs = async () => {
       await invoke('get_logs').then(logs => {
-        console.log(logs, 'logs')
         return db.insertLogs(logs as string[]).then(() => {
           return invoke('clear_logs')
         })
