@@ -9,6 +9,12 @@ jobs:
       # Checkout
       - name: Checkout repository
         uses: actions/checkout@v2
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+      - name: install Rust stable
+        uses: dtolnay/rust-toolchain@stable
       # Install deps
       - name: Install dependencies with yarn
         working-directory: ./app
