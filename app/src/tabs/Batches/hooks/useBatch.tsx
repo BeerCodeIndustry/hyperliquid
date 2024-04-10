@@ -261,7 +261,7 @@ export const useBatch = ({
         const unitRecreateTiming = getUnitTimingReacreate(asset)
         await setTimings(asset, unitRecreateTiming, Date.now())
         await fetchUserStates()
-        setRecreatingUnits(prev => prev.filter(asset => asset !== asset))
+        setRecreatingUnits(prev => prev.filter(unit => unit !== asset))
       })
 
       toast.promise(promise, {
