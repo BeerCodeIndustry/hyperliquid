@@ -25,11 +25,16 @@ jobs:
       - name: Build release
         working-directory: ./app
         run: yarn tauri build
+      # ZIP
+      - uses: vimtor/action-zip@v1.2
+        with:
+          files: ./app/src-tauri/target/release
+          dest: ./app/src-tauri/target/release.zip
       # Upload folder
       - name: Upload to gdrive
         uses: adityak74/google-drive-upload-git-action@main
         with:
           credentials: ${{ secrets.GOOGLE_CREDS }}
-          filename: "release-latest.zip"
+          filename: "./app/src-tauri/target/release.zip"
           folderId: 1bWsw-mq1r9BHVESU89REvhuD5PFTRdUA
           overwrite: "true"
