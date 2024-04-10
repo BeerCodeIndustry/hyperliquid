@@ -1,0 +1,29 @@
+name: Publish release to google drive
+on:
+  push: { branches: [master] }
+jobs:
+  buildAndTestForSomePlatforms:
+    name: Upload public to drive
+    runs-on: ubuntu-latest
+    steps:
+      # Checkout
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      # YARN
+      - name: action-yarn
+        uses: comchangs/action-yarn@v0.1-beta
+      # Install deps
+      - name: Install dependencies with yarn
+        working-directory: ./app
+      - run: yarn
+      # Build
+      - name: Build release
+        working-directory: ./app
+      - run: yarn tauri build
+      # Upload to Drive
+      - name: Upload release folder to Google Drive
+        uses: Jodebu/upload-to-drive@master
+        with:
+          target: ./app/src-tauri/target/release
+          credentials: secrets.GOOGLE_CREDS
+          folder: 1bWsw-mq1r9BHVESU89REvhuD5PFTRdUA
