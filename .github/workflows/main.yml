@@ -8,11 +8,11 @@ jobs:
     steps:
       # Checkout
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: setup node
         uses: actions/setup-node@v4
         with:
-          node-version: lts/*
+          node-version: 18
       - name: install Rust stable
         uses: dtolnay/rust-toolchain@stable
       # Install deps
@@ -23,13 +23,9 @@ jobs:
       - name: Build release
         working-directory: ./app
         run: yarn tauri build
-      # ZIP
-      - name: make zip
-        run: "Compress-Archive -Path app/src-tauri/target/release/* -Destination release.zip"
-      # Upload folder
+      # Make artifact
       - name: Upload artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
-          name: release.zip
-          overwrite: true
-          path: "release.zip"
+          name: release
+          path: "app/src-tauri/target/release"
