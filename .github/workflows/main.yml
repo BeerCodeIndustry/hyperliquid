@@ -25,18 +25,11 @@ jobs:
       - name: Build release
         working-directory: ./app
         run: yarn tauri build
-      - id: decode-base64
-        uses: akiojin/decode-base64-github-action@v0.1.0
-        with:
-            base64: ${{ secrets.GOOGLE_CREDS }}
-      # Google auth
-      - name: Google auth
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ steps.decode-base64.outputs.decoded }}
       # Upload folder
-      - name: Upload release folder
-        uses: google-github-actions/upload-cloud-storage@v2
+      - name: Upload to gdrive
+        uses: adityak74/google-drive-upload-git-action@main
         with:
-          path: ./app/src-tauri/target/release
-          destination: hyperliquid
+          credentials: ${{ secrets.GOOGLE_CREDS }}
+          filename: "release-latest.zip"
+          folderId: 1bWsw-mq1r9BHVESU89REvhuD5PFTRdUA
+          overwrite: "true"
