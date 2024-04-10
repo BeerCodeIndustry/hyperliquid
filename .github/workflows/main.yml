@@ -15,11 +15,11 @@ jobs:
       # Install deps
       - name: Install dependencies with yarn
         working-directory: ./app
-      - run: yarn
+        run: yarn
       # Build
       - name: Build release
         working-directory: ./app
-      - run: yarn tauri build
+        run: yarn tauri build
       # Upload to Drive
       - name: Upload release folder to Google Drive
         uses: Jodebu/upload-to-drive@master
