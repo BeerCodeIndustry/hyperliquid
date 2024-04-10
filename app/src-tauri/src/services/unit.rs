@@ -226,6 +226,23 @@ pub async fn close_and_create_unit_service(
         handlers_1.public_address, handlers_2.public_address, asset
     );
 
+    let (before_pos_1, before_pos_2) = tokio::join!(
+        get_position(&handlers_1.info_client, &handlers_1.public_address, &asset),
+        get_position(&handlers_2.info_client, &handlers_2.public_address, &asset)
+    );
+
+    if before_pos_1.is_some() || before_pos_2.is_some() {
+        error!(
+            "Unit already exists for {}, {}, unit: {asset}",
+            handlers_1.public_address, handlers_2.public_address
+        );
+
+        return Err(format!(
+            "Unit already exists for {}, {}, unit: {asset}",
+            handlers_1.public_address, handlers_2.public_address
+        ));
+    }
+
     let r = close_unit_service(handlers_1, handlers_2, asset.clone()).await;
 
     match r {
