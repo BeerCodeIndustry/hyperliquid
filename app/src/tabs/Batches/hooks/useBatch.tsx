@@ -1,5 +1,12 @@
 import { invoke } from '@tauri-apps/api'
-import { useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import {
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import { toast } from 'react-toastify'
 
 import { GlobalContext } from '../../../context'
@@ -60,6 +67,8 @@ export const useBatch = ({
     [accounts],
   )
 
+  const updatingRef = useRef(false)
+
   const [initialLoading, setInitialLoading] = useState(true)
 
   const [closingUnits, setClosingUnits] = useState<string[]>([])
@@ -115,35 +124,43 @@ export const useBatch = ({
   }, [account_1, account_2])
 
   const updateLoop = useCallback(() => {
-    fetchUserStates().then((res: [AccountState, AccountState]) => {
-      const units = transformAccountStatesToUnits(res)
+    updatingRef.current = true
+    const now = Date.now() - UPDATE_INTERVAL
+    return fetchUserStates()
+      .then((res: [AccountState, AccountState]) => {
+        const units = transformAccountStatesToUnits(res)
 
-      units.forEach((unit: Unit) => {
-        const unitOpenedTiming = getUnitTimingOpened(unit.base_unit_info.asset)
-        const unitRecreateTiming = getUnitTimingReacreate(
-          unit.base_unit_info.asset,
-        )
+        units.forEach((unit: Unit) => {
+          const unitOpenedTiming = getUnitTimingOpened(
+            unit.base_unit_info.asset,
+          )
+          const unitRecreateTiming = getUnitTimingReacreate(
+            unit.base_unit_info.asset,
+          )
 
-        if (
-          closingUnits.includes(unit.base_unit_info.asset) ||
-          recreatingUnits.includes(unit.base_unit_info.asset) ||
-          creatingUnits.includes(unit.base_unit_info.asset)
-        ) {
-          return
-        }
+          if (
+            closingUnits.includes(unit.base_unit_info.asset) ||
+            recreatingUnits.includes(unit.base_unit_info.asset) ||
+            creatingUnits.includes(unit.base_unit_info.asset)
+          ) {
+            return
+          }
 
-        if (
-          Date.now() - unitOpenedTiming >= unitRecreateTiming ||
-          unit.positions.length === 1
-        ) {
-          recreateUnit({
-            asset: unit.base_unit_info.asset,
-            sz: unit.base_unit_info.size,
-            leverage: unit.base_unit_info.leverage,
-          })
-        }
+          if (
+            now - unitOpenedTiming >= unitRecreateTiming ||
+            unit.positions.length === 1
+          ) {
+            recreateUnit({
+              asset: unit.base_unit_info.asset,
+              sz: unit.base_unit_info.size,
+              leverage: unit.base_unit_info.leverage,
+            })
+          }
+        })
       })
-    })
+      .finally(() => {
+        updatingRef.current = false
+      })
   }, [
     fetchUserStates,
     closingUnits,
@@ -177,7 +194,12 @@ export const useBatch = ({
   )
 
   useEffect(() => {
-    const interval = setInterval(updateLoop, UPDATE_INTERVAL)
+    const interval = setInterval(() => {
+      if (updatingRef.current === true) {
+        return
+      }
+      updateLoop()
+    }, UPDATE_INTERVAL)
 
     return () => {
       clearInterval(interval)
@@ -213,11 +235,11 @@ export const useBatch = ({
         account1: getBatchAccount(account_1, getAccountProxy(account_1)),
         account2: getBatchAccount(account_2, getAccountProxy(account_2)),
         asset: unit.base_unit_info.asset,
-      }).finally(() => {
+      }).finally(async () => {
+        await fetchUserStates()
         setClosingUnits(prev =>
           prev.filter(asset => asset !== unit.base_unit_info.asset),
         )
-        fetchUserStates()
       })
     },
     [account_1, account_2, fetchUserStates],

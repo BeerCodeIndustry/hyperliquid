@@ -33,7 +33,9 @@ const Tabs = {
 
 const App = () => {
   const { isAuth, logout } = useContext(GlobalContext)
-  const [tabId, setTabId] = useState<keyof typeof Tabs>(Tabs.Accounts.id)
+  const [tabId, setTabId] = useState<string>(
+    localStorage.getItem('lastTabId') ?? Tabs.Accounts.id,
+  )
 
   if (!isAuth) {
     return <Login />
@@ -52,7 +54,10 @@ const App = () => {
       >
         <MuiTabs
           value={tabId}
-          onChange={(_, newTabId) => setTabId(newTabId)}
+          onChange={(_, newTabId) => {
+            localStorage.setItem('lastTabId', newTabId)
+            setTabId(newTabId)
+          }}
           aria-label='basic tabs example'
         >
           {Object.values(Tabs).map(({ label, id }) => (
