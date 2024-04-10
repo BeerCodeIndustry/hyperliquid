@@ -224,8 +224,16 @@ export class SUPABASE_DB {
     return this.client.from('batches').delete().eq('id', batchId)
   }
 
-  public getLogs = async () => {
-    return this.client.from('logs').select<string, LogRow>('*')
+  public getLogs = async (start: string, end: string) => {
+    console.log(start, end)
+    return (
+      await this.client
+        .from('logs')
+        .select<string, LogRow>('*')
+        .gte('created_at', start)
+        .lte('created_at', end)
+        .order('created_at', { ascending: true })
+    ).data
   }
 
   public insertLogs = async (logs: string[]) => {

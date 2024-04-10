@@ -1,6 +1,18 @@
-import { Box, Typography } from '@mui/material'
+import {
+  AppBar,
+  Box,
+  Button,
+  Checkbox,
+  FormControlLabel,
+  Paper,
+  Typography,
+} from '@mui/material'
 import { blue, green, red, yellow } from '@mui/material/colors'
-import { useContext, useEffect, useRef, useState } from 'react'
+import { DateTimePicker, LocalizationProvider } from '@mui/x-date-pickers'
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
+import dayjs, { Dayjs } from 'dayjs'
+import 'dayjs/locale/ru'
+import { useContext, useEffect, useState } from 'react'
 
 import { LogsContext } from '../../logsContext'
 
@@ -12,11 +24,10 @@ const colors = {
 }
 
 export const Logs = () => {
-  const { logs } = useContext(LogsContext)
+  const { logs, refetch, filters, setFilters } = useContext(LogsContext)
 
-  const [showInfo] = useState(false)
+  const [isAutoRefresh, setIsAutoRefresh] = useState(false)
 
-  const lastLogRef = useRef<HTMLSpanElement>(null)
   const getLogColor = (log: string) => {
     if (log.includes('ERROR')) return colors.ERROR
     if (log.includes('WARN')) return colors.WARN
@@ -24,42 +35,97 @@ export const Logs = () => {
     if (log.includes('DEBUG')) return colors.DEBUG
   }
 
-  useEffect(() => {
-    lastLogRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [showInfo])
+  const handleRefreshClick = () => {
+    refetch()
+  }
 
-  const filteredLogs = logs.filter(
-    (log: string) => !(log.includes('DEBUG') && !showInfo),
-  )
+  useEffect(() => {
+    let interval: NodeJS.Timeout
+    if (isAutoRefresh) {
+      interval = setInterval(refetch, 5000)
+    }
+
+    return () => {
+      clearInterval(interval)
+    }
+  }, [isAutoRefresh])
+
+  const onChangeStart = (v: Dayjs | null) => {
+    setFilters({
+      ...filters,
+      start: v ?? dayjs().subtract(1, 'day'),
+    })
+  }
+
+  const onChangeEnd = (v: Dayjs | null) => {
+    setFilters({
+      ...filters,
+      end: v ?? dayjs(),
+    })
+  }
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-      {filteredLogs.map((info, index) => (
-        <Typography
-          color={getLogColor(info)}
-          ref={index === logs.length - 1 ? lastLogRef : null}
-        >
-          {info}
-        </Typography>
-      ))}
-
-      {/* <Box
+    <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale='ru'>
+      <Box
         sx={{
-          position: 'fixed',
-          top: 62,
-          right: 12,
           display: 'flex',
-          alignItems: 'center',
-          padding: '0 8px',
-          border: '1px solid black',
+          flexDirection: 'column',
+          gap: 1,
+          position: 'relative',
         }}
       >
-        <Typography>Show DEBUG logs</Typography>
-        <Checkbox
-          checked={showInfo}
-          onChange={e => setShowInfo(e.target.checked)}
-        />
-      </Box> */}
-    </Box>
+        <AppBar position='sticky' color='default' sx={{ padding: 2, mb: 2 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}
+          >
+            <Box sx={{ display: 'flex', gap: 3 }}>
+              <DateTimePicker
+                label='Start'
+                value={filters.start}
+                format='DD.MM.YYYY HH:mm'
+                onChange={onChangeStart}
+              />
+              <DateTimePicker
+                label='End'
+                value={filters.end}
+                format='DD.MM.YYYY HH:mm'
+                onChange={onChangeEnd}
+              />
+            </Box>
+
+            <Box>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={isAutoRefresh}
+                    onChange={e => setIsAutoRefresh(e.target.checked)}
+                  />
+                }
+                label='Auto refresh (5s)'
+              />
+
+              <Button
+                variant='contained'
+                sx={{ height: '42px' }}
+                onClick={handleRefreshClick}
+              >
+                Refresh
+              </Button>
+            </Box>
+          </Box>
+        </AppBar>
+        <Box sx={{ display: 'flex', flexDirection: 'column-reverse', gap: 1 }}>
+          {logs.map(info => (
+            <Paper sx={{ p: 1 }}>
+              <Typography color={getLogColor(info)}>{info}</Typography>
+            </Paper>
+          ))}
+        </Box>
+      </Box>
+    </LocalizationProvider>
   )
 }

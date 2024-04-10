@@ -65,7 +65,7 @@ export const GlobalContext = createContext<GlobalContextType>({
   setUnitInitTimings: async () => {},
 })
 
-const db = new SUPABASE_DB()
+export const db = new SUPABASE_DB()
 
 export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
   const [proxies, setProxies] = useState<Proxy[]>([])
@@ -76,7 +76,6 @@ export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
 
   const [loading, setLoading] = useState(false)
   const [authenticating, setAuthenticating] = useState(true)
-  const [insertingLogs, setInsertingLogs] = useState(false)
 
   const addAccount = useCallback((account: Account, proxy?: string) => {
     if (proxy) {
