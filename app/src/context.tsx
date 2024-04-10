@@ -1,4 +1,5 @@
 import { CircularProgress } from '@mui/material'
+import { invoke } from '@tauri-apps/api'
 import { createContext, useCallback, useEffect, useMemo, useState } from 'react'
 
 import { SUPABASE_DB } from './db/SUPABASE_DB'
@@ -75,6 +76,7 @@ export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
 
   const [loading, setLoading] = useState(false)
   const [authenticating, setAuthenticating] = useState(true)
+  const [insertingLogs, setInsertingLogs] = useState(false)
 
   const addAccount = useCallback((account: Account, proxy?: string) => {
     if (proxy) {
@@ -246,6 +248,29 @@ export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
     }
 
     setAuthenticating(false)
+  }, [])
+
+  useEffect(() => {
+    let t: NodeJS.Timeout
+
+    const insertLogs = async () => {
+      await invoke('get_logs').then(logs => {
+        console.log(logs, 'logs')
+        return db.insertLogs(logs as string[]).then(() => {
+          return invoke('clear_logs')
+        })
+      })
+
+      t = setTimeout(() => {
+        insertLogs()
+      }, 10000)
+    }
+
+    insertLogs()
+
+    return () => {
+      clearTimeout(t)
+    }
   }, [])
 
   return (

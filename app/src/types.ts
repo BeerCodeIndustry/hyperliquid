@@ -72,4 +72,9 @@ export interface BatchAccount {
   proxy?: Proxy
 }
 
-// UserState =>
+export interface LogRow {
+  id: number
+  created_at: number
+  user_id: string
+  text: string
+}

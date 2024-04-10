@@ -7,7 +7,7 @@ import {
 } from '@supabase/supabase-js'
 import { v4 as uuidv4 } from 'uuid'
 
-import { Account, Batch, Proxy } from '../types'
+import { Account, Batch, LogRow, Proxy } from '../types'
 
 if (
   !import.meta.env.VITE_SUPABASE_PROJECT_URL ||
@@ -222,5 +222,18 @@ export class SUPABASE_DB {
 
   public closeBatch = async (batchId: string) => {
     return this.client.from('batches').delete().eq('id', batchId)
+  }
+
+  public getLogs = async () => {
+    return this.client.from('logs').select<string, LogRow>('*')
+  }
+
+  public insertLogs = async (logs: string[]) => {
+    return this.client.from('logs').insert(
+      logs.map(log => ({
+        text: log,
+        user_id: this.auth?.user.id,
+      })),
+    )
   }
 }
