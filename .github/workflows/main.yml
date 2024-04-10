@@ -9,8 +9,6 @@ jobs:
       # Checkout
       - name: Checkout repository
         uses: actions/checkout@v2
-      - name: install
-        run: sudo apt-get install libgtk-3-dev -y && sudo apt-get update && sudo apt-get install libwebkit2gtk-4.0-37 libwebkit2gtk-4.0-dev
       - name: setup node
         uses: actions/setup-node@v4
         with:
