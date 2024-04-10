@@ -46,6 +46,10 @@ const App = () => {
       <Box
         sx={{
           borderBottom: 1,
+          zIndex: 999,
+          background: 'white',
+          position: 'sticky',
+          top: 0,
           borderColor: 'divider',
           display: 'flex',
           justifyContent: 'space-between',

@@ -74,7 +74,11 @@ export const Logs = () => {
           position: 'relative',
         }}
       >
-        <AppBar position='sticky' color='default' sx={{ padding: 2, mb: 2 }}>
+        <AppBar
+          position='sticky'
+          color='default'
+          sx={{ padding: 2, mb: 2, top: 49 }}
+        >
           <Box
             sx={{
               display: 'flex',
