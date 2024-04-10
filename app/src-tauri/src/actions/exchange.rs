@@ -73,6 +73,8 @@ pub async fn close_position(
         order_type: "FrontendMarket".to_string(),
     };
 
+    info!("Closing position {position:?} for {public_address}, unit: {asset}");
+
     let r = open_order(
         position_pair,
         exchange_client,
@@ -142,6 +144,11 @@ pub async fn open_position(
     public_address: String,
     is_buy: bool,
 ) -> Result<AssetPosition, String> {
+    info!(
+        "Opening position {position_pair:?} for {public_address}, unit: {}",
+        position_pair.asset
+    );
+
     let r = open_order(
         position_pair.clone(),
         exchange_client,
@@ -157,14 +164,19 @@ pub async fn open_position(
                 .await
                 .unwrap();
 
-            if position_pair.sz == f.total_sz.parse::<f64>().unwrap() {
-                info!(
-                    "Position opened for {public_address}, unit: {}, filled: {f:?}",
-                    position_pair.asset
-                );
+            if pos.position.szi.parse::<f64>().unwrap().abs() != position_pair.sz {
+                error!("Current opened position size and requested size are not equal for {public_address}, 
+                unit: {}, filled: {f:?}, current position: {pos:?}", position_pair.asset);
 
-                return Ok(pos);
-            } else {
+                close_position(&pos, exchange_client, info_client, public_address.clone()).await;
+
+                return Err(format!(
+                    "Current opened position size and requested size are not equal for {public_address}, 
+                    unit: {}, filled: {f:?}, current position: {pos:?}", position_pair.asset
+                ));
+            }
+
+            if position_pair.sz != f.total_sz.parse::<f64>().unwrap() {
                 error!(
                     "Position not fully opened for {public_address}, unit: {}, filled: {f:?}",
                     position_pair.asset
@@ -177,6 +189,13 @@ pub async fn open_position(
                     position_pair.asset
                 ));
             }
+
+            info!(
+                "Position opened for {public_address}, unit: {}, filled: {f:?}, current position: {pos:?}",
+                position_pair.asset
+            );
+
+            return Ok(pos);
         }
         Err(e) => {
             error!("{e} for {public_address} unit: {}", position_pair.asset);
