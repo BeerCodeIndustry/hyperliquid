@@ -25,10 +25,13 @@ jobs:
       - name: Build release
         working-directory: ./app
         run: yarn tauri build
-      # Upload to Drive
-      - name: Upload release folder to Google Drive
-        uses: Jodebu/upload-to-drive@master
+      # Google auth
+      - name: Google auth
+        uses: google-github-actions/auth@v2
         with:
-          target: ./app/src-tauri/target/release
-          credentials: ${{ secrets.GOOGLE_CREDS }}
-          folder: 1bWsw-mq1r9BHVESU89REvhuD5PFTRdUA
+          credentials_json: ${{ secrets.GOOGLE_CREDS }}
+      - name: Upload release folder
+        uses: google-github-actions/upload-cloud-storage@v2
+        with:
+          path: ./app/src-tauri/target/release
+          destination: hyperliquid
