@@ -94,9 +94,9 @@ export class SUPABASE_DB {
     if (!this.auth) {
       throw new Error('401')
     }
-    
+
     const id = uuidv4()
-    await this.client.from('proxies').insert<Proxy>({ ...proxy, id })
+    await this.client.from('proxies').insert<Proxy>({ ...proxy, id, user_id: this.auth.user.id })
     return this.client.from('accounts').insert({ ...account, proxy_id: id, user_id: this.auth.user.id })
   }
 
