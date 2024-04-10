@@ -27,10 +27,7 @@ jobs:
       - name: make zip
         run: "Compress-Archive -Path app/src-tauri/target/release/* -Destination release.zip"
       # Upload folder
-      - name: Upload to gdrive
-        uses: adityak74/google-drive-upload-git-action@main
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
         with:
-          credentials: ${{ secrets.GOOGLE_CREDS }}
-          filename: "release.zip"
-          folderId: 1bWsw-mq1r9BHVESU89REvhuD5PFTRdUA
-          overwrite: "true"
+          name: vendor.zip
