@@ -2,7 +2,6 @@ import {
   Account,
   AccountState,
   BatchAccount,
-  LogRow,
   Proxy,
   Unit,
 } from './types'
