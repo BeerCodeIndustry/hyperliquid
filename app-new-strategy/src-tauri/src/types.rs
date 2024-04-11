@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use ethers::signers::LocalWallet;
 use hyperliquid_rust_sdk::{AssetPosition, ExchangeClient, InfoClient};
 use reqwest::Client;
@@ -77,4 +79,5 @@ pub struct Unit {
     pub asset: String,
     pub sz: f64,
     pub leverage: u32,
+    pub sz_decimals: u32,
 }

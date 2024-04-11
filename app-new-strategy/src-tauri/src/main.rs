@@ -112,9 +112,10 @@ async fn main() {
     //         },
     //     ],
     //     Unit {
-    //         asset: "JUP".to_string(),
-    //         sz: 12.0,
-    //         leverage: 5,
+    //         asset: "CRV".to_string(),
+    //         sz: 200.8,
+    //         leverage: 1,
+    //         sz_decimals: 1,
     //     },
     // )
     // .await;
