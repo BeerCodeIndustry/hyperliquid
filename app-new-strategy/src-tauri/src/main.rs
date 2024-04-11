@@ -10,7 +10,7 @@ mod utils;
 
 use fern::colors::{Color, ColoredLevelConfig};
 use high_level::batch::{close_and_create_same_unit, close_unit, create_unit};
-use high_level::info::get_asset_price;
+use high_level::info::{get_asset_price, get_asset_sz_decimals};
 use high_level::logs::{clear_logs, get_logs};
 use high_level::unit::get_unit_user_states;
 use log::LevelFilter;
@@ -45,20 +45,20 @@ async fn main() {
     setup_logger().expect("Error setting up logger");
 
     // return create_unit(
-    //     BatchAccount {
-    //         account: AccountDTO {
-    //             name: "account_1".to_string(),
-    //             public_address: "0xD14cf2c66f50845222C80a3d4910CdF147701B73".to_string(),
-    //             api_private_key: "0x5d57f4591004358204c42a30c269d146f10d1b5c568129c406ff3ccfc5592b63".to_string()
-    //         },
-    //         proxy: Some(ProxyDTO {
-    //             name: "proxy_1".to_string(),
-    //             host: "89.40.223.107".to_string(),
-    //             port: "6143".to_string(),
-    //             username: "gljdskgd".to_string(),
-    //             password: "7qrarsn88jhk".to_string(),
-    //         })
+    // BatchAccount {
+    //     account: AccountDTO {
+    //         name: "account_1".to_string(),
+    //         public_address: "0xD14cf2c66f50845222C80a3d4910CdF147701B73".to_string(),
+    //         api_private_key: "0x5d57f4591004358204c42a30c269d146f10d1b5c568129c406ff3ccfc5592b63".to_string()
     //     },
+    //     proxy: Some(ProxyDTO {
+    //         name: "proxy_1".to_string(),
+    //         host: "89.40.223.107".to_string(),
+    //         port: "6143".to_string(),
+    //         username: "gljdskgd".to_string(),
+    //         password: "7qrarsn88jhk".to_string(),
+    //     })
+    // },
     //     BatchAccount {
     //         account: AccountDTO {
     //             name: "account_2".to_string(),
