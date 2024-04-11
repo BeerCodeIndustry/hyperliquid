@@ -11,13 +11,13 @@ export const stringifyProxy = (proxy: Proxy) => {
     return 'No proxy'
   }
 
-  return `${proxy.name}:${proxy.host}:${proxy.port}:${proxy.username}:${proxy.password}`
+  return `${proxy.host}:${proxy.port}:${proxy.username}:${proxy.password}`
 }
 
 export const parseProxy = (proxyString: string): Proxy => {
-  const [name, host, port, username, password] = proxyString.split(':')
+  const [host, port, username, password] = proxyString.split(':')
 
-  return { name, host, port, username, password }
+  return { host, port, username, password }
 }
 
 export const connectSocket = (cb: (socket: WebSocket | null) => void) => {

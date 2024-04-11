@@ -1,5 +1,4 @@
-import DeleteIcon from '@mui/icons-material/Delete'
-import { Box, Button, IconButton, Tooltip } from '@mui/material'
+import { Box, Button } from '@mui/material'
 import React, { useContext, useMemo, useState } from 'react'
 
 import { AddAccountModal } from '../../components/AddAccountModal'
@@ -20,7 +19,7 @@ const createRows = (
       account.name,
       <ChipWithCopy value={account.public_address} />,
       <ChipWithCopy value={account.api_private_key} />,
-      stringifyProxy(getAccountProxy(account)!),
+      <ChipWithCopy value={stringifyProxy(getAccountProxy(account)!)} />,
     ],
   }))
 }

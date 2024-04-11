@@ -1,8 +1,8 @@
-import DeleteIcon from '@mui/icons-material/Delete'
-import { Box, Button, IconButton, Tooltip } from '@mui/material'
+import { Box, Button } from '@mui/material'
 import { useContext, useMemo, useState } from 'react'
 
 import { AddProxyModal } from '../../components/AddProxyModal'
+import { ChipWithCopy } from '../../components/ChipWithCopy'
 import { Row, Table } from '../../components/Table'
 import { GlobalContext } from '../../context'
 import { HeadCell, Proxy as ProxyType } from '../../types'
@@ -11,32 +11,25 @@ const createRows = (proxies: ProxyType[]): Row[] => {
   return proxies.map(proxy => ({
     id: proxy.id!,
     data: [
-      proxy.name,
-      `${proxy.host}:${proxy.port}`,
-      proxy.username,
-      proxy.password,
+      <ChipWithCopy value={`${proxy.host}:${proxy.port}`} />,
+      <ChipWithCopy value={proxy.username} />,
+      <ChipWithCopy value={proxy.password} />,
     ],
   }))
 }
 
 const headCells: HeadCell[] = [
   {
-    id: 'name',
-    align: 'left',
-    disablePadding: true,
-    label: 'Name',
-  },
-  {
     id: 'ip_port',
-    align: 'center',
+    align: 'left',
     disablePadding: false,
-    label: 'Ip:Port',
+    label: 'Host:Port',
   },
   {
     id: 'login',
     align: 'center',
     disablePadding: false,
-    label: 'Login',
+    label: 'Username',
   },
   {
     id: 'password',
