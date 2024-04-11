@@ -159,6 +159,10 @@ export const Batch: React.FC<{
       {modalId === 'importUnitsModal' && (
         <ImportUnitsModal
           handleCreateUnits={handleCreateUnits}
+          account={getBatchAccount(
+            batchAccounts[0],
+            getAccountProxy(batchAccounts[0]),
+          )}
           open
           handleClose={() => setModalId(null)}
         />

@@ -1,7 +1,9 @@
 import LoadingButton from '@mui/lab/LoadingButton'
 import {
+  Alert,
   CircularProgress,
   FormControl,
+  FormHelperText,
   InputLabel,
   MenuItem,
   Modal,
@@ -92,9 +94,16 @@ export const CreateUnitModal: React.FC<{
 
   const [assetPrice, setAssetPrice] = useState(0)
   const [assetPriceLoading, setAssetPriceLoading] = useState(false)
+  const [decimals, setDecimals] = useState<number>()
 
   const onConfirm = () => {
-    if (form.asset && form.sz && form.leverage && form.timing)
+    if (
+      form.asset &&
+      form.sz &&
+      form.leverage &&
+      form.timing &&
+      decimals !== undefined
+    )
       handleCreateUnit({
         ...form,
         timing: form.timing * 60000,
@@ -108,11 +117,19 @@ export const CreateUnitModal: React.FC<{
     })
   }
 
+  const getDecimals = (asset: string): Promise<number> => {
+    return invoke<number>('get_asset_sz_decimals', {
+      batchAccount: account,
+      asset,
+    })
+  }
+
   const onChange = (
     key: 'asset' | 'sz' | 'leverage' | 'timing',
     v: string | number,
   ) => {
     if (key === 'asset' && typeof v === 'string') {
+      setDecimals(undefined)
       setAssetPriceLoading(true)
       getAssetPrice(v)
         .then((price: string) => {
@@ -121,8 +138,34 @@ export const CreateUnitModal: React.FC<{
         .finally(() => {
           setAssetPriceLoading(false)
         })
+
+      getDecimals(v)
+        .then((res: number) => {
+          setDecimals(res)
+        })
+        .catch(() => {
+          alert(`Error when getting size decimals for asset: ${v}`)
+          setDecimals(undefined)
+        })
+    }
+
+    if (key === 'sz' && typeof v === 'number') {
+      console.log(Number(v.toFixed(decimals).replace(',', '.')))
+      setForm(prev => ({
+        ...prev,
+        sz: Number(v.toFixed(decimals)),
+      }))
+      return
     }
     setForm(prev => ({ ...prev, [key]: v }))
+  }
+
+  const getStep = (decimals?: number) => {
+    if (decimals === 0 || decimals === undefined) {
+      return '1'
+    }
+
+    return `.${new Array(decimals - 1).fill('0').join('')}1`
   }
 
   return (
@@ -168,6 +211,11 @@ export const CreateUnitModal: React.FC<{
               size='small'
               label='Size'
               variant='outlined'
+              inputProps={{
+                step: getStep(decimals),
+              }}
+              value={form.sz || ''}
+              disabled={decimals === undefined}
               type='number'
               onChange={e => onChange('sz', Number(e.target.value))}
             />
@@ -179,6 +227,7 @@ export const CreateUnitModal: React.FC<{
               label='Leverage'
               variant='outlined'
               type='number'
+              value={form.leverage}
               onChange={e => onChange('leverage', Number(e.target.value))}
             />
           </Box>
@@ -196,11 +245,31 @@ export const CreateUnitModal: React.FC<{
         </Box>
         <Box>
           <Typography>
-            Summary:{' '}
+            Summary:
             {assetPriceLoading ? (
               <CircularProgress size={12} />
             ) : (
-              <strong>{(assetPrice * form.sz).toFixed(2)} $</strong>
+              <strong>{' ' + (assetPrice * form.sz).toFixed(2)} $</strong>
+            )}
+          </Typography>
+          <Typography sx={{ mt: 1 }}>
+            Summary with leverage:
+            {assetPriceLoading ? (
+              <CircularProgress size={12} />
+            ) : (
+              <>
+                <strong>
+                  {' ' + (assetPrice * form.sz * form.leverage).toFixed(2)} $
+                </strong>
+                {form.sz * form.leverage * 0.1 < 10 && (
+                  <Alert variant='standard' color='warning' sx={{ mt: 1 }}>
+                    <Typography fontSize={14}>
+                      [Size] * [Leverage] * 0.1 should be greater or equal than
+                      10
+                    </Typography>
+                  </Alert>
+                )}
+              </>
             )}
           </Typography>
         </Box>
@@ -215,7 +284,12 @@ export const CreateUnitModal: React.FC<{
             variant='contained'
             color='success'
             onClick={onConfirm}
-            disabled={!form.asset || !form.sz || !form.leverage}
+            disabled={
+              !form.asset ||
+              !form.sz ||
+              !form.leverage ||
+              form.sz * form.leverage * 0.1 < 10
+            }
           >
             Confirm
           </LoadingButton>

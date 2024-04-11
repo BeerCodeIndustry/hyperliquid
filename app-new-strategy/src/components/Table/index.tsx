@@ -1,4 +1,5 @@
 import {
+  Button,
   Checkbox,
   CircularProgress,
   Table as MuiTable,
@@ -97,6 +98,14 @@ export const Table: React.FC<Props> = ({
     <Paper sx={{ width: '100%', mb: 2 }}>
       <EnhancedTableToolbar numSelected={selected.length} toolBar={toolbar}>
         {ActionBar && <ActionBar selected={selected} />}
+        <Button
+          variant='outlined'
+          color='error'
+          sx={{ ml: 6, height: '38px' }}
+          onClick={() => setSelected([])}
+        >
+          Cancel
+        </Button>
       </EnhancedTableToolbar>
       <TableContainer>
         <MuiTable

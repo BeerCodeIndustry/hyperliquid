@@ -3,6 +3,7 @@ import { Box, Button, IconButton, Tooltip } from '@mui/material'
 import React, { useContext, useMemo, useState } from 'react'
 
 import { AddAccountModal } from '../../components/AddAccountModal'
+import { ChipWithCopy } from '../../components/ChipWithCopy'
 import { SetProxyModal } from '../../components/SetProxyModal'
 import { Row, Table } from '../../components/Table'
 import { GlobalContext } from '../../context'
@@ -17,8 +18,8 @@ const createRows = (
     id: account.id!,
     data: [
       account.name,
-      account.public_address,
-      account.api_private_key,
+      <ChipWithCopy value={account.public_address} />,
+      <ChipWithCopy value={account.api_private_key} />,
       stringifyProxy(getAccountProxy(account)!),
     ],
   }))
@@ -81,11 +82,13 @@ export const Accounts = () => {
           >
             Set Proxy
           </Button>
-          <Tooltip title='Delete' onClick={() => removeAccounts(selected)}>
-            <IconButton>
-              <DeleteIcon />
-            </IconButton>
-          </Tooltip>
+          <Button
+            variant='contained'
+            color='error'
+            onClick={() => removeAccounts(selected)}
+          >
+            Delete selected
+          </Button>
         </Box>
       </>
     )

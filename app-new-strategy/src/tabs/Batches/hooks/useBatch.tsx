@@ -92,6 +92,23 @@ export const useBatch = ({
     [unitTimings],
   )
 
+  const getDecimals = useCallback((asset: string): Promise<number> => {
+    return invoke<number>('get_asset_sz_decimals', {
+      batchAccount: getBatchAccount(
+        batchAccounts[0],
+        getAccountProxy(batchAccounts[0]),
+      ),
+      asset,
+    }).catch(() => {
+      toast(
+        `${asset}: Error while getting sz_decimals. Set 0 as sz_decimals 🤯`,
+        { type: 'error' },
+      )
+
+      return 0
+    })
+  }, [])
+
   const getUnitTimingReacreate = useCallback(
     (asset: string): number => {
       return unitTimings[asset as keyof typeof unitTimings]?.recreateTiming
@@ -103,22 +120,8 @@ export const useBatch = ({
     [AccountState, AccountState]
   > => {
     return invoke<[AccountState, AccountState]>('get_unit_user_states', {
-      account1: getBatchAccount(
-        //todo
-        batchAccounts[0],
-        getAccountProxy(batchAccounts[0]),
-      ),
-      account2: getBatchAccount(
-        batchAccounts[1],
-        getAccountProxy(batchAccounts[1]),
-      ),
-      account3: getBatchAccount(
-        batchAccounts[2],
-        getAccountProxy(batchAccounts[2]),
-      ),
-      account4: getBatchAccount(
-        batchAccounts[3],
-        getAccountProxy(batchAccounts[3]),
+      accounts: batchAccounts.map(acc =>
+        getBatchAccount(acc, getAccountProxy(acc)),
       ),
     }).then((res: AccountState[]) => {
       setAccountState(
@@ -227,28 +230,17 @@ export const useBatch = ({
     async ({ asset, sz, leverage, timing }: CreateUnitPayload) => {
       setCreatingUnits(prev => [...prev, asset])
 
+      const sz_decimals = await getDecimals(asset)
+
       return invoke('create_unit', {
-        account1: getBatchAccount(
-          //todo
-          batchAccounts[0],
-          getAccountProxy(batchAccounts[0]),
-        ),
-        account2: getBatchAccount(
-          batchAccounts[1],
-          getAccountProxy(batchAccounts[1]),
-        ),
-        account3: getBatchAccount(
-          batchAccounts[2],
-          getAccountProxy(batchAccounts[2]),
-        ),
-        account4: getBatchAccount(
-          batchAccounts[3],
-          getAccountProxy(batchAccounts[3]),
+        accounts: batchAccounts.map(acc =>
+          getBatchAccount(acc, getAccountProxy(acc)),
         ),
         unit: {
           asset,
           sz,
           leverage,
+          sz_decimals,
         },
       }).finally(async () => {
         await setTimings(asset, timing, Date.now())
@@ -256,7 +248,7 @@ export const useBatch = ({
         setCreatingUnits(prev => prev.filter(coin => coin !== asset))
       })
     },
-    [batchAccounts, fetchUserStates, setTimings],
+    [batchAccounts, fetchUserStates, setTimings, getDecimals],
   )
 
   const closeUnit = useCallback(
@@ -264,22 +256,8 @@ export const useBatch = ({
       setClosingUnits(prev => [...prev, unit.base_unit_info.asset])
 
       return invoke('close_unit', {
-        account1: getBatchAccount(
-          //todo
-          batchAccounts[0],
-          getAccountProxy(batchAccounts[0]),
-        ),
-        account2: getBatchAccount(
-          batchAccounts[1],
-          getAccountProxy(batchAccounts[1]),
-        ),
-        account3: getBatchAccount(
-          batchAccounts[2],
-          getAccountProxy(batchAccounts[2]),
-        ),
-        account4: getBatchAccount(
-          batchAccounts[3],
-          getAccountProxy(batchAccounts[3]),
+        accounts: batchAccounts.map(acc =>
+          getBatchAccount(acc, getAccountProxy(acc)),
         ),
         asset: unit.base_unit_info.asset,
       }).finally(async () => {
@@ -293,31 +271,20 @@ export const useBatch = ({
   )
 
   const recreateUnit = useCallback(
-    ({ asset, sz, leverage }: Omit<CreateUnitPayload, 'timing'>) => {
+    async ({ asset, sz, leverage }: Omit<CreateUnitPayload, 'timing'>) => {
       setRecreatingUnits(prev => [...prev, asset])
 
+      const sz_decimals = await getDecimals(asset)
+
       const promise = invoke('close_and_create_same_unit', {
-        account1: getBatchAccount(
-          //todo
-          batchAccounts[0],
-          getAccountProxy(batchAccounts[0]),
-        ),
-        account2: getBatchAccount(
-          batchAccounts[1],
-          getAccountProxy(batchAccounts[1]),
-        ),
-        account3: getBatchAccount(
-          batchAccounts[2],
-          getAccountProxy(batchAccounts[2]),
-        ),
-        account4: getBatchAccount(
-          batchAccounts[3],
-          getAccountProxy(batchAccounts[3]),
+        accounts: batchAccounts.map(acc =>
+          getBatchAccount(acc, getAccountProxy(acc)),
         ),
         unit: {
           asset,
           sz,
           leverage,
+          sz_decimals,
         },
       }).finally(async () => {
         const unitRecreateTiming = getUnitTimingReacreate(asset)

@@ -53,13 +53,23 @@ export const Proxy = () => {
 
   const ActionBar: React.FC<{ selected: string[] }> = ({ selected }) => {
     return (
-      <div>
-        <Tooltip title='Delete' onClick={() => removeProxies(selected)}>
-          <IconButton>
-            <DeleteIcon />
-          </IconButton>
-        </Tooltip>
-      </div>
+      <Box
+        sx={{
+          display: 'flex',
+          gap: 1,
+          alignItems: 'center',
+          width: '100%',
+          justifyContent: 'flex-end',
+        }}
+      >
+        <Button
+          variant='contained'
+          color='error'
+          onClick={() => removeProxies(selected)}
+        >
+          Delete selected
+        </Button>
+      </Box>
     )
   }
 

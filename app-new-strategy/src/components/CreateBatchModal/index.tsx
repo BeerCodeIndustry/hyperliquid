@@ -2,6 +2,7 @@ import {
   Button,
   Chip,
   FormControl,
+  FormHelperText,
   InputLabel,
   MenuItem,
   Modal,
@@ -10,6 +11,7 @@ import {
   Select,
   SelectChangeEvent,
   TextField,
+  Typography,
 } from '@mui/material'
 import { useContext, useMemo, useState } from 'react'
 
@@ -47,7 +49,10 @@ export const CreateBatchModal: React.FC<{
   }, [accounts, batches])
 
   const onConfirm = () => {
-    if (batchAccounts.accounts.length === 4) {
+    if (
+      batchAccounts.accounts.length === 4 ||
+      batchAccounts.accounts.length === 6
+    ) {
       createBatch(batchAccounts)
       handleClose()
     }
@@ -90,6 +95,7 @@ export const CreateBatchModal: React.FC<{
                 multiple
                 value={batchAccounts.accounts}
                 onChange={onAccountsChange}
+                maxRows={6}
                 input={
                   <OutlinedInput id='select-multiple-chip' label='Accounts' />
                 }
@@ -107,7 +113,14 @@ export const CreateBatchModal: React.FC<{
                     {account.public_address}
                   </MenuItem>
                 ))}
+
+                {!filteredAccounts.length && (
+                  <Typography sx={{ p: 1 }}>No available accounts</Typography>
+                )}
               </Select>
+              <FormHelperText variant='standard'>
+                Supported 4 or 6 accounts in batch
+              </FormHelperText>
             </FormControl>
             <FormControl sx={{ m: 1, minWidth: 120 }}>
               <TextField
@@ -117,6 +130,10 @@ export const CreateBatchModal: React.FC<{
                 variant='outlined'
                 onChange={e => onChange('timing', Number(e.target.value))}
               />
+              <FormHelperText variant='standard'>
+                Not required, default 60 mins (you can change this value for
+                every single unit)
+              </FormHelperText>
             </FormControl>
           </Box>
 
@@ -134,7 +151,7 @@ export const CreateBatchModal: React.FC<{
               variant='contained'
               color='success'
               onClick={onConfirm}
-              disabled={batchAccounts.accounts.length !== 4}
+              disabled={![4, 6].includes(batchAccounts.accounts.length)}
             >
               Confirm
             </Button>
