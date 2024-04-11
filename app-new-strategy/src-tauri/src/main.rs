@@ -117,7 +117,8 @@ async fn main() {
             get_logs,
             get_unit_user_states,
             get_asset_price,
-            clear_logs
+            clear_logs,
+            get_asset_sz_decimals
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
