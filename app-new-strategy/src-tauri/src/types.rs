@@ -56,7 +56,6 @@ pub struct AccountDTO {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct ProxyDTO {
-    pub name: String,
     pub host: String,
     pub port: String,
     pub username: String,

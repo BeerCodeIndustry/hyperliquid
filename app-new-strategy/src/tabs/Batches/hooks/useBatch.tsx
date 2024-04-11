@@ -233,7 +233,7 @@ export const useBatch = ({
       const sz_decimals = await getDecimals(asset)
 
       return invoke('create_unit', {
-        accounts: batchAccounts.map(acc =>
+        batchAccounts: batchAccounts.map(acc =>
           getBatchAccount(acc, getAccountProxy(acc)),
         ),
         unit: {
@@ -256,7 +256,7 @@ export const useBatch = ({
       setClosingUnits(prev => [...prev, unit.base_unit_info.asset])
 
       return invoke('close_unit', {
-        accounts: batchAccounts.map(acc =>
+        batchAccounts: batchAccounts.map(acc =>
           getBatchAccount(acc, getAccountProxy(acc)),
         ),
         asset: unit.base_unit_info.asset,
@@ -277,7 +277,7 @@ export const useBatch = ({
       const sz_decimals = await getDecimals(asset)
 
       const promise = invoke('close_and_create_same_unit', {
-        accounts: batchAccounts.map(acc =>
+        batchAccounts: batchAccounts.map(acc =>
           getBatchAccount(acc, getAccountProxy(acc)),
         ),
         unit: {

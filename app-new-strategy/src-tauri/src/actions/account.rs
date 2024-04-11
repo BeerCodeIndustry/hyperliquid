@@ -4,10 +4,10 @@ use reqwest::{Client, Proxy};
 
 use crate::types::{Account, BatchAccount, Handlers, ProxyDTO};
 use crate::utils::str::private_key_slice;
+use log::info;
 
 pub fn get_account(account: BatchAccount) -> Account {
     let default_proxy = ProxyDTO {
-        name: "default_proxy".to_string(),
         host: "89.40.223.107".to_string(),
         port: "6143".to_string(),
         username: "gljdskgd".to_string(),
@@ -53,6 +53,7 @@ pub async fn get_exchange_client(account: &Account) -> ExchangeClient {
 }
 
 pub async fn get_batch_account_handlers(batch_account: BatchAccount) -> Handlers {
+    info!("Getting batch account handlers");
     let account = get_account(batch_account);
 
     let (info_client, exchange_client) =

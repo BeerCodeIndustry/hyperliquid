@@ -5,9 +5,11 @@ use crate::services::unit::{
     close_and_create_unit_service, close_unit_service, create_unit_service,
 };
 use crate::types::{BatchAccount, Unit};
+use log::info;
 
 #[tauri::command]
 pub async fn create_unit(batch_accounts: Vec<BatchAccount>, unit: Unit) -> Result<(), String> {
+    info!("Creating unit");
     let handlers = join_all(batch_accounts.into_iter().map(get_batch_account_handlers)).await;
 
     create_unit_service(&handlers, unit).await
