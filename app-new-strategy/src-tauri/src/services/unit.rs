@@ -5,12 +5,14 @@ use log::{error, info, warn};
 use crate::actions::exchange::{close_position, open_position};
 use crate::actions::info::{can_open_position, get_position};
 use crate::types::{DefaultPair, Handlers, Unit};
+use crate::utils::rand::{get_rand_is_buy_fat, get_rand_k_4, get_rand_k_6};
 
 pub async fn create_unit_service(handlers: &Vec<Handlers>, unit: Unit) -> Result<(), String> {
     let Unit {
         asset,
         sz,
         leverage,
+        sz_decimals,
     } = unit;
 
     warn!(
@@ -73,42 +75,32 @@ pub async fn create_unit_service(handlers: &Vec<Handlers>, unit: Unit) -> Result
         ));
     }
 
-    // let rand = []; // 10 - 80 n = 24 100 - 24 = 76 - 10 = 66 10 - 66
-
-    // 10 - 80 24
-    // 10 - 66 50
-    // 10 - 16
-
-    let fat_account_idx = 0;
-    let rand_is_buy_fat = true;
+    let rand_is_buy_fat = get_rand_is_buy_fat();
+    let rand_ks = if handlers.len() == 4 {
+        get_rand_k_4()
+    } else {
+        get_rand_k_6()
+    };
 
     let poss = join_all(handlers.iter().enumerate().map(|(i, h)| {
-        if i == fat_account_idx {
-            return open_position(
-                &h.exchange_client,
-                &h.info_client,
-                DefaultPair {
-                    asset: asset.to_string(),
-                    sz,
-                    reduce_only: false,
-                    order_type: "FrontendMarket".to_string(),
-                },
-                h.public_address.clone(),
-                rand_is_buy_fat,
-            );
-        }
+        let k = rand_ks[i] as f64;
+        let is_buy = if k == 100.0 {
+            rand_is_buy_fat
+        } else {
+            !rand_is_buy_fat
+        };
 
         return open_position(
             &h.exchange_client,
             &h.info_client,
             DefaultPair {
                 asset: asset.to_string(),
-                sz: sz / 3.0,
+                sz: sz * k / 100.0,
                 reduce_only: false,
                 order_type: "FrontendMarket".to_string(),
             },
             h.public_address.clone(),
-            !rand_is_buy_fat,
+            is_buy,
         );
     }))
     .await;
@@ -194,6 +186,7 @@ pub async fn close_and_create_unit_service(
         asset,
         sz,
         leverage,
+        sz_decimals,
     } = unit;
 
     warn!(
@@ -223,6 +216,7 @@ pub async fn close_and_create_unit_service(
                     asset,
                     sz,
                     leverage,
+                    sz_decimals,
                 },
             )
             .await

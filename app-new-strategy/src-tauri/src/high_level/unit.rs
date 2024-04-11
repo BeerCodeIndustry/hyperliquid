@@ -1,39 +1,26 @@
+use futures::future::{join_all, FutureExt};
+
 use crate::actions::account::{get_account, get_info_client};
 use crate::actions::info::get_user_state;
 use crate::dto_types::user_state::UserState;
-use crate::types::BatchAccount;
+use crate::types::{Account, BatchAccount};
 use crate::utils::convert_types::convert_user_state;
 
 #[tauri::command]
-pub async fn get_unit_user_states(
-    account1: BatchAccount,
-    account2: BatchAccount,
-    account3: BatchAccount,
-    account4: BatchAccount,
-) -> Result<[UserState; 4], String> {
-    let account_1 = get_account(account1);
-    let account_2 = get_account(account2);
-    let account_3 = get_account(account3);
-    let account_4 = get_account(account4);
+pub async fn get_unit_user_states(accounts: Vec<BatchAccount>) -> Result<Vec<UserState>, String> {
+    let accounts: Vec<Account> = accounts.iter().map(|a| get_account(a.clone())).collect();
 
-    let (info_client_1, info_client_2, info_client_3, info_client_4) = tokio::join!(
-        get_info_client(&account_1),
-        get_info_client(&account_2),
-        get_info_client(&account_3),
-        get_info_client(&account_4)
-    );
+    let info_clients = join_all(
+        accounts
+            .iter()
+            .map(|a| get_info_client(a).map(move |r| (r, a))),
+    )
+    .await;
 
-    let (user_state_1, user_state_2, user_state_3, user_state_4) = tokio::join!(
-        get_user_state(&info_client_1, &account_1.public_address),
-        get_user_state(&info_client_2, &account_2.public_address),
-        get_user_state(&info_client_3, &account_4.public_address),
-        get_user_state(&info_client_3, &account_4.public_address),
-    );
+    let user_states = join_all(info_clients.iter().map(|(info_client, account)| {
+        get_user_state(info_client, &account.public_address).map(|r| convert_user_state(r))
+    }))
+    .await;
 
-    Ok([
-        convert_user_state(user_state_1),
-        convert_user_state(user_state_2),
-        convert_user_state(user_state_3),
-        convert_user_state(user_state_4),
-    ])
+    Ok(user_states)
 }

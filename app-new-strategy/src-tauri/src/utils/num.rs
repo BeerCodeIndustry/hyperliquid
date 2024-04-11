@@ -1,5 +1,3 @@
-use itertools::Itertools;
-
 use rust_decimal::prelude::*;
 
 use log::info;
