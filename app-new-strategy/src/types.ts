@@ -9,7 +9,6 @@ export interface Account {
 
 export interface Proxy {
   id?: string
-  name: string
   host: string
   port: string
   username: string
