@@ -45,10 +45,8 @@ export const CreateBatchModal: React.FC<{
 
     return accounts.filter(a => !allBatches.includes(a.id!))
   }, [accounts, batches])
-  console.log(accounts, filteredAccounts)
 
   const onConfirm = () => {
-    console.log(batchAccounts)
     if (batchAccounts.accounts.length === 4) {
       createBatch(batchAccounts)
       handleClose()
@@ -64,7 +62,6 @@ export const CreateBatchModal: React.FC<{
       ...batchAccounts,
       accounts: Array.from(v.target.value),
     })
-    console.log(v)
   }
 
   return (

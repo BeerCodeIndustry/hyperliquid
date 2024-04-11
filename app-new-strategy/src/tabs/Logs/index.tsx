@@ -13,6 +13,7 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
 import dayjs, { Dayjs } from 'dayjs'
 import 'dayjs/locale/ru'
 import { useContext, useEffect, useState } from 'react'
+import { v4 as uuidv4 } from 'uuid'
 
 import { LogsContext } from '../../logsContext'
 
@@ -124,7 +125,7 @@ export const Logs = () => {
         </AppBar>
         <Box sx={{ display: 'flex', flexDirection: 'column-reverse', gap: 1 }}>
           {logs.map(info => (
-            <Paper sx={{ p: 1 }}>
+            <Paper sx={{ p: 1 }} key={uuidv4()}>
               <Typography color={getLogColor(info)}>{info}</Typography>
             </Paper>
           ))}
