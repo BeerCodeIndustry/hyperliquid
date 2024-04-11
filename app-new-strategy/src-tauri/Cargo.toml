@@ -27,6 +27,7 @@ rust_decimal = "1.35.0"
 async-recursion = "1.1.0"
 fern = { version = "0.6.2", features = ["colored"] }
 chrono = "0.4.37"
+futures = "0.3.30"
 
 
 [features]

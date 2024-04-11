@@ -1,16 +1,12 @@
+use futures::future::{self, join_all, FutureExt};
+use itertools::Itertools;
 use log::{error, info, warn};
 
 use crate::actions::exchange::{close_position, open_position};
 use crate::actions::info::{can_open_position, get_position};
 use crate::types::{DefaultPair, Handlers, Unit};
 
-pub async fn create_unit_service(
-    handlers_1: &Handlers,
-    handlers_2: &Handlers,
-    handlers_3: &Handlers,
-    handlers_4: &Handlers,
-    unit: Unit,
-) -> Result<(), String> {
+pub async fn create_unit_service(handlers: &Vec<Handlers>, unit: Unit) -> Result<(), String> {
     let Unit {
         asset,
         sz,
@@ -18,108 +14,62 @@ pub async fn create_unit_service(
     } = unit;
 
     warn!(
-        "Creating unit for {} & {} & {} & {}, unit: {}",
-        handlers_1.public_address,
-        handlers_2.public_address,
-        handlers_3.public_address,
-        handlers_4.public_address,
+        "Creating unit for {}, unit: {}",
+        handlers
+            .iter()
+            .map(|h| h.public_address.clone())
+            .join(" & "),
         asset
     );
 
     let sz = sz * leverage as f64;
-    let Handlers {
-        info_client: info_client_1,
-        exchange_client: exchange_client_1,
-        public_address: public_address_1,
-    } = handlers_1;
 
-    let Handlers {
-        info_client: info_client_2,
-        exchange_client: exchange_client_2,
-        public_address: public_address_2,
-    } = handlers_2;
+    let cos = join_all(handlers.iter().map(|h| {
+        can_open_position(&h.info_client, &h.public_address, &asset, sz, leverage)
+            .map(move |r| (r, h))
+    }))
+    .await;
 
-    let Handlers {
-        info_client: info_client_3,
-        exchange_client: exchange_client_3,
-        public_address: public_address_3,
-    } = handlers_3;
-
-    let Handlers {
-        info_client: info_client_4,
-        exchange_client: exchange_client_4,
-        public_address: public_address_4,
-    } = handlers_4;
-
-    let (can_open_1, can_open_2, can_open_3, can_open_4) = tokio::join!(
-        can_open_position(&info_client_1, &public_address_1, &asset, sz, leverage),
-        can_open_position(&info_client_2, &public_address_2, &asset, sz, leverage),
-        can_open_position(&info_client_3, &public_address_3, &asset, sz, leverage),
-        can_open_position(&info_client_4, &public_address_4, &asset, sz, leverage),
-    );
-
-    if !can_open_1 {
-        error!("Cannot open position for {public_address_1}, not enough balance, unit: {asset}");
+    if let Some((_, h)) = cos.iter().find(|(b, _)| !b) {
+        error!(
+            "Cannot open position for {}, not enough balance, unit: {asset}",
+            h.public_address
+        );
 
         return Err(format!(
-            "Cannot open position for {public_address_1}, not enough balance, unit: {asset}"
+            "Cannot open position for {}, not enough balance, unit: {asset}",
+            h.public_address
         ));
     }
 
-    if !can_open_2 {
-        error!("Cannot open position for {public_address_1}, not enough balance, unit: {asset}");
+    let _ = join_all(handlers.iter().map(|h| {
+        h.exchange_client
+            .update_leverage(leverage, &asset, false, None)
+    }))
+    .await;
+
+    let bps = join_all(
+        handlers
+            .iter()
+            .map(|h| get_position(&h.info_client, &h.public_address, &asset)),
+    )
+    .await;
+
+    if bps.iter().any(|bp| bp.is_some()) {
+        error!(
+            "Unit already exists for {}, unit: {asset}",
+            handlers
+                .iter()
+                .map(|h| h.public_address.clone())
+                .join(" & ")
+        );
 
         return Err(format!(
-            "Cannot open position for {public_address_1}, not enough balance, unit: {asset}"
-        ));
-    }
-
-    if !can_open_3 {
-        error!("Cannot open position for {public_address_1}, not enough balance, unit: {asset}");
-
-        return Err(format!(
-            "Cannot open position for {public_address_1}, not enough balance, unit: {asset}"
-        ));
-    }
-
-    if !can_open_4 {
-        error!("Cannot open position for {public_address_1}, not enough balance, unit: {asset}");
-
-        return Err(format!(
-            "Cannot open position for {public_address_1}, not enough balance, unit: {asset}"
-        ));
-    }
-
-    let (_, _, _, _) = tokio::join!(
-        exchange_client_1.update_leverage(leverage, &asset, false, None),
-        exchange_client_2.update_leverage(leverage, &asset, false, None),
-        exchange_client_3.update_leverage(leverage, &asset, false, None),
-        exchange_client_4.update_leverage(leverage, &asset, false, None),
-    );
-
-    let position_pair = DefaultPair {
-        asset: asset.to_string(),
-        sz,
-        reduce_only: false,
-        order_type: "FrontendMarket".to_string(),
-    };
-
-    let (before_pos_1, before_pos_2, before_pos_3, before_pos_4) = tokio::join!(
-        get_position(&info_client_1, &public_address_1, &asset),
-        get_position(&info_client_2, &public_address_2, &asset),
-        get_position(&info_client_3, &public_address_3, &asset),
-        get_position(&info_client_4, &public_address_4, &asset),
-    );
-
-    if before_pos_1.is_some()
-        || before_pos_2.is_some()
-        || before_pos_3.is_some()
-        || before_pos_4.is_some()
-    {
-        error!("Unit already exists for {public_address_1}, {public_address_2}, unit: {asset}");
-
-        return Err(format!(
-            "Unit already exists for {public_address_1}, {public_address_2}, unit: {asset}"
+            "Unit already exists for {}, unit: {asset}",
+            handlers
+                .iter()
+                .map(|h| h.public_address.clone())
+                .join(" & ")
         ));
     }
 
@@ -129,179 +79,107 @@ pub async fn create_unit_service(
     // 10 - 66 50
     // 10 - 16
 
-    let (pos_1, pos_2, pos_3, pos_4) = tokio::join!(
-        open_position(
-            &exchange_client_1,
-            &info_client_1,
-            DefaultPair {
-                asset: asset.to_string(),
-                sz: sz,
-                reduce_only: false,
-                order_type: "FrontendMarket".to_string(),
-            },
-            public_address_1.clone(),
-            true,
-        ),
-        open_position(
-            &exchange_client_2,
-            &info_client_2,
-            DefaultPair {
-                asset: asset.to_string(),
-                sz: sz * 0.25,
-                reduce_only: false,
-                order_type: "FrontendMarket".to_string(),
-            },
-            public_address_2.clone(),
-            false,
-        ),
-        open_position(
-            &exchange_client_3,
-            &info_client_3,
-            DefaultPair {
-                asset: asset.to_string(),
-                sz: sz * 0.35,
-                reduce_only: false,
-                order_type: "FrontendMarket".to_string(),
-            },
-            public_address_3.clone(),
-            false,
-        ),
-        open_position(
-            &exchange_client_4,
-            &info_client_4,
-            DefaultPair {
-                asset: asset.to_string(),
-                sz: sz * 0.4,
-                reduce_only: false,
-                order_type: "FrontendMarket".to_string(),
-            },
-            public_address_4.clone(),
-            false,
-        )
-    );
+    let fat_account_idx = 0;
+    let rand_is_buy_fat = true;
 
-    if pos_1.is_err() || pos_2.is_err() || pos_3.is_err() || pos_4.is_err() {
-        error!("Error opening position for {public_address_1} & {public_address_2} & {public_address_3} & {public_address_4}, unit: {asset}");
+    let poss = join_all(handlers.iter().enumerate().map(|(i, h)| {
+        if i == fat_account_idx {
+            return open_position(
+                &h.exchange_client,
+                &h.info_client,
+                DefaultPair {
+                    asset: asset.to_string(),
+                    sz,
+                    reduce_only: false,
+                    order_type: "FrontendMarket".to_string(),
+                },
+                h.public_address.clone(),
+                rand_is_buy_fat,
+            );
+        }
 
-        // TODO: let _ = close_unit_service(&handlers_1, &handlers_2, asset.clone()).await;
+        return open_position(
+            &h.exchange_client,
+            &h.info_client,
+            DefaultPair {
+                asset: asset.to_string(),
+                sz: sz / 3.0,
+                reduce_only: false,
+                order_type: "FrontendMarket".to_string(),
+            },
+            h.public_address.clone(),
+            !rand_is_buy_fat,
+        );
+    }))
+    .await;
+
+    if poss.iter().any(|pos| pos.is_err()) {
+        error!(
+            "Error opening positions for {}, unit: {asset}",
+            handlers
+                .iter()
+                .map(|h| h.public_address.clone())
+                .join(" & ")
+        );
+
+        let _ = close_unit_service(&handlers, asset.clone()).await;
 
         return Err(format!(
-            "Error opening position for {public_address_1} & {public_address_2} & {public_address_3} & {public_address_4}, unit: {asset}"
+            "Error opening positions for {}, unit: {asset}",
+            handlers
+                .iter()
+                .map(|h| h.public_address.clone())
+                .join(" & ")
         ));
     }
 
     Ok(())
 }
 
-pub async fn close_unit_service(
-    handlers_1: &Handlers,
-    handlers_2: &Handlers,
-    handlers_3: &Handlers,
-    handlers_4: &Handlers,
-    asset: String,
-) -> Result<(), String> {
+pub async fn close_unit_service(handlers: &Vec<Handlers>, asset: String) -> Result<(), String> {
     warn!(
-        "Closing unit for {} & {} & {} & {}, unit: {}",
-        handlers_1.public_address,
-        handlers_2.public_address,
-        handlers_3.public_address,
-        handlers_4.public_address,
-        asset
+        "Closing unit for {}, unit: {asset}",
+        handlers
+            .iter()
+            .map(|h| h.public_address.clone())
+            .join(" & "),
     );
 
-    let Handlers {
-        info_client: info_client_1,
-        exchange_client: exchange_client_1,
-        public_address: public_address_1,
-    } = handlers_1;
+    let poss = join_all(handlers.iter().enumerate().map(|(_, h)| {
+        get_position(&h.info_client, &h.public_address, &asset).map(move |r| (r, h))
+    }))
+    .await;
 
-    let Handlers {
-        info_client: info_client_2,
-        exchange_client: exchange_client_2,
-        public_address: public_address_2,
-    } = handlers_2;
-
-    let Handlers {
-        info_client: info_client_3,
-        exchange_client: exchange_client_3,
-        public_address: public_address_3,
-    } = handlers_3;
-
-    let Handlers {
-        info_client: info_client_4,
-        exchange_client: exchange_client_4,
-        public_address: public_address_4,
-    } = handlers_4;
-
-    let (pos_1, pos_2, pos_3, pos_4) = tokio::join!(
-        get_position(&info_client_1, &public_address_1, &asset),
-        get_position(&info_client_2, &public_address_2, &asset),
-        get_position(&info_client_3, &public_address_3, &asset),
-        get_position(&info_client_4, &public_address_4, &asset),
-    );
-
-    let (c_1, c_2, c_3, c_4) = tokio::join!(
-        async {
-            if pos_1.is_some() {
-                close_position(
-                    &pos_1.unwrap(),
-                    &exchange_client_1,
-                    &info_client_1,
-                    public_address_1.clone(),
-                )
-                .await
-            } else {
-                Ok(())
-            }
-        },
-        async {
-            if pos_2.is_some() {
-                close_position(
-                    &pos_2.unwrap(),
-                    &exchange_client_2,
-                    &info_client_2,
-                    public_address_2.clone(),
-                )
-                .await
-            } else {
-                Ok(())
-            }
-        },
-        async {
-            if pos_3.is_some() {
-                close_position(
-                    &pos_3.unwrap(),
-                    &exchange_client_3,
-                    &info_client_3,
-                    public_address_3.clone(),
-                )
-                .await
-            } else {
-                Ok(())
-            }
-        },
-        async {
-            if pos_4.is_some() {
-                close_position(
-                    &pos_4.unwrap(),
-                    &exchange_client_4,
-                    &info_client_4,
-                    public_address_4.clone(),
-                )
-                .await
-            } else {
-                Ok(())
-            }
+    let cps = join_all(poss.iter().map(|(pos, h)| {
+        if let Some(pos) = pos.as_ref() {
+            return close_position(
+                pos,
+                &h.exchange_client,
+                &h.info_client,
+                h.public_address.clone(),
+            )
+            .boxed();
+        } else {
+            return future::ready(Ok(())).boxed();
         }
-    );
+    }))
+    .await;
 
-    if c_1.is_err() || c_2.is_err() || c_3.is_err() || c_4.is_err() {
+    if cps.iter().any(|cp| cp.is_err()) {
         error!(
-            "Error closing unit e: {c_1:?} for {public_address_1} & {public_address_2} & {public_address_3} & {public_address_4}, unit: {asset}"
+            "Error closing unit for {}, unit: {asset}",
+            handlers
+                .iter()
+                .map(|h| h.public_address.clone())
+                .join(" & "),
         );
 
         return Err(format!(
-            "Error closing unit e: {c_2:?} for {public_address_1} & {public_address_2} & {public_address_3} & {public_address_4}, unit: {asset}"
+            "Error closing unit for {}, unit: {asset}",
+            handlers
+                .iter()
+                .map(|h| h.public_address.clone())
+                .join(" & "),
         ));
     }
 
@@ -309,10 +187,7 @@ pub async fn close_unit_service(
 }
 
 pub async fn close_and_create_unit_service(
-    handlers_1: &Handlers,
-    handlers_2: &Handlers,
-    handlers_3: &Handlers,
-    handlers_4: &Handlers,
+    handlers: &Vec<Handlers>,
     unit: Unit,
 ) -> Result<(), String> {
     let Unit {
@@ -322,30 +197,28 @@ pub async fn close_and_create_unit_service(
     } = unit;
 
     warn!(
-        "Invoke ReCreating unit, for {} & {} unit: {}",
-        handlers_1.public_address, handlers_2.public_address, asset
+        "Invoke ReCreating unit, for {} unit: {}",
+        handlers
+            .iter()
+            .map(|h| h.public_address.clone())
+            .join(" & "),
+        asset
     );
 
-    let r = close_unit_service(
-        handlers_1,
-        handlers_2,
-        handlers_3,
-        handlers_4,
-        asset.clone(),
-    )
-    .await;
+    let r = close_unit_service(handlers, asset.clone()).await;
 
     match r {
         Ok(_) => {
             info!(
-                "Unit fully closed for {} & {}, unit: {}",
-                handlers_1.public_address, handlers_2.public_address, asset
+                "Unit fully closed for {}, unit: {}",
+                handlers
+                    .iter()
+                    .map(|h| h.public_address.clone())
+                    .join(" & "),
+                asset
             );
             create_unit_service(
-                handlers_1,
-                handlers_2,
-                handlers_3,
-                handlers_4,
+                handlers,
                 Unit {
                     asset,
                     sz,
@@ -355,8 +228,11 @@ pub async fn close_and_create_unit_service(
             .await
         }
         Err(e) => panic!(
-            "panic! {e} for {}, {}, unit: {asset}",
-            handlers_1.public_address, handlers_2.public_address
+            "panic! {e} for {}, unit: {asset}",
+            handlers
+                .iter()
+                .map(|h| h.public_address.clone())
+                .join(" & "),
         ),
     }
 }
