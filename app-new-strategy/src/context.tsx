@@ -23,13 +23,11 @@ interface GlobalContextType {
   ) => void
   createBatch: ({
     name,
-    account_1_id,
-    account_2_id,
+    accounts,
     timing,
   }: {
     name: string
-    account_1_id: string
-    account_2_id: string
+    accounts: string[]
     timing: number
   }) => void
   closeBatch: (batchId: string) => void
@@ -170,16 +168,14 @@ export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
   const createBatch = useCallback(
     ({
       name,
-      account_1_id,
-      account_2_id,
+      accounts,
       timing,
     }: {
       name: string
-      account_1_id: string
-      account_2_id: string
+      accounts: string[]
       timing: number
     }) => {
-      db.createBatch(name, account_1_id, account_2_id, timing).then(() => {
+      db.createBatch(name, accounts, timing).then(() => {
         getBatches()
       })
     },

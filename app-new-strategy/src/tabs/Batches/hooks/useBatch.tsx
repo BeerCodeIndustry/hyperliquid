@@ -14,8 +14,7 @@ import { Account, AccountState, Unit } from '../../../types'
 import { getBatchAccount, transformAccountStatesToUnits } from '../../../utils'
 
 interface Props {
-  account_id_1: string
-  account_id_2: string
+  accounts: string[]
   id: string
   name: string
 }
@@ -28,8 +27,7 @@ interface CreateUnitPayload {
 }
 
 interface ReturnType {
-  account_1: Account
-  account_2: Account
+  batchAccounts: Account[]
   units: Unit[]
   balances: Record<string, string>
   unitTimings: Record<string, { openedTiming: number; recreateTiming: number }>
@@ -50,21 +48,19 @@ interface ReturnType {
 const UPDATE_INTERVAL = 2500
 
 export const useBatch = ({
-  account_id_1,
-  account_id_2,
+  accounts: accountsProps,
   id,
   name,
 }: Props): ReturnType => {
   const { accounts, getAccountProxy, getUnitTimings, setUnitInitTimings } =
     useContext(GlobalContext)
 
-  const account_1 = useMemo(
-    () => accounts.find(a => a.id === account_id_1)!,
-    [accounts],
-  )
-  const account_2 = useMemo(
-    () => accounts.find(a => a.id === account_id_2)!,
-    [accounts],
+  const batchAccounts = useMemo(
+    () =>
+      accountsProps.map(a => {
+        return accounts.find(b => b.id === a)!
+      })!,
+    [accountsProps],
   )
 
   const updatingRef = useRef(false)
@@ -107,21 +103,42 @@ export const useBatch = ({
     [AccountState, AccountState]
   > => {
     return invoke<[AccountState, AccountState]>('get_unit_user_states', {
-      account1: getBatchAccount(account_1, getAccountProxy(account_1)),
-      account2: getBatchAccount(account_2, getAccountProxy(account_2)),
-    }).then((res: [AccountState, AccountState]) => {
-      setAccountState({
-        [account_1.public_address]: res[0],
-        [account_2.public_address]: res[1],
-      })
-      setBalances({
-        [account_1.public_address]: res[0].marginSummary.accountValue,
-        [account_2.public_address]: res[1].marginSummary.accountValue,
-      })
+      account1: getBatchAccount(
+        //todo
+        batchAccounts[0],
+        getAccountProxy(batchAccounts[0]),
+      ),
+      account2: getBatchAccount(
+        batchAccounts[1],
+        getAccountProxy(batchAccounts[1]),
+      ),
+      account3: getBatchAccount(
+        batchAccounts[2],
+        getAccountProxy(batchAccounts[2]),
+      ),
+      account4: getBatchAccount(
+        batchAccounts[3],
+        getAccountProxy(batchAccounts[3]),
+      ),
+    }).then((res: AccountState[]) => {
+      setAccountState(
+        batchAccounts.reduce((acc, account, index) => {
+          return { ...acc, [account.public_address]: res[index] }
+        }, {}),
+      )
+
+      setBalances(
+        batchAccounts.reduce((acc, account, index) => {
+          return {
+            ...acc,
+            [account.public_address]: res[index].marginSummary.accountValue,
+          }
+        }, {}),
+      )
 
       return res
     }) as Promise<[AccountState, AccountState]>
-  }, [account_1, account_2])
+  }, [batchAccounts])
 
   const updateLoop = useCallback(() => {
     updatingRef.current = true
@@ -148,7 +165,7 @@ export const useBatch = ({
 
           if (
             now - unitOpenedTiming >= unitRecreateTiming ||
-            unit.positions.length === 1
+            unit.positions.length !== accounts.length
           ) {
             recreateUnit({
               asset: unit.base_unit_info.asset,
@@ -211,8 +228,23 @@ export const useBatch = ({
       setCreatingUnits(prev => [...prev, asset])
 
       return invoke('create_unit', {
-        account1: getBatchAccount(account_1, getAccountProxy(account_1)),
-        account2: getBatchAccount(account_2, getAccountProxy(account_2)),
+        account1: getBatchAccount(
+          //todo
+          batchAccounts[0],
+          getAccountProxy(batchAccounts[0]),
+        ),
+        account2: getBatchAccount(
+          batchAccounts[1],
+          getAccountProxy(batchAccounts[1]),
+        ),
+        account3: getBatchAccount(
+          batchAccounts[2],
+          getAccountProxy(batchAccounts[2]),
+        ),
+        account4: getBatchAccount(
+          batchAccounts[3],
+          getAccountProxy(batchAccounts[3]),
+        ),
         unit: {
           asset,
           sz,
@@ -224,7 +256,7 @@ export const useBatch = ({
         setCreatingUnits(prev => prev.filter(coin => coin !== asset))
       })
     },
-    [account_1, account_2, fetchUserStates, setTimings],
+    [batchAccounts, fetchUserStates, setTimings],
   )
 
   const closeUnit = useCallback(
@@ -232,8 +264,23 @@ export const useBatch = ({
       setClosingUnits(prev => [...prev, unit.base_unit_info.asset])
 
       return invoke('close_unit', {
-        account1: getBatchAccount(account_1, getAccountProxy(account_1)),
-        account2: getBatchAccount(account_2, getAccountProxy(account_2)),
+        account1: getBatchAccount(
+          //todo
+          batchAccounts[0],
+          getAccountProxy(batchAccounts[0]),
+        ),
+        account2: getBatchAccount(
+          batchAccounts[1],
+          getAccountProxy(batchAccounts[1]),
+        ),
+        account3: getBatchAccount(
+          batchAccounts[2],
+          getAccountProxy(batchAccounts[2]),
+        ),
+        account4: getBatchAccount(
+          batchAccounts[3],
+          getAccountProxy(batchAccounts[3]),
+        ),
         asset: unit.base_unit_info.asset,
       }).finally(async () => {
         await fetchUserStates()
@@ -242,7 +289,7 @@ export const useBatch = ({
         )
       })
     },
-    [account_1, account_2, fetchUserStates],
+    [batchAccounts, fetchUserStates],
   )
 
   const recreateUnit = useCallback(
@@ -250,8 +297,23 @@ export const useBatch = ({
       setRecreatingUnits(prev => [...prev, asset])
 
       const promise = invoke('close_and_create_same_unit', {
-        account1: getBatchAccount(account_1, getAccountProxy(account_1)),
-        account2: getBatchAccount(account_2, getAccountProxy(account_2)),
+        account1: getBatchAccount(
+          //todo
+          batchAccounts[0],
+          getAccountProxy(batchAccounts[0]),
+        ),
+        account2: getBatchAccount(
+          batchAccounts[1],
+          getAccountProxy(batchAccounts[1]),
+        ),
+        account3: getBatchAccount(
+          batchAccounts[2],
+          getAccountProxy(batchAccounts[2]),
+        ),
+        account4: getBatchAccount(
+          batchAccounts[3],
+          getAccountProxy(batchAccounts[3]),
+        ),
         unit: {
           asset,
           sz,
@@ -270,12 +332,11 @@ export const useBatch = ({
         error: `${name}: Error while re-creating unit with asset ${asset} error 🤯`,
       })
     },
-    [account_1, account_2, getUnitTimingReacreate, fetchUserStates, setTimings],
+    [batchAccounts, getUnitTimingReacreate, fetchUserStates, setTimings],
   )
 
   return {
-    account_1,
-    account_2,
+    batchAccounts,
     units,
     balances,
     unitTimings,

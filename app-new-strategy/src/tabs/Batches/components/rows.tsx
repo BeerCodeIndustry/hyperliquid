@@ -52,13 +52,12 @@ export const createRows = (
       <div>
         <div>Amount: {unit.positions.length}</div>
 
+        <div>Sizes: {unit.positions.map(p => p.info.szi).join(' / ')}</div>
         <div>
-          Sizes: {unit.positions?.[0]?.info.szi} /{' '}
-          {unit.positions?.[1]?.info.szi}
-        </div>
-        <div>
-          Liq price: {unit.positions?.[0]?.info.liquidationPx} /{' '}
-          {unit.positions?.[1]?.info.liquidationPx}
+          Liq price:{' '}
+          {unit.positions
+            .map(p => Number(p.info.liquidationPx).toFixed(5))
+            .join(' / ')}
         </div>
       </div>,
       <Box sx={{ display: 'flex', width: '100%', justifyContent: 'center' }}>

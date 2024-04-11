@@ -79,8 +79,12 @@ const App = () => {
         </Button>
       </Box>
       <Box sx={{ p: 2 }}>
-        {tabId === Tabs.Accounts.id && <Accounts />}
-        {tabId === Tabs.Proxy.id && <Proxy />}
+        <div style={{ display: tabId === Tabs.Accounts.id ? 'block' : 'none' }}>
+          <Accounts />
+        </div>
+        <div style={{ display: tabId === Tabs.Proxy.id ? 'block' : 'none' }}>
+          <Proxy />
+        </div>
         <div style={{ display: tabId === Tabs.Batches.id ? 'block' : 'none' }}>
           <Batches />
         </div>

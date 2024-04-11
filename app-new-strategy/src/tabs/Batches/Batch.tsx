@@ -15,19 +15,17 @@ import { useBatch } from './hooks/useBatch'
 
 export const Batch: React.FC<{
   name: string
-  account_id_1: string
-  account_id_2: string
+  accounts: string[]
   constant_timing: number
   id: string
-}> = ({ name, account_id_1, account_id_2, id, constant_timing }) => {
+}> = ({ name, accounts, id, constant_timing }) => {
   const [modalId, setModalId] = useState<string | null>(null)
   const { closeBatch, getAccountProxy } = useContext(GlobalContext)
 
   const [updatingUnit, setUpdatingUnit] = useState('')
 
   const {
-    account_1,
-    account_2,
+    batchAccounts,
     units,
     balances,
     closingUnits,
@@ -38,7 +36,7 @@ export const Batch: React.FC<{
     setTimings,
     createUnit,
     closeUnit,
-  } = useBatch({ account_id_1, account_id_2, id, name })
+  } = useBatch({ accounts, id, name })
 
   const handleAction = (
     type: 'close_unit' | 'update_unit_timing',
@@ -139,7 +137,10 @@ export const Batch: React.FC<{
       {modalId === 'createUnitModal' && (
         <CreateUnitModal
           handleCreateUnit={handleCreateUnit}
-          account={getBatchAccount(account_1, getAccountProxy(account_1))}
+          account={getBatchAccount(
+            batchAccounts[0],
+            getAccountProxy(batchAccounts[0]),
+          )}
           open
           handleClose={() => setModalId(null)}
           defaultTiming={constant_timing}
@@ -187,14 +188,15 @@ export const Batch: React.FC<{
         </Box>
       </Box>
 
-      <Typography>
-        Account 1: <strong>{account_1.public_address}</strong> balance:{' '}
-        <strong>{balances[account_1.public_address]}$</strong>
-      </Typography>
-      <Typography>
-        Account 2: <strong>{account_2.public_address}</strong> balance:{' '}
-        <strong>{balances[account_2.public_address]}$</strong>
-      </Typography>
+      {batchAccounts.map((account, index) => {
+        return (
+          <Typography>
+            Account {index + 1}: <strong>{account.public_address}</strong>{' '}
+            balance: <strong>{balances[account.public_address]}$</strong>
+          </Typography>
+        )
+      })}
+
       <Table
         headCells={headCells}
         loading={initialLoading}

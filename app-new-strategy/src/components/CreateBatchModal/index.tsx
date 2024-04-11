@@ -1,11 +1,14 @@
 import {
   Button,
+  Chip,
   FormControl,
   InputLabel,
   MenuItem,
   Modal,
+  OutlinedInput,
   Paper,
   Select,
+  SelectChangeEvent,
   TextField,
 } from '@mui/material'
 import { useContext, useMemo, useState } from 'react'
@@ -14,6 +17,14 @@ import Box from '@mui/material/Box'
 
 import { GlobalContext } from '../../context'
 
+const MenuProps = {
+  PaperProps: {
+    style: {
+      width: 250,
+    },
+  },
+}
+
 export const CreateBatchModal: React.FC<{
   open: boolean
   handleClose: () => void
@@ -21,34 +32,39 @@ export const CreateBatchModal: React.FC<{
   const { accounts, createBatch, batches } = useContext(GlobalContext)
   const [batchAccounts, setBatchAccounts] = useState<{
     name: string
-    account_1_id: string
-    account_2_id: string
+    accounts: string[]
     timing: number
   }>({
     name: '',
-    account_1_id: '',
-    account_2_id: '',
+    accounts: [],
     timing: 60,
   })
 
   const filteredAccounts = useMemo(() => {
-    const allBatches = batches.map(b => [b.account_1_id, b.account_2_id]).flat()
+    const allBatches = batches.map(b => b.accounts).flat()
 
     return accounts.filter(a => !allBatches.includes(a.id!))
   }, [accounts, batches])
+  console.log(accounts, filteredAccounts)
 
   const onConfirm = () => {
-    if (batchAccounts.account_1_id && batchAccounts.account_2_id) {
+    console.log(batchAccounts)
+    if (batchAccounts.accounts.length === 4) {
       createBatch(batchAccounts)
       handleClose()
     }
   }
 
-  const onChange = (
-    id: 'account_1_id' | 'account_2_id' | 'timing' | 'name',
-    v: string | number,
-  ) => {
+  const onChange = (id: 'timing' | 'name', v: string | number) => {
     setBatchAccounts(prev => ({ ...prev, [id]: v ?? '' }))
+  }
+
+  const onAccountsChange = (v: SelectChangeEvent<string[]>) => {
+    setBatchAccounts({
+      ...batchAccounts,
+      accounts: Array.from(v.target.value),
+    })
+    console.log(v)
   }
 
   return (
@@ -71,45 +87,29 @@ export const CreateBatchModal: React.FC<{
               />
             </FormControl>
             <FormControl sx={{ m: 1, minWidth: 120 }}>
-              <InputLabel id='account-label'>Account 1</InputLabel>
+              <InputLabel id='demo-multiple-chip-label'>Accounts</InputLabel>
               <Select
-                labelId='account-label'
-                id='account-select'
-                value={batchAccounts.account_1_id}
-                label='Account 1'
-                onChange={e => onChange('account_1_id', e.target.value)}
+                labelId='demo-multiple-chip-label'
+                multiple
+                value={batchAccounts.accounts}
+                onChange={onAccountsChange}
+                input={
+                  <OutlinedInput id='select-multiple-chip' label='Accounts' />
+                }
+                renderValue={selected => (
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                    {selected.map(value => (
+                      <Chip key={value} label={value} />
+                    ))}
+                  </Box>
+                )}
+                MenuProps={MenuProps}
               >
-                <MenuItem value='' key='none'>
-                  <em>None</em>
-                </MenuItem>
-                {filteredAccounts
-                  .filter(a => a.id !== batchAccounts.account_2_id)
-                  .map(a => (
-                    <MenuItem value={a.id} key={a.id}>
-                      {a.public_address}
-                    </MenuItem>
-                  ))}
-              </Select>
-            </FormControl>
-            <FormControl sx={{ m: 1, minWidth: 120 }}>
-              <InputLabel id='account-label'>Account 2</InputLabel>
-              <Select
-                labelId='account-label'
-                id='account-select'
-                value={batchAccounts.account_2_id}
-                label='Account 2'
-                onChange={e => onChange('account_2_id', e.target.value)}
-              >
-                <MenuItem value='' key='none'>
-                  <em>None</em>
-                </MenuItem>
-                {filteredAccounts
-                  .filter(a => a.id !== batchAccounts.account_1_id)
-                  .map(a => (
-                    <MenuItem value={a.id} key={a.id}>
-                      {a.public_address}
-                    </MenuItem>
-                  ))}
+                {filteredAccounts.map(account => (
+                  <MenuItem key={account.id} value={account.id}>
+                    {account.public_address}
+                  </MenuItem>
+                ))}
               </Select>
             </FormControl>
             <FormControl sx={{ m: 1, minWidth: 120 }}>
@@ -137,9 +137,7 @@ export const CreateBatchModal: React.FC<{
               variant='contained'
               color='success'
               onClick={onConfirm}
-              disabled={
-                !batchAccounts.account_1_id || !batchAccounts.account_2_id
-              }
+              disabled={batchAccounts.accounts.length !== 4}
             >
               Confirm
             </Button>

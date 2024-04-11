@@ -147,8 +147,7 @@ export class SUPABASE_DB {
 
   public createBatch = async (
     name: string,
-    account_1_id: string,
-    account_2_id: string,
+    accounts: string[],
     timing: number,
   ) => {
     if (!this.auth) {
@@ -157,8 +156,7 @@ export class SUPABASE_DB {
 
     return this.client.from('batches').insert({
       name,
-      account_1_id,
-      account_2_id,
+      accounts,
       constant_timing: timing,
       user_id: this.auth.user.id,
     })
