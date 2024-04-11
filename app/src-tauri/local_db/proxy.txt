@@ -1,2 +1,0 @@
-proxy_1:89.40.223.107:6143:gljdskgd:7qrarsn88jhk
-proxy_2:89.40.222.208:6584:gljdskgd:7qrarsn88jhk

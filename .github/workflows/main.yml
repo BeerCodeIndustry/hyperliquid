@@ -1,31 +1,31 @@
-name: Publish release to google drive
-on:
-  push: { branches: [master] }
-jobs:
-  buildAndTestForSomePlatforms:
-    name: Upload public to drive
-    runs-on: windows-latest
-    steps:
-      # Checkout
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      - name: setup node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 18
-      - name: install Rust stable
-        uses: dtolnay/rust-toolchain@stable
-      # Install deps
-      - name: Install dependencies with yarn
-        working-directory: ./app
-        run: yarn
-      # Build
-      - name: Build release
-        working-directory: ./app
-        run: yarn tauri build
-      # Make artifact
-      - name: Upload artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: release
-          path: "app/src-tauri/target/release"
+# name: Publish release to google drive
+# on:
+#   push: { branches: [master] }
+# jobs:
+#   buildAndTestForSomePlatforms:
+#     name: Upload public to drive
+#     runs-on: windows-latest
+#     steps:
+#       # Checkout
+#       - name: Checkout repository
+#         uses: actions/checkout@v4
+#       - name: setup node
+#         uses: actions/setup-node@v4
+#         with:
+#           node-version: 18
+#       - name: install Rust stable
+#         uses: dtolnay/rust-toolchain@stable
+#       # Install deps
+#       - name: Install dependencies with yarn
+#         working-directory: ./app
+#         run: yarn
+#       # Build
+#       - name: Build release
+#         working-directory: ./app
+#         run: yarn tauri build
+#       # Make artifact
+#       - name: Upload artifact
+#         uses: actions/upload-artifact@v3
+#         with:
+#           name: release
+#           path: "app/src-tauri/target/release"
