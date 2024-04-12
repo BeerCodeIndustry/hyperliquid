@@ -1,6 +1,6 @@
 name: Publish release v2
 on:
-  create: { tags: 'v2*' }
+  push: { tags: 'v2*' }
 jobs:
   createRelease:
     name: Upload public to drive
