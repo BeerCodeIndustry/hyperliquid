@@ -57,7 +57,10 @@ export const Accounts = () => {
   const rows = useMemo(() => createRows(accounts, getAccountProxy), [accounts])
   const [activeModalId, setModalId] = useState<string | null>(null)
 
-  const ActionBar: React.FC<{ selected: string[] }> = ({ selected }) => {
+  const ActionBar: React.FC<{
+    selected: string[]
+    onActionDone: () => void
+  }> = ({ selected, onActionDone }) => {
     return (
       <>
         <SetProxyModal
@@ -77,14 +80,20 @@ export const Accounts = () => {
           <Button
             variant='contained'
             color='primary'
-            onClick={() => setModalId('setProxyModal')}
+            onClick={() => {
+              setModalId('setProxyModal')
+              onActionDone()
+            }}
           >
             Set Proxy
           </Button>
           <Button
             variant='contained'
             color='error'
-            onClick={() => removeAccounts(selected)}
+            onClick={() => {
+              onActionDone()
+              removeAccounts(selected)
+            }}
           >
             Delete selected
           </Button>

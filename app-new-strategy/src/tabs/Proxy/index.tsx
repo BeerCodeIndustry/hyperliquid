@@ -44,7 +44,10 @@ export const Proxy = () => {
   const rows = useMemo(() => createRows(proxies), [proxies])
   const [activeModalId, setModalId] = useState<string | null>(null)
 
-  const ActionBar: React.FC<{ selected: string[] }> = ({ selected }) => {
+  const ActionBar: React.FC<{
+    selected: string[]
+    onActionDone: () => void
+  }> = ({ selected, onActionDone }) => {
     return (
       <Box
         sx={{
@@ -58,7 +61,10 @@ export const Proxy = () => {
         <Button
           variant='contained'
           color='error'
-          onClick={() => removeProxies(selected)}
+          onClick={() => {
+            onActionDone()
+            removeProxies(selected)
+          }}
         >
           Delete selected
         </Button>
@@ -72,7 +78,9 @@ export const Proxy = () => {
         <Button
           variant='contained'
           color='primary'
-          onClick={() => setModalId('addProxyModal')}
+          onClick={() => {
+            setModalId('addProxyModal')
+          }}
         >
           Add proxy
         </Button>

@@ -23,7 +23,7 @@ export interface Row {
 
 interface Props {
   headCells: HeadCell[]
-  ActionBar?: React.FC<{ selected: string[] }>
+  ActionBar?: React.FC<{ selected: string[]; onActionDone: () => void }>
   toolbar?: React.ReactNode
   withCheckbox?: boolean
   pagination?: boolean
@@ -97,7 +97,9 @@ export const Table: React.FC<Props> = ({
   return (
     <Paper sx={{ width: '100%', mb: 2 }}>
       <EnhancedTableToolbar numSelected={selected.length} toolBar={toolbar}>
-        {ActionBar && <ActionBar selected={selected} />}
+        {ActionBar && (
+          <ActionBar selected={selected} onActionDone={() => setSelected([])} />
+        )}
         <Button
           variant='outlined'
           color='error'
