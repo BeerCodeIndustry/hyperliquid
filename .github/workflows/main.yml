@@ -1,10 +1,10 @@
-name: Publish release to google drive
+name: Publish release
 on:
   push: { tags: 'v*' }
 jobs:
   createRelease:
     name: Upload public to drive
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     steps:
       # Checkout
       - name: Checkout repository
