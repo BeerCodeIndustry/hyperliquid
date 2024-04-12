@@ -1,6 +1,7 @@
 use futures::future::{self, join_all, FutureExt};
 use itertools::Itertools;
 use log::{error, info, warn};
+use rust_decimal::prelude::*;
 
 use crate::actions::exchange::{close_position, open_position};
 use crate::actions::info::{can_open_position, get_position};
@@ -95,7 +96,11 @@ pub async fn create_unit_service(handlers: &Vec<Handlers>, unit: Unit) -> Result
             &h.info_client,
             DefaultPair {
                 asset: asset.to_string(),
-                sz: sz * k / 100.0,
+                sz: Decimal::from_f64(sz * k / 100.0)
+                    .unwrap()
+                    .round_dp(sz_decimals)
+                    .to_f64()
+                    .unwrap(),
                 reduce_only: false,
                 order_type: "FrontendMarket".to_string(),
             },
