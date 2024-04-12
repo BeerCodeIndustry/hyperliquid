@@ -133,7 +133,7 @@ export const getShortPositions = (positions: Unit['positions']) => {
 export const getPositionsSummary = (positions: Unit['positions']) => {
   return positions.reduce(
     (acc, pos) =>
-      acc + Math.abs(Number(pos.info.szi)) * pos.info.leverage,
+      acc + Math.abs(Number(pos.info.szi)),
     0,
   )
 }

@@ -69,7 +69,7 @@ export const createRows = (
 
           <Tooltip
             title={getLongPositions(unit.positions).map(pos => (
-              <Box>{Math.abs(Number(pos.info.szi) * pos.info.leverage)}</Box>
+              <Box>{Math.abs(Number(pos.info.szi))}</Box>
             ))}
           >
             <Typography fontSize={14} fontWeight={900} color='green'>
@@ -80,7 +80,7 @@ export const createRows = (
           <span>/</span>
           <Tooltip
             title={getShortPositions(unit.positions).map(pos => (
-              <Box>{Math.abs(Number(pos.info.szi) * pos.info.leverage)}</Box>
+              <Box>{Math.abs(Number(pos.info.szi))}</Box>
             ))}
           >
             <Typography fontSize={14} fontWeight={900} color='error'>
