@@ -168,7 +168,7 @@ export const useBatch = ({
 
           if (
             now - unitOpenedTiming >= unitRecreateTiming ||
-            unit.positions.length !== accounts.length
+            unit.positions.length !== accountsProps.length
           ) {
             recreateUnit({
               asset: unit.base_unit_info.asset,
