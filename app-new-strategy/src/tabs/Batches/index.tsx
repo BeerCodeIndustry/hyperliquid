@@ -12,10 +12,9 @@ export const Batches: React.FC = () => {
 
   return (
     <Box sx={{ width: '100%' }}>
-      <CreateBatchModal
-        open={modalId === 'createBatchModal'}
-        handleClose={() => setModalId(null)}
-      />
+      {modalId === 'createBatchModal' && (
+        <CreateBatchModal open={true} handleClose={() => setModalId(null)} />
+      )}
       <Button
         variant='contained'
         color='primary'

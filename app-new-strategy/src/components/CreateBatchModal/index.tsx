@@ -57,7 +57,7 @@ export const CreateBatchModal: React.FC<{
       handleClose()
     }
   }
-
+  console.log(batchAccounts)
   const onChange = (id: 'timing' | 'name', v: string | number) => {
     setBatchAccounts(prev => ({ ...prev, [id]: v ?? '' }))
   }
@@ -101,9 +101,12 @@ export const CreateBatchModal: React.FC<{
                 }
                 renderValue={selected => (
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                    {selected.map(value => (
-                      <Chip key={value} label={value} />
-                    ))}
+                    {selected.map(value => {
+                      const public_address = filteredAccounts.find(
+                        a => a.id === value,
+                      )?.public_address
+                      return <Chip key={value} label={public_address} />
+                    })}
                   </Box>
                 )}
                 MenuProps={MenuProps}
