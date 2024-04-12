@@ -6,7 +6,7 @@
     "distDir": "../dist"
   },
   "package": {
-    "productName": "app",
+    "productName": "app-new-strategy",
     "version": "0.0.0"
   },
   "tauri": {
