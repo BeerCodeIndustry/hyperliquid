@@ -1,6 +1,6 @@
-name: Publish release
+name: Publish release v2
 on:
-  push: { tags: 'v*' }
+  push: { tags: 'v2*' }
 jobs:
   createRelease:
     name: Upload public to drive
@@ -19,18 +19,18 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
       # Install deps
       - name: Install dependencies with yarn
-        working-directory: ./app
+        working-directory: ./app-new-strategy
         run: yarn
       # Build
       - name: Build release
-        working-directory: ./app
+        working-directory: ./app-new-strategy
         run: yarn tauri build
       # Make artifact
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
           name: release
-          path: "app/src-tauri/target/release"
+          path: "app-new-strategy/src-tauri/target/release"
       - uses: ncipollo/release-action@v1
         with:
           artifacts: "release.zip"
