@@ -275,7 +275,7 @@ export const useBatch = ({
       setRecreatingUnits(prev => [...prev, asset])
 
       const sz_decimals = await getDecimals(asset)
-
+      console.log(sz, 'sz')
       const promise = invoke('close_and_create_same_unit', {
         batchAccounts: batchAccounts.map(acc =>
           getBatchAccount(acc, getAccountProxy(acc)),
