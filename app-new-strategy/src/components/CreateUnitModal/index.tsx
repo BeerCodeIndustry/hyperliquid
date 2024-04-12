@@ -167,6 +167,8 @@ export const CreateUnitModal: React.FC<{
     return `.${new Array(decimals - 1).fill('0').join('')}1`
   }
 
+  const sizingError = assetPrice * form.sz * form.leverage * 0.1 < 10
+
   return (
     <Modal
       open={open}
@@ -260,11 +262,11 @@ export const CreateUnitModal: React.FC<{
                 <strong>
                   {' ' + (assetPrice * form.sz * form.leverage).toFixed(2)} $
                 </strong>
-                {form.sz * form.leverage * 0.1 < 10 && (
+                {sizingError && (
                   <Alert variant='standard' color='warning' sx={{ mt: 1 }}>
                     <Typography fontSize={14}>
-                      [Size] * [Leverage] * 0.1 should be greater or equal than
-                      10
+                      [Summary] * [Leverage] * 0.1 should be greater or equal
+                      than 10$
                     </Typography>
                   </Alert>
                 )}
@@ -283,12 +285,7 @@ export const CreateUnitModal: React.FC<{
             variant='contained'
             color='success'
             onClick={onConfirm}
-            disabled={
-              !form.asset ||
-              !form.sz ||
-              !form.leverage ||
-              form.sz * form.leverage * 0.1 < 10
-            }
+            disabled={!form.asset || !form.sz || !form.leverage || sizingError}
           >
             Confirm
           </LoadingButton>

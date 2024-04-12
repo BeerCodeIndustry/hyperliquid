@@ -32,6 +32,7 @@ export const ImportUnitsModal: React.FC<{
   })
 
   const [decimalsMap, setDecimalsMap] = useState<Record<string, number>>({})
+  const [pricesMap, setPricesMap] = useState<Record<string, number>>({})
   const [loading, setLoading] = useState(false)
 
   const getDecimals = (asset: string): Promise<number> => {
@@ -41,7 +42,12 @@ export const ImportUnitsModal: React.FC<{
     })
   }
 
-  console.log(decimalsMap)
+  const getAssetPrice = (asset: string): Promise<string> => {
+    return invoke<string>('get_asset_price', {
+      batchAccount: account,
+      asset,
+    })
+  }
 
   const units = useMemo(() => {
     const unitsStrings = form.text.split('\n')
@@ -79,7 +85,9 @@ export const ImportUnitsModal: React.FC<{
     }
     setLoading(true)
 
-    Promise.all(units.map(unit => getDecimals(unit.asset)))
+    const decimalsPromise = Promise.all(
+      units.map(unit => getDecimals(unit.asset)),
+    )
       .then(res => {
         const map: Record<string, number> = {}
         res.forEach((decimal, index) => {
@@ -90,9 +98,24 @@ export const ImportUnitsModal: React.FC<{
       .catch(() => {
         alert(`Error when getting size decimals`)
       })
-      .finally(() => {
-        setLoading(false)
+
+    const pricesPromise = Promise.all(
+      units.map(unit => getAssetPrice(unit.asset)),
+    )
+      .then(res => {
+        const map: Record<string, number> = {}
+        res.forEach((price, index) => {
+          map[units[index].asset] = Number(price)
+        })
+        setPricesMap(map)
       })
+      .catch(() => {
+        alert(`Error when getting size decimals`)
+      })
+
+    Promise.all([decimalsPromise, pricesPromise]).finally(() => {
+      setLoading(false)
+    })
   }, [units])
 
   const onConfirm = () => {
@@ -109,6 +132,10 @@ export const ImportUnitsModal: React.FC<{
   const onChange = (key: 'text', v: string) => {
     setForm(prev => ({ ...prev, [key]: v }))
   }
+
+  const sizingError = units.some(
+    unit => pricesMap[unit.asset] * unit.sz * unit.leverage * 0.1 < 10,
+  )
 
   return (
     <Modal
@@ -145,10 +172,11 @@ export const ImportUnitsModal: React.FC<{
               multiline
             />
           </Box>
-          {units.some(unit => unit.sz * unit.leverage * 0.1 < 10) && (
+          {sizingError && (
             <Alert variant='standard' color='warning'>
               <Typography fontSize={14}>
-                [Size] * [Leverage] * 0.1 should be greater or equal than 10
+                [Size * TokenPrice] * [Leverage] * 0.1 should be greater or
+                equal than 10$
               </Typography>
             </Alert>
           )}
@@ -183,10 +211,7 @@ export const ImportUnitsModal: React.FC<{
             variant='contained'
             color='success'
             onClick={onConfirm}
-            disabled={
-              !form.text ||
-              units.some(unit => unit.sz * unit.leverage * 0.1 < 10)
-            }
+            disabled={!form.text || sizingError}
           >
             Confirm
           </LoadingButton>

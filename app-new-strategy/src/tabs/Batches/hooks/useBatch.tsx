@@ -230,6 +230,8 @@ export const useBatch = ({
     async ({ asset, sz, leverage, timing }: CreateUnitPayload) => {
       setCreatingUnits(prev => [...prev, asset])
 
+      console.log({ asset, sz, leverage, timing })
+
       const sz_decimals = await getDecimals(asset)
 
       return invoke('create_unit', {
@@ -275,7 +277,9 @@ export const useBatch = ({
       setRecreatingUnits(prev => [...prev, asset])
 
       const sz_decimals = await getDecimals(asset)
-      console.log(sz, 'sz')
+
+      console.log({ asset, sz, leverage })
+
       const promise = invoke('close_and_create_same_unit', {
         batchAccounts: batchAccounts.map(acc =>
           getBatchAccount(acc, getAccountProxy(acc)),
