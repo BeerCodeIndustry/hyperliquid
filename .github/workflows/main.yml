@@ -30,7 +30,7 @@ jobs:
 
       - uses: tauri-apps/tauri-action@v0
         env:
-          GITHUB_TOKEN: ${{ secrets.token }}
+          GITHUB_TOKEN: ${{ secrets.TOKEN }}
         with:
           tagName: ${{  github.ref_name }}
           projectPath: ./app-new-strategy
