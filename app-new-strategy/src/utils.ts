@@ -67,6 +67,7 @@ export const transformAccountStatesToUnits = (
         info: {
           szi: position.position.szi,
           positionValue: position.position.positionValue,
+          leverage: position.position.leverage.value,
           liquidationPx: position.position.liquidationPx,
         },
       })
@@ -119,4 +120,20 @@ export const formatLogs = (
 
     return { text: log, created_at: match[1], user_id }
   })
+}
+
+export const getLongPositions = (positions: Unit['positions']) => {
+  return positions.filter(p => p.info.szi[0] !== '-')
+}
+
+export const getShortPositions = (positions: Unit['positions']) => {
+  return positions.filter(p => p.info.szi[0] === '-')
+}
+
+export const getPositionsSummary = (positions: Unit['positions']) => {
+  return positions.reduce(
+    (acc, pos) =>
+      acc + Math.abs(Number(pos.info.szi)) * pos.info.leverage,
+    0,
+  )
 }

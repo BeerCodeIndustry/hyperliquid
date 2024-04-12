@@ -1,10 +1,15 @@
 import { RefreshOutlined } from '@mui/icons-material'
 import { LoadingButton } from '@mui/lab'
-import { Box, CircularProgress } from '@mui/material'
+import { Box, CircularProgress, Tooltip, Typography } from '@mui/material'
 
 import { Row } from '../../../components/Table'
 import { Unit } from '../../../types'
-import { convertMsToTime } from '../../../utils'
+import {
+  convertMsToTime,
+  getLongPositions,
+  getPositionsSummary,
+  getShortPositions,
+} from '../../../utils'
 
 export const createRows = (
   units: Unit[],
@@ -50,15 +55,39 @@ export const createRows = (
         )}
       </div>,
       <div>
-        <div>Amount: {unit.positions.length}</div>
+        <Box>Amount: {unit.positions.length}</Box>
 
-        <div>Sizes: {unit.positions.map(p => p.info.szi).join(' / ')}</div>
-        <div>
-          Liq price:{' '}
-          {unit.positions
-            .map(p => Number(p.info.liquidationPx).toFixed(5))
-            .join(' / ')}
-        </div>
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            gap: 1,
+          }}
+        >
+          <Typography fontSize={14}>Sizes:</Typography>
+
+          <Tooltip
+            title={getLongPositions(unit.positions).map(pos => (
+              <Box>{Math.abs(Number(pos.info.szi) * pos.info.leverage)}</Box>
+            ))}
+          >
+            <Typography fontSize={14} fontWeight={900} color='green'>
+              {getPositionsSummary(getLongPositions(unit.positions))}
+            </Typography>
+          </Tooltip>
+
+          <span>/</span>
+          <Tooltip
+            title={getShortPositions(unit.positions).map(pos => (
+              <Box>{Math.abs(Number(pos.info.szi) * pos.info.leverage)}</Box>
+            ))}
+          >
+            <Typography fontSize={14} fontWeight={900} color='error'>
+              {getPositionsSummary(getShortPositions(unit.positions))}
+            </Typography>
+          </Tooltip>
+        </Box>
       </div>,
       <Box sx={{ display: 'flex', width: '100%', justifyContent: 'center' }}>
         <LoadingButton

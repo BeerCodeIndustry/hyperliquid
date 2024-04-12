@@ -60,6 +60,7 @@ export interface Unit {
     info: {
       szi: string
       positionValue: string
+      leverage: number
       liquidationPx: string
     }
   }[]

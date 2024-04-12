@@ -20,7 +20,7 @@ pub fn get_rand_k_4() -> Vec<i32> {
 pub fn get_rand_k_6() -> Vec<i32> {
     let mut rng = rand::thread_rng();
     let min_k = 10;
-    let mut acc = 100;
+    let mut acc = 200;
 
     let k_1 = 100;
     let k_2 = 100;
