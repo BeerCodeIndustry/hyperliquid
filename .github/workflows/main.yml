@@ -4,7 +4,7 @@ on:
 jobs:
   createRelease:
     name: Upload public to drive
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     steps:
       # Checkout
       - name: Checkout repository
@@ -25,12 +25,14 @@ jobs:
       - name: Build release
         working-directory: ./app-new-strategy
         run: yarn tauri build
+      - name: To .tar
+        run: tar -cvf release.tar app-new-strategy/src-tauri/target/release
       # Make artifact
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
           name: release
-          path: "app-new-strategy/src-tauri/target/release"
+          path: "release.tar"
       - uses: ncipollo/release-action@v1
         with:
           artifacts: "release.zip"
