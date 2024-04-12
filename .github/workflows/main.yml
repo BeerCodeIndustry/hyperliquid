@@ -1,42 +1,41 @@
-name: Publish release v2
+name: Publish v2
+
 on:
-  push: { tags: 'v2*' }
+  push:
+    tags:
+      - v2*
+
 jobs:
-  createRelease:
-    name: Upload public to drive
+  publish-tauri:
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+
     runs-on: windows-latest
     steps:
-      # Checkout
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+
       - name: setup node
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: lts/*
+
       - name: install Rust stable
         uses: dtolnay/rust-toolchain@stable
-      # Install deps
-      - name: Install dependencies with yarn
+
+      - name: install frontend dependencies
         working-directory: ./app-new-strategy
-        run: yarn
-      # Build
-      - name: Build release
-        working-directory: ./app-new-strategy
-        run: yarn tauri build
-      - name: To .tar
-        run: tar -cvf release.tar.gz app-new-strategy/src-tauri/target/release
-      # Make artifact
-      - name: Upload artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: release.tar.gz
-          path: "release.tar.gz"
-      - name: Create release
-        uses: actions/create-release@v1
-        with:
-          draft: false
-          prerelease: false
-          release_name: ${{ github.ref }}
-          tag_name: ${{ github.ref }}
+        run: yarn install
+
+      - uses: tauri-apps/tauri-action@v0
         env:
-          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ secrets.TOKEN }}
+        with:
+          tagName: ${{  github.ref_name }}
+          projectPath: ./app-new-strategy
+          releaseName: ${{  github.ref_name }}
+          releaseBody: 'See the assets to download this version and install.'
+          releaseDraft: true
+          prerelease: false
+          args: ''
