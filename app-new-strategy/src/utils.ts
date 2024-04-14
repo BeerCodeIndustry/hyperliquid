@@ -54,14 +54,13 @@ export const transformAccountStatesToUnits = (
           base_unit_info: {
             asset: coin,
             leverage: leverage.value,
-            size: Math.abs(Number(szi) / leverage.value),
+            size: 0,
           },
           positions: [],
         }
       }
-
-      if (Math.abs(Number(szi) / leverage.value) > Math.abs(unitsMap[coin]?.base_unit_info.size)) {
-        unitsMap[coin].base_unit_info.size = Math.abs(Number(szi) / leverage.value)
+      if (Number(szi) > 0) {
+        unitsMap[coin].base_unit_info.size += Number(szi) / leverage.value
       }
       unitsMap[coin].positions.push({
         info: {
