@@ -11,6 +11,9 @@ jobs:
       contents: write
     strategy:
       fail-fast: false
+    env:
+      VITE_SUPABASE_PROJECT_URL: ${{ secrets.PROJECT_URL_V2_PROD }}
+      VITE_SUPABASE_ANON_KEY: ${{ secrets.ANON_TOKEN_V2_PROD }}
 
     runs-on: windows-latest
     steps:
