@@ -84,8 +84,9 @@ pub async fn create_unit_service(handlers: &Vec<Handlers>, unit: Unit) -> Result
     };
 
     let poss = join_all(handlers.iter().enumerate().map(|(i, h)| {
-        let k = rand_ks[i] as f64;
-        let is_buy = if k == 100.0 {
+        let k = rand_ks[i].k as f64;
+        let is_fat = rand_ks[i].is_fat;
+        let is_buy = if is_fat {
             rand_is_buy_fat
         } else {
             !rand_is_buy_fat

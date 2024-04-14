@@ -1,6 +1,7 @@
+use crate::types::RandK;
 use rand::Rng;
 
-pub fn get_rand_k_4() -> Vec<i32> {
+pub fn get_rand_k_4() -> Vec<RandK> {
     let mut rng = rand::thread_rng();
     rng.gen_range(10..11);
     let min_k = 10;
@@ -12,18 +13,35 @@ pub fn get_rand_k_4() -> Vec<i32> {
     let k_3 = rng.gen_range(min_k..acc - min_k + 1);
     let k_4 = acc - k_3;
 
-    let ks = vec![k_1, k_2, k_3, k_4];
+    let ks = vec![
+        RandK {
+            k: k_1,
+            is_fat: true,
+        },
+        RandK {
+            k: k_2,
+            is_fat: false,
+        },
+        RandK {
+            k: k_3,
+            is_fat: false,
+        },
+        RandK {
+            k: k_4,
+            is_fat: false,
+        },
+    ];
 
     rand_idx_4(ks)
 }
 
-pub fn get_rand_k_6() -> Vec<i32> {
+pub fn get_rand_k_6() -> Vec<RandK> {
     let mut rng = rand::thread_rng();
     let min_k = 10;
-    let mut acc = 200;
+    let mut acc = 100;
 
-    let k_1 = 100;
-    let k_2 = 100;
+    let k_1 = rng.gen_range(40..61); // fat
+    let k_2 = 100 - k_1; // fat
     let k_3 = rng.gen_range(min_k..acc - min_k * 3);
     acc -= k_3;
     let k_4 = rng.gen_range(min_k..acc - min_k * 2);
@@ -31,7 +49,32 @@ pub fn get_rand_k_6() -> Vec<i32> {
     let k_5 = rng.gen_range(min_k..acc - min_k);
     let k_6 = acc - k_5;
 
-    let ks = vec![k_1, k_2, k_3, k_4, k_5, k_6];
+    let ks = vec![
+        RandK {
+            k: k_1,
+            is_fat: true,
+        },
+        RandK {
+            k: k_2,
+            is_fat: true,
+        },
+        RandK {
+            k: k_3,
+            is_fat: false,
+        },
+        RandK {
+            k: k_4,
+            is_fat: false,
+        },
+        RandK {
+            k: k_5,
+            is_fat: false,
+        },
+        RandK {
+            k: k_6,
+            is_fat: false,
+        },
+    ];
 
     rand_idx_6(ks)
 }
@@ -42,10 +85,10 @@ pub fn get_rand_is_buy_fat() -> bool {
     rng.gen_bool(0.5)
 }
 
-pub fn rand_idx_4(ks: Vec<i32>) -> Vec<i32> {
+pub fn rand_idx_4(ks: Vec<RandK>) -> Vec<RandK> {
     let mut ks = ks.clone();
     let mut rng = rand::thread_rng();
-    let mut ks_4: Vec<i32> = vec![0, 0, 0, 0];
+    let mut ks_4: Vec<RandK> = vec![];
     let i_1 = rng.gen_range(0..4);
     ks_4[0] = ks[i_1];
     ks.remove(i_1);
@@ -63,10 +106,10 @@ pub fn rand_idx_4(ks: Vec<i32>) -> Vec<i32> {
     ks_4
 }
 
-pub fn rand_idx_6(ks: Vec<i32>) -> Vec<i32> {
+pub fn rand_idx_6(ks: Vec<RandK>) -> Vec<RandK> {
     let mut rng = rand::thread_rng();
     let mut ks = ks.clone();
-    let mut ks_6: Vec<i32> = vec![0, 0, 0, 0, 0, 0];
+    let mut ks_6: Vec<RandK> = vec![];
 
     let i_1 = rng.gen_range(0..6);
     ks_6[0] = ks[i_1];

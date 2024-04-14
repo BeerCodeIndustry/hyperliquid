@@ -80,3 +80,9 @@ pub struct Unit {
     pub leverage: u32,
     pub sz_decimals: u32,
 }
+
+#[derive(Debug, Clone, Copy)]
+pub struct RandK {
+    pub k: i32,
+    pub is_fat: bool,
+}
