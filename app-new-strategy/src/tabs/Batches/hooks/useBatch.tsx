@@ -9,7 +9,7 @@ import {
 } from 'react'
 import { toast } from 'react-toastify'
 
-import { GlobalContext } from '../../../context'
+import { GlobalContext, db } from '../../../context'
 import { Account, AccountState, Unit } from '../../../types'
 import { getBatchAccount, transformAccountStatesToUnits } from '../../../utils'
 
@@ -81,6 +81,8 @@ export const useBatch = ({
     Record<string, { openedTiming: number; recreateTiming: number }>
   >({})
 
+  const [unitSizes, setUnitSizes] = useState<Record<string, number>>({})
+
   const units = useMemo(() => {
     return transformAccountStatesToUnits(Object.values(accountStates))
   }, [accountStates])
@@ -90,6 +92,20 @@ export const useBatch = ({
       return unitTimings[asset as keyof typeof unitTimings]?.openedTiming
     },
     [unitTimings],
+  )
+
+  const getUnitTimingReacreate = useCallback(
+    (asset: string): number => {
+      return unitTimings[asset as keyof typeof unitTimings]?.recreateTiming
+    },
+    [unitTimings],
+  )
+
+  const getUnitSize = useCallback(
+    (asset: string): number => {
+      return unitSizes[asset as keyof typeof unitTimings]
+    },
+    [unitSizes],
   )
 
   const getDecimals = useCallback((asset: string): Promise<number> => {
@@ -108,13 +124,6 @@ export const useBatch = ({
       return 0
     })
   }, [])
-
-  const getUnitTimingReacreate = useCallback(
-    (asset: string): number => {
-      return unitTimings[asset as keyof typeof unitTimings]?.recreateTiming
-    },
-    [unitTimings],
-  )
 
   const fetchUserStates = useCallback((): Promise<
     [AccountState, AccountState]
@@ -172,13 +181,10 @@ export const useBatch = ({
           ) {
             recreateUnit({
               asset: unit.base_unit_info.asset,
-              sz: unit.base_unit_info.size,
               leverage: unit.base_unit_info.leverage,
             })
           }
         })
-
-        return getUnitTimings(id)
       })
       .finally(() => {
         updatingRef.current = false
@@ -194,9 +200,10 @@ export const useBatch = ({
   ])
 
   useEffect(() => {
-    Promise.all([getUnitTimings(id), fetchUserStates()]).then(
-      ([unitTimings]) => {
+    Promise.all([getUnitTimings(id), getUnitSizes(), fetchUserStates()]).then(
+      ([unitTimings, unitSizes]) => {
         setUnitTimings(unitTimings)
+        setUnitSizes(unitSizes)
         setInitialLoading(false)
       },
     )
@@ -216,6 +223,18 @@ export const useBatch = ({
     [setUnitInitTimings, setUnitTimings],
   )
 
+  const setUnitSize = useCallback(
+    (asset: string, size: number) => {
+      setUnitSizes(prev => ({ ...prev, [asset]: size }))
+      return db.setUnitInitSize(id, asset, size)
+    },
+    [id],
+  )
+
+  const getUnitSizes = useCallback(() => {
+    return db.getUnitSizes(id)
+  }, [id])
+
   useEffect(() => {
     const interval = setInterval(() => {
       if (updatingRef.current === true) {
@@ -233,6 +252,7 @@ export const useBatch = ({
     async ({ asset, sz, leverage, timing }: CreateUnitPayload) => {
       setCreatingUnits(prev => [...prev, asset])
 
+      await setUnitSize(asset, sz)
       const sz_decimals = await getDecimals(asset)
 
       return invoke('create_unit', {
@@ -251,7 +271,7 @@ export const useBatch = ({
         setCreatingUnits(prev => prev.filter(coin => coin !== asset))
       })
     },
-    [batchAccounts, fetchUserStates, setTimings, getDecimals],
+    [batchAccounts, fetchUserStates, setTimings, getDecimals, setUnitSize],
   )
 
   const closeUnit = useCallback(
@@ -274,7 +294,7 @@ export const useBatch = ({
   )
 
   const recreateUnit = useCallback(
-    async ({ asset, sz, leverage }: Omit<CreateUnitPayload, 'timing'>) => {
+    async ({ asset, leverage }: Omit<CreateUnitPayload, 'timing' | 'sz'>) => {
       setRecreatingUnits(prev => [...prev, asset])
 
       const sz_decimals = await getDecimals(asset)
@@ -285,7 +305,7 @@ export const useBatch = ({
         ),
         unit: {
           asset,
-          sz,
+          sz: getUnitSize(asset),
           leverage,
           sz_decimals,
         },
@@ -302,7 +322,13 @@ export const useBatch = ({
         error: `${name}: Error while re-creating unit with asset ${asset} error 🤯`,
       })
     },
-    [batchAccounts, getUnitTimingReacreate, fetchUserStates, setTimings],
+    [
+      batchAccounts,
+      getUnitTimingReacreate,
+      fetchUserStates,
+      setTimings,
+      getUnitSize,
+    ],
   )
 
   return {

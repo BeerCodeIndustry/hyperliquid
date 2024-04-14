@@ -24,6 +24,11 @@ export class SUPABASE_DB {
     { openedTiming: number; recreateTiming: number }
   >
   unitTimingTimeoutId: NodeJS.Timeout | null
+  unitSizesChanges: Record<
+    string,
+    number
+  >
+  unitSizesTimeoutId: NodeJS.Timeout | null
   auth: {
     user: User
     session: Session
@@ -38,6 +43,9 @@ export class SUPABASE_DB {
 
     this.unitTimingChanges = {}
     this.unitTimingTimeoutId = null
+
+    this.unitSizesChanges = {}
+    this.unitSizesTimeoutId = null
 
     this.auth = null
   }
@@ -225,6 +233,63 @@ export class SUPABASE_DB {
     }
 
     return JSON.parse(batch.data[0].unit_timings)
+  }
+
+  public setUnitInitSize = async (
+    batchId: string,
+    asset: string,
+    size: number,
+  ) => {
+    this.unitSizesChanges = {
+      ...this.unitSizesChanges,
+      [asset]: size,
+    }
+
+    if (this.unitSizesTimeoutId) {
+      clearTimeout(this.unitSizesTimeoutId)
+    }
+
+    this.unitSizesTimeoutId = setTimeout(() => {
+      this.applyUnitSizesChanges(batchId)
+    }, 100)
+  }
+
+  private applyUnitSizesChanges = async (batchId: string) => {
+    const {data} = await this.client
+      .from('batches')
+      .select<string, {unit_sizes: string}>('unit_sizes')
+      .eq('id', batchId)
+
+    if (!data?.[0]) {
+      throw new Error('setUnitSizes')
+    }
+
+    const prev_unit_sizes = JSON.parse(data[0].unit_sizes)
+
+    const unit_sizes = JSON.stringify({
+      ...prev_unit_sizes,
+      ...this.unitSizesChanges,
+    })
+
+    this.unitSizesChanges = {}
+
+    return this.client
+      .from('batches')
+      .update({ unit_sizes })
+      .eq('id', batchId)
+  }
+
+  public getUnitSizes = async (batchId: string) => {
+    const {data} = await this.client
+      .from('batches')
+      .select<string, {unit_sizes: string}>('unit_sizes')
+      .eq('id', batchId)
+
+    if (!data?.[0]) {
+      throw new Error('getUnitSizes')
+    }
+
+    return JSON.parse(data?.[0].unit_sizes)
   }
 
   public closeBatch = async (batchId: string) => {

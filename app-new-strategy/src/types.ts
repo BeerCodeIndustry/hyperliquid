@@ -28,6 +28,7 @@ export interface Batch {
   name: string
   accounts: string[]
   unit_timings: string
+  unit_sizes: string
   constant_timing: number
   user_id?: string
 }
