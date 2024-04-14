@@ -123,7 +123,7 @@ export const Logs = () => {
             </Box>
           </Box>
         </AppBar>
-        <Box sx={{ display: 'flex', flexDirection: 'column-reverse', gap: 1 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
           {logs.map(info => (
             <Paper sx={{ p: 1 }} key={uuidv4()}>
               <Typography color={getLogColor(info)}>{info}</Typography>

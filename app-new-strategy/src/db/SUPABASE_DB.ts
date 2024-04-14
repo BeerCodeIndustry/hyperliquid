@@ -96,8 +96,12 @@ export class SUPABASE_DB {
     }
 
     const id = uuidv4()
-    await this.client.from('proxies').insert<Proxy>({ ...proxy, id, user_id: this.auth.user.id })
-    return this.client.from('accounts').insert({ ...account, proxy_id: id, user_id: this.auth.user.id })
+    await this.client
+      .from('proxies')
+      .insert<Proxy>({ ...proxy, id, user_id: this.auth.user.id })
+    return this.client
+      .from('accounts')
+      .insert({ ...account, proxy_id: id, user_id: this.auth.user.id })
   }
 
   public removeAccounts = (accountIds: string[]) => {
@@ -234,7 +238,7 @@ export class SUPABASE_DB {
         .select<string, LogRow>('*')
         .gte('created_at', start)
         .lte('created_at', end)
-        .order('created_at', { ascending: true })
+        .order('created_at', { ascending: false })
     ).data
   }
 
