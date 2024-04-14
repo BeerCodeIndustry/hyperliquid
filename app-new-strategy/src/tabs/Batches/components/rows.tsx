@@ -88,6 +88,7 @@ export const createRows = (
             </Typography>
           </Tooltip>
         </Box>
+        <Box>Leverage: {unit.positions[0].info.leverage}</Box>
       </div>,
       <Box sx={{ display: 'flex', width: '100%', justifyContent: 'center' }}>
         <LoadingButton
