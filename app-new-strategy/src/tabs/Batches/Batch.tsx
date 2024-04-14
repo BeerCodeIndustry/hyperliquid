@@ -99,7 +99,13 @@ export const Batch: React.FC<{
         getUnitTimingReacreate,
         handleAction,
       ),
-    [units, closingUnits, recreatingUnits],
+    [
+      units,
+      closingUnits,
+      recreatingUnits,
+      getUnitTimingOpened,
+      getUnitTimingReacreate,
+    ],
   )
 
   const toolbar = () => {

@@ -177,6 +177,8 @@ export const useBatch = ({
             })
           }
         })
+
+        return getUnitTimings(id)
       })
       .finally(() => {
         updatingRef.current = false
@@ -188,6 +190,7 @@ export const useBatch = ({
     creatingUnits,
     getUnitTimingOpened,
     getUnitTimingReacreate,
+    unitTimings,
   ])
 
   useEffect(() => {
@@ -201,7 +204,7 @@ export const useBatch = ({
 
   const setTimings = useCallback(
     async (asset: string, recreateTiming: number, openedTiming: number) => {
-      await setUnitInitTimings(id, asset, recreateTiming, openedTiming)
+      setUnitInitTimings(id, asset, recreateTiming, openedTiming)
       setUnitTimings(prev => ({
         ...prev,
         [asset]: {
@@ -229,8 +232,6 @@ export const useBatch = ({
   const createUnit = useCallback(
     async ({ asset, sz, leverage, timing }: CreateUnitPayload) => {
       setCreatingUnits(prev => [...prev, asset])
-
-      console.log({ asset, sz, leverage, timing })
 
       const sz_decimals = await getDecimals(asset)
 
@@ -277,8 +278,6 @@ export const useBatch = ({
       setRecreatingUnits(prev => [...prev, asset])
 
       const sz_decimals = await getDecimals(asset)
-
-      console.log({ asset, sz, leverage })
 
       const promise = invoke('close_and_create_same_unit', {
         batchAccounts: batchAccounts.map(acc =>
