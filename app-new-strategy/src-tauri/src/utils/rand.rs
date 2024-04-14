@@ -90,18 +90,18 @@ pub fn rand_idx_4(ks: Vec<RandK>) -> Vec<RandK> {
     let mut rng = rand::thread_rng();
     let mut ks_4: Vec<RandK> = vec![];
     let i_1 = rng.gen_range(0..4);
-    ks_4[0] = ks[i_1];
+    ks_4.push(ks[i_1]);
     ks.remove(i_1);
 
     let i_2 = rng.gen_range(0..3);
-    ks_4[1] = ks[i_2];
+    ks_4.push(ks[i_2]);
     ks.remove(i_2);
 
     let i_3 = rng.gen_range(0..2);
-    ks_4[2] = ks[i_3];
+    ks_4.push(ks[i_3]);
     ks.remove(i_3);
 
-    ks_4[3] = ks[0];
+    ks_4.push(ks[0]);
 
     ks_4
 }
@@ -112,26 +112,26 @@ pub fn rand_idx_6(ks: Vec<RandK>) -> Vec<RandK> {
     let mut ks_6: Vec<RandK> = vec![];
 
     let i_1 = rng.gen_range(0..6);
-    ks_6[0] = ks[i_1];
+    ks_6.push(ks[i_1]);
     ks.remove(i_1);
 
     let i_2 = rng.gen_range(0..5);
-    ks_6[1] = ks[i_2];
+    ks_6.push(ks[i_2]);
     ks.remove(i_2);
 
     let i_3 = rng.gen_range(0..4);
-    ks_6[2] = ks[i_3];
+    ks_6.push(ks[i_3]);
     ks.remove(i_3);
 
     let i_4 = rng.gen_range(0..3);
-    ks_6[3] = ks[i_4];
+    ks_6.push(ks[i_4]);
     ks.remove(i_4);
 
     let i_5 = rng.gen_range(0..2);
-    ks_6[4] = ks[i_5];
+    ks_6.push(ks[i_5]);
     ks.remove(i_5);
 
-    ks_6[5] = ks[0];
+    ks_6.push(ks[0]);
 
     ks_6
 }
