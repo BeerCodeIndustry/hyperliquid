@@ -1,4 +1,5 @@
 use futures::future::{self, join_all, FutureExt};
+use hyperliquid_rust_sdk::AssetPosition;
 use itertools::Itertools;
 use log::{error, info, warn};
 use rust_decimal::prelude::*;
@@ -76,40 +77,64 @@ pub async fn create_unit_service(handlers: &Vec<Handlers>, unit: Unit) -> Result
         ));
     }
 
-    let rand_is_buy_fat = get_rand_is_buy_fat();
-    let rand_ks = if handlers.len() == 4 {
-        get_rand_k_4()
-    } else {
-        get_rand_k_6()
-    };
+    let poss: Vec<Result<AssetPosition, String>>;
 
-    let poss = join_all(handlers.iter().enumerate().map(|(i, h)| {
-        let k = rand_ks[i].k as f64;
-        let is_fat = rand_ks[i].is_fat;
-        let is_buy = if is_fat {
-            rand_is_buy_fat
+    if handlers.len() == 2 {
+        poss = join_all(handlers.iter().enumerate().map(|(i, h)| {
+            return open_position(
+                &h.exchange_client,
+                &h.info_client,
+                DefaultPair {
+                    asset: asset.to_string(),
+                    sz: Decimal::from_f64(sz)
+                        .unwrap()
+                        .round_dp(sz_decimals)
+                        .to_f64()
+                        .unwrap(),
+                    reduce_only: false,
+                    order_type: "FrontendMarket".to_string(),
+                },
+                h.public_address.clone(),
+                i == 0,
+            );
+        }))
+        .await;
+    } else {
+        let rand_is_buy_fat = get_rand_is_buy_fat();
+        let rand_ks = if handlers.len() == 4 {
+            get_rand_k_4()
         } else {
-            !rand_is_buy_fat
+            get_rand_k_6()
         };
 
-        return open_position(
-            &h.exchange_client,
-            &h.info_client,
-            DefaultPair {
-                asset: asset.to_string(),
-                sz: Decimal::from_f64(sz * k / 100.0)
-                    .unwrap()
-                    .round_dp(sz_decimals)
-                    .to_f64()
-                    .unwrap(),
-                reduce_only: false,
-                order_type: "FrontendMarket".to_string(),
-            },
-            h.public_address.clone(),
-            is_buy,
-        );
-    }))
-    .await;
+        poss = join_all(handlers.iter().enumerate().map(|(i, h)| {
+            let k = rand_ks[i].k as f64;
+            let is_fat = rand_ks[i].is_fat;
+            let is_buy = if is_fat {
+                rand_is_buy_fat
+            } else {
+                !rand_is_buy_fat
+            };
+
+            return open_position(
+                &h.exchange_client,
+                &h.info_client,
+                DefaultPair {
+                    asset: asset.to_string(),
+                    sz: Decimal::from_f64(sz * k / 100.0)
+                        .unwrap()
+                        .round_dp(sz_decimals)
+                        .to_f64()
+                        .unwrap(),
+                    reduce_only: false,
+                    order_type: "FrontendMarket".to_string(),
+                },
+                h.public_address.clone(),
+                is_buy,
+            );
+        }))
+        .await;
+    }
 
     if poss.iter().any(|pos| pos.is_err()) {
         error!(
