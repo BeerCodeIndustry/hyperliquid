@@ -75,6 +75,7 @@ const AllowedAssets = [
 export const CreateUnitModal: React.FC<{
   open: boolean
   account: BatchAccount
+  accountsCount: number
   handleClose: () => void
   handleCreateUnit: (form: {
     asset: string
@@ -83,7 +84,14 @@ export const CreateUnitModal: React.FC<{
     timing: number
   }) => void
   defaultTiming: number
-}> = ({ open, handleClose, handleCreateUnit, defaultTiming, account }) => {
+}> = ({
+  open,
+  handleClose,
+  handleCreateUnit,
+  defaultTiming,
+  account,
+  accountsCount,
+}) => {
   const [form, setForm] = useState({
     asset: '',
     timing: defaultTiming,
@@ -149,7 +157,6 @@ export const CreateUnitModal: React.FC<{
     }
 
     if (key === 'sz' && typeof v === 'number') {
-      console.log(Number(v.toFixed(decimals).replace(',', '.')))
       setForm(prev => ({
         ...prev,
         sz: Number(v.toFixed(decimals)),
@@ -167,7 +174,8 @@ export const CreateUnitModal: React.FC<{
     return `.${new Array(decimals - 1).fill('0').join('')}1`
   }
 
-  const sizingError = assetPrice * form.sz * form.leverage * 0.1 < 10
+  const sizingError =
+    accountsCount > 2 ? assetPrice * form.sz * form.leverage * 0.1 < 10 : false
 
   return (
     <Modal

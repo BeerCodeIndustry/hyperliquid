@@ -112,7 +112,15 @@ export class SUPABASE_DB {
       .insert({ ...account, proxy_id: id, user_id: this.auth.user.id })
   }
 
-  public removeAccounts = (accountIds: string[]) => {
+  public removeAccounts = async (accountIds: string[]) => {
+    const batches = await this.client.from('batches').select().filter('accounts', 'ov', `{${accountIds.map(id => `"${id}"`).join(',')}}`)
+  
+    if (batches.data?.length) {
+      return new Promise((_, rej) => {
+        rej('Some of accounts exists in batch, so they can not be deleted')
+      })
+    }
+    
     return this.client.from('accounts').delete().in('id', accountIds)
   }
 

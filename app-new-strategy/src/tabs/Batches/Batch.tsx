@@ -147,6 +147,7 @@ export const Batch: React.FC<{
             batchAccounts[0],
             getAccountProxy(batchAccounts[0]),
           )}
+          accountsCount={accounts.length}
           open
           handleClose={() => setModalId(null)}
           defaultTiming={constant_timing}
@@ -169,6 +170,7 @@ export const Batch: React.FC<{
             batchAccounts[0],
             getAccountProxy(batchAccounts[0]),
           )}
+          accountsCount={accounts.length}
           open
           handleClose={() => setModalId(null)}
         />

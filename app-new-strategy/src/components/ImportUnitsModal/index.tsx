@@ -24,9 +24,10 @@ export interface FormUnit {
 export const ImportUnitsModal: React.FC<{
   open: boolean
   account: BatchAccount
+  accountsCount: number
   handleClose: () => void
   handleCreateUnits: (units: FormUnit[]) => void
-}> = ({ open, handleClose, handleCreateUnits, account }) => {
+}> = ({ open, handleClose, handleCreateUnits, account, accountsCount }) => {
   const [form, setForm] = useState({
     text: '',
   })
@@ -133,9 +134,12 @@ export const ImportUnitsModal: React.FC<{
     setForm(prev => ({ ...prev, [key]: v }))
   }
 
-  const sizingError = units.some(
-    unit => pricesMap[unit.asset] * unit.sz * unit.leverage * 0.1 < 10,
-  )
+  const sizingError =
+    accountsCount > 2
+      ? units.some(
+          unit => pricesMap[unit.asset] * unit.sz * unit.leverage * 0.1 < 10,
+        )
+      : false
 
   return (
     <Modal

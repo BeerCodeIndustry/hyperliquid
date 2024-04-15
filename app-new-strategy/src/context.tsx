@@ -1,6 +1,7 @@
 import { CircularProgress } from '@mui/material'
 import { invoke } from '@tauri-apps/api'
 import { createContext, useCallback, useEffect, useMemo, useState } from 'react'
+import { toast } from 'react-toastify'
 
 import { SUPABASE_DB } from './db/SUPABASE_DB'
 import { Account, Batch, Proxy } from './types'
@@ -89,9 +90,13 @@ export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
   }, [])
 
   const removeAccounts = useCallback((accountIds: string[]) => {
-    db.removeAccounts(accountIds).then(() => {
-      getAccounts()
-    })
+    db.removeAccounts(accountIds)
+      .then(() => {
+        getAccounts()
+      })
+      .catch(e => {
+        toast(e, { type: 'error' })
+      })
   }, [])
 
   const removeProxies = useCallback((proxyIds: string[]) => {
