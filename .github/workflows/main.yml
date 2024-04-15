@@ -1,9 +1,9 @@
-name: Publish v2
+name: Publish v3
 
 on:
   push:
     tags:
-      - v2*
+      - v3*
 
 jobs:
   publish-tauri:

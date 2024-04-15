@@ -6,8 +6,8 @@
     "distDir": "../dist"
   },
   "package": {
-    "productName": "app-new-strategy",
-    "version": "0.0.0"
+    "productName": "hyperliquid-farming-bot",
+    "version": "3.0.0"
   },
   "tauri": {
     "allowlist": {
