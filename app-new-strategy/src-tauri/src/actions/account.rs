@@ -53,7 +53,6 @@ pub async fn get_exchange_client(account: &Account) -> ExchangeClient {
 }
 
 pub async fn get_batch_account_handlers(batch_account: BatchAccount) -> Handlers {
-    info!("Getting batch account handlers");
     let account = get_account(batch_account);
 
     let (info_client, exchange_client) =
