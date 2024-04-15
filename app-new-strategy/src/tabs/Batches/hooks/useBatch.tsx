@@ -154,6 +154,9 @@ export const useBatch = ({
 
   const updateLoop = useCallback(() => {
     updatingRef.current = true
+    const timiout = setTimeout(() => {
+      updatingRef.current = false
+    }, 10000)
     const now = Date.now() - UPDATE_INTERVAL
     return fetchUserStates()
       .then((res: [AccountState, AccountState]) => {
@@ -188,6 +191,7 @@ export const useBatch = ({
       })
       .finally(() => {
         updatingRef.current = false
+        clearTimeout(timiout)
       })
   }, [
     fetchUserStates,
