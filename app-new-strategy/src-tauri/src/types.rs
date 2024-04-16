@@ -34,7 +34,7 @@ pub struct Position {
     pub id: Uuid,
     pub asset_position: Option<AssetPosition>,
 }
-
+#[derive(Debug)]
 pub struct Account {
     pub public_address: String,
     pub wallet: LocalWallet,
