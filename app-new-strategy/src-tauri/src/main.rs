@@ -1,6 +1,9 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+use fern::colors::{Color, ColoredLevelConfig};
+use std::panic;
+
 mod actions;
 mod dto_types;
 mod high_level;
@@ -8,7 +11,6 @@ mod services;
 mod types;
 mod utils;
 
-use fern::colors::{Color, ColoredLevelConfig};
 use high_level::batch::{close_and_create_same_unit, close_unit, create_unit};
 use high_level::info::{get_asset_price, get_asset_sz_decimals};
 use high_level::logs::{clear_logs, get_logs};
@@ -16,7 +18,29 @@ use high_level::unit::get_unit_user_states;
 use log::LevelFilter;
 use types::{AccountDTO, BatchAccount, ProxyDTO, Unit};
 
+fn setup_panic_handler() {
+    panic::set_hook(Box::new(|panic_info| {
+        // Получаем сообщение о панике или стандартный текст, если сообщение отсутствует
+        let payload = panic_info
+            .payload()
+            .downcast_ref::<&str>()
+            .unwrap_or(&"Unknown panic");
+
+        // Опционально, можно получить и вывести местоположение паники
+        let location = if let Some(location) = panic_info.location() {
+            format!(" in file '{}' at line {}", location.file(), location.line())
+        } else {
+            String::from(" at unknown location")
+        };
+
+        // Логируем панику
+        log::error!("Panic occurred: {}{}", payload, location);
+    }));
+}
+
 fn setup_logger() -> Result<(), fern::InitError> {
+    setup_panic_handler();
+
     let colors = ColoredLevelConfig::new()
         .info(Color::Green)
         .warn(Color::Yellow)
