@@ -48,7 +48,7 @@ export interface Position {
 
 export interface AccountState {
   assetPositions: Position[]
-  marginSummary: { accountValue: string; totalRawUsd: string }
+  marginSummary: { accountValue: string; totalRawUsd: string, totalMarginUsed: string }
 }
 
 export interface Unit {

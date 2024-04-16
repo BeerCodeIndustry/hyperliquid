@@ -223,7 +223,7 @@ export const CreateUnitModal: React.FC<{
               inputProps={{
                 step: getStep(decimals),
               }}
-              value={form.sz || ''}
+              value={form.sz}
               disabled={decimals === undefined}
               type='number'
               onChange={e => onChange('sz', Number(e.target.value))}

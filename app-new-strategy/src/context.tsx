@@ -256,13 +256,13 @@ export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
     const insertLogs = async () => {
       await invoke('get_logs').then(logs => {
         return db.insertLogs(logs as string[]).then(() => {
-          return invoke('clear_logs')
+          return invoke('clear_logs', { rows: logs })
         })
       })
 
       t = setTimeout(() => {
         insertLogs()
-      }, 10000)
+      }, 30000)
     }
 
     insertLogs()

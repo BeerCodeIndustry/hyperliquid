@@ -29,7 +29,7 @@ interface CreateUnitPayload {
 interface ReturnType {
   batchAccounts: Account[]
   units: Unit[]
-  balances: Record<string, string>
+  balances: Record<string, { free: string; all: string }>
   unitTimings: Record<string, { openedTiming: number; recreateTiming: number }>
   closingUnits: string[]
   recreatingUnits: string[]
@@ -71,7 +71,9 @@ export const useBatch = ({
   const [creatingUnits, setCreatingUnits] = useState<string[]>([])
   const [recreatingUnits, setRecreatingUnits] = useState<string[]>([])
 
-  const [balances, setBalances] = useState<Record<string, string>>({})
+  const [balances, setBalances] = useState<
+    Record<string, { free: string; all: string }>
+  >({})
 
   const [accountStates, setAccountState] = useState<
     Record<string, AccountState>
@@ -143,7 +145,13 @@ export const useBatch = ({
         batchAccounts.reduce((acc, account, index) => {
           return {
             ...acc,
-            [account.public_address]: res[index].marginSummary.accountValue,
+            [account.public_address]: {
+              all: Number(res[index].marginSummary.accountValue).toFixed(2),
+              free: (
+                +res[index].marginSummary.accountValue -
+                +res[index].marginSummary.totalMarginUsed
+              ).toFixed(2),
+            },
           }
         }, {}),
       )

@@ -204,7 +204,9 @@ export const Batch: React.FC<{
         return (
           <Typography key={account.id}>
             Account {index + 1}: <strong>{account.public_address}</strong>{' '}
-            balance: <strong>{balances[account.public_address]}$</strong>
+            balance: <strong>{balances[account.public_address]?.all}$</strong>{' '}
+            free_balance:{' '}
+            <strong>{balances[account.public_address]?.free}$</strong>
           </Typography>
         )
       })}
