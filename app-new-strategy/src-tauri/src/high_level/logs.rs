@@ -16,7 +16,7 @@ pub fn get_logs() -> Vec<String> {
 }
 
 #[tauri::command]
-pub fn clear_logs() -> Result<(), String> {
+pub fn clear_logs(rows: Vec<String>) -> Result<(), String> {
     let path = Path::new("logs.log");
 
     let _file = match File::create(path) {
