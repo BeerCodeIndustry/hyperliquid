@@ -58,6 +58,7 @@ export const AddAccountModal: React.FC<{
             <TextField
               label='Proxy'
               variant='outlined'
+              placeholder='host:port:login:password'
               onChange={e => onChange('proxy', e.target.value)}
             />
           </Box>

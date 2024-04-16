@@ -139,7 +139,7 @@ export const Batch: React.FC<{
   }
 
   return (
-    <Paper sx={{ width: '100%', p: 2 }}>
+    <Paper sx={{ padding: 3 }}>
       {modalId === 'createUnitModal' && (
         <CreateUnitModal
           handleCreateUnit={handleCreateUnit}
@@ -179,6 +179,7 @@ export const Batch: React.FC<{
         sx={{
           display: 'flex',
           alignItems: 'center',
+          p: 0,
           width: '100%',
           justifyContent: 'space-between',
         }}

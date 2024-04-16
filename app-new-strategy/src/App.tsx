@@ -8,9 +8,11 @@ import 'react-toastify/dist/ReactToastify.css'
 import Box from '@mui/material/Box'
 
 import { Login } from './components/Login'
+import { ThemeSwitch } from './components/ThemeSwitch'
 import { GlobalContext } from './context'
 import { LogsProvider } from './logsContext'
 import { Accounts, Batches, Logs, Proxy } from './tabs'
+import { Theme, ThemeContext } from './themeContext'
 
 const Tabs = {
   Accounts: {
@@ -32,6 +34,7 @@ const Tabs = {
 } as const
 
 const App = () => {
+  const { changeTheme, theme } = useContext(ThemeContext)
   const { isAuth, logout } = useContext(GlobalContext)
   const [tabId, setTabId] = useState<string>(
     localStorage.getItem('lastTabId') ?? Tabs.Accounts.id,
@@ -42,19 +45,25 @@ const App = () => {
   }
 
   return (
-    <Box>
+    <Box
+      sx={theme => ({
+        minHeight: '100vh',
+        height: '100%',
+        background: theme.palette.background.default,
+      })}
+    >
       <Box
-        sx={{
+        sx={theme => ({
           borderBottom: 1,
           zIndex: 999,
-          background: 'white',
           position: 'sticky',
+          background: theme.palette.background.default,
           top: 0,
           borderColor: 'divider',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-        }}
+        })}
       >
         <MuiTabs
           value={tabId}
@@ -62,21 +71,30 @@ const App = () => {
             localStorage.setItem('lastTabId', newTabId)
             setTabId(newTabId)
           }}
+          sx={theme => ({ background: theme.palette.background.default })}
           aria-label='basic tabs example'
         >
           {Object.values(Tabs).map(({ label, id }) => (
             <MuiTab label={label} value={id} key={id} />
           ))}
         </MuiTabs>
-        <Button
-          sx={{ mr: 2, height: '40px' }}
-          color='error'
-          variant='contained'
-          size='small'
-          onClick={logout}
-        >
-          Logout
-        </Button>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <ThemeSwitch
+            onChange={e =>
+              changeTheme(e.target.checked ? Theme.Dark : Theme.Light)
+            }
+            checked={theme === Theme.Dark}
+          />
+          <Button
+            sx={{ mr: 2, height: '32px' }}
+            color='error'
+            variant='contained'
+            size='small'
+            onClick={logout}
+          >
+            Logout
+          </Button>
+        </Box>
       </Box>
       <Box sx={{ p: 2 }}>
         <div style={{ display: tabId === Tabs.Accounts.id ? 'block' : 'none' }}>

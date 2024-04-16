@@ -82,7 +82,6 @@ export const Accounts = () => {
             color='primary'
             onClick={() => {
               setModalId('setProxyModal')
-              onActionDone()
             }}
           >
             Set Proxy

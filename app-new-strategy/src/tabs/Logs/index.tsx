@@ -7,7 +7,7 @@ import {
   Paper,
   Typography,
 } from '@mui/material'
-import { blue, green, red, yellow } from '@mui/material/colors'
+import { blue, lightGreen, red, yellow } from '@mui/material/colors'
 import { DateTimePicker, LocalizationProvider } from '@mui/x-date-pickers'
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
 import dayjs, { Dayjs } from 'dayjs'
@@ -20,7 +20,7 @@ import { LogsContext } from '../../logsContext'
 const colors = {
   DEBUG: blue[900],
   ERROR: red[900],
-  INFO: green[900],
+  INFO: lightGreen[500],
   WARN: yellow[900],
 }
 
