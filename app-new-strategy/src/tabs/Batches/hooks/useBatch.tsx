@@ -164,8 +164,8 @@ export const useBatch = ({
     updatingRef.current = true
     const timiout = setTimeout(() => {
       updatingRef.current = false
-    }, 10000)
-    const now = Date.now() - UPDATE_INTERVAL
+    }, 20000)
+    const now = Date.now()
     return fetchUserStates()
       .then((res: [AccountState, AccountState]) => {
         const units = transformAccountStatesToUnits(res)
@@ -181,7 +181,9 @@ export const useBatch = ({
           if (
             closingUnits.includes(unit.base_unit_info.asset) ||
             recreatingUnits.includes(unit.base_unit_info.asset) ||
-            creatingUnits.includes(unit.base_unit_info.asset)
+            creatingUnits.includes(unit.base_unit_info.asset) ||
+            !unitOpenedTiming ||
+            !unitRecreateTiming
           ) {
             return
           }
@@ -278,12 +280,19 @@ export const useBatch = ({
           sz_decimals,
         },
       }).finally(async () => {
-        await setTimings(asset, timing, Date.now())
+        setTimings(asset, timing, Date.now())
         await fetchUserStates()
         setCreatingUnits(prev => prev.filter(coin => coin !== asset))
       })
     },
-    [batchAccounts, fetchUserStates, setTimings, getDecimals, setUnitSize],
+    [
+      batchAccounts,
+      fetchUserStates,
+      setTimings,
+      getDecimals,
+      setUnitSize,
+      setCreatingUnits,
+    ],
   )
 
   const closeUnit = useCallback(
@@ -302,7 +311,7 @@ export const useBatch = ({
         )
       })
     },
-    [batchAccounts, fetchUserStates],
+    [batchAccounts, fetchUserStates, setClosingUnits],
   )
 
   const recreateUnit = useCallback(
@@ -323,7 +332,7 @@ export const useBatch = ({
         },
       }).finally(async () => {
         const unitRecreateTiming = getUnitTimingReacreate(asset)
-        await setTimings(asset, unitRecreateTiming, Date.now())
+        setTimings(asset, unitRecreateTiming, Date.now())
         await fetchUserStates()
         setRecreatingUnits(prev => prev.filter(unit => unit !== asset))
       })
@@ -340,6 +349,7 @@ export const useBatch = ({
       fetchUserStates,
       setTimings,
       getUnitSize,
+      setRecreatingUnits,
     ],
   )
 

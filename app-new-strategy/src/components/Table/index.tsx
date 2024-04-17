@@ -18,7 +18,7 @@ import { EnhancedTableToolbar } from '../EnhancedTableToolbar'
 
 export interface Row {
   id: string
-  data: any[]
+  data: React.ReactNode[]
 }
 
 interface Props {
