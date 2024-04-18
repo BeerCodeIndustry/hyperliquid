@@ -1,11 +1,11 @@
 {
-  "version": "v1.0.0",
-  "notes": "Test version",
-  "pub_date": "2020-06-22T19:25:57Z",
+  "version": "3.2.0",
+  "notes": "See the assets to download this version and install.",
+  "pub_date": "2024-04-18T11:12:07.204Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "Content of app-setup.nsis.sig or app.msi.sig, depending on the chosen format",
-      "url": "https://github.com/username/reponame/releases/download/v1.0.0/app-x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTazdZSUQ2eHNiNmZROFVkMDJFdzVSZjJNVjlwTkdtYU5ZRnE3d2dMb1JwWjJrTERFQXZhSmRzSk1nbllxUkhXbC9qaGRLbWhyaHErcy9yakpNTTZPdzhyTlh0Zmo0UkF3PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzEzNDM4NzIyCWZpbGU6aHlwZXJsaXF1aWQtZmFybWluZy1ib3RfMy4yLjBfeDY0X2VuLVVTLm1zaS56aXAKZnJsb2gyY0UxN0IrS3loTUtERXpWWUZtWjNMQXg0d1liMnVYSHNBTExzY3k0VjRDMmRua1BEL0F5MWxEeVhKaCs3dXBJMW1mLzkzSExpaCtpK0IyQVE9PQo=",
+      "url": "https://github.com/BeerCodeIndustry/hyperliquid/releases/download/v3.2.4/hyperliquid-farming-bot_3.2.0_x64_en-US.msi.zip"
     }
   }
 }
