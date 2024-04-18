@@ -11,7 +11,11 @@ import { toast } from 'react-toastify'
 
 import { GlobalContext, db } from '../../../context'
 import { Account, AccountState, Unit } from '../../../types'
-import { getBatchAccount, transformAccountStatesToUnits } from '../../../utils'
+import {
+  getBatchAccount,
+  transformAccountStatesToUnits,
+  withTimeout,
+} from '../../../utils'
 
 interface Props {
   accounts: string[]
@@ -127,14 +131,16 @@ export const useBatch = ({
     })
   }, [])
 
-  const fetchUserStates = useCallback((): Promise<
-    [AccountState, AccountState]
-  > => {
-    return invoke<[AccountState, AccountState]>('get_unit_user_states', {
-      accounts: batchAccounts.map(acc =>
-        getBatchAccount(acc, getAccountProxy(acc)),
-      ),
-    }).then((res: AccountState[]) => {
+  const fetchUserStates = useCallback((): Promise<AccountState[]> => {
+    return withTimeout<AccountState[]>(
+      () =>
+        invoke<AccountState[]>('get_unit_user_states', {
+          accounts: batchAccounts.map(acc =>
+            getBatchAccount(acc, getAccountProxy(acc)),
+          ),
+        }),
+      8000,
+    ).then((res: AccountState[]) => {
       setAccountState(
         batchAccounts.reduce((acc, account, index) => {
           return { ...acc, [account.public_address]: res[index] }
@@ -162,12 +168,9 @@ export const useBatch = ({
 
   const updateLoop = useCallback(() => {
     updatingRef.current = true
-    const timiout = setTimeout(() => {
-      updatingRef.current = false
-    }, 20000)
     const now = Date.now()
     return fetchUserStates()
-      .then((res: [AccountState, AccountState]) => {
+      .then((res: AccountState[]) => {
         const units = transformAccountStatesToUnits(res)
 
         units.forEach((unit: Unit) => {
@@ -201,7 +204,6 @@ export const useBatch = ({
       })
       .finally(() => {
         updatingRef.current = false
-        clearTimeout(timiout)
       })
   }, [
     fetchUserStates,
@@ -214,13 +216,14 @@ export const useBatch = ({
   ])
 
   useEffect(() => {
-    Promise.all([getUnitTimings(id), getUnitSizes(), fetchUserStates()]).then(
-      ([unitTimings, unitSizes]) => {
+    Promise.all([getUnitTimings(id), getUnitSizes(), fetchUserStates()])
+      .then(([unitTimings, unitSizes]) => {
         setUnitTimings(unitTimings)
         setUnitSizes(unitSizes)
+      })
+      .finally(() => {
         setInitialLoading(false)
-      },
-    )
+      })
   }, [])
 
   const setTimings = useCallback(

@@ -136,3 +136,20 @@ export const getPositionsSummary = (positions: Unit['positions']) => {
     0,
   )
 }
+
+export const withTimeout = <T>(invoke: () => Promise<T>, time = 20000) => {
+  return new Promise<T>((res, rej) => {
+    let timeout: NodeJS.Timeout;
+    invoke().then((response) => {
+      clearTimeout(timeout)
+      res(response)
+    }).catch((e) => {
+      clearTimeout(timeout)
+      rej(e)
+    })
+
+    timeout = setTimeout(() => {
+      rej("timeout " + time)
+    }, time)
+  })
+}
