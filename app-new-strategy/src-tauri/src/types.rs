@@ -79,6 +79,7 @@ pub struct Unit {
     pub sz: f64,
     pub leverage: u32,
     pub sz_decimals: u32,
+    pub smart_balance_usage: bool,
 }
 
 #[derive(Debug, Clone, Copy)]

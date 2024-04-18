@@ -15,6 +15,7 @@ pub async fn create_unit_service(handlers: &Vec<Handlers>, unit: Unit) -> Result
         sz,
         leverage,
         sz_decimals,
+        smart_balance_usage,
     } = unit;
 
     warn!(
@@ -107,6 +108,7 @@ pub async fn create_unit_service(handlers: &Vec<Handlers>, unit: Unit) -> Result
                 asset: asset.clone(),
                 sz_decimals,
                 leverage,
+                smart_balance_usage,
             },
         )
         .await;
@@ -194,6 +196,7 @@ pub async fn close_and_create_unit_service(
         sz,
         leverage,
         sz_decimals,
+        smart_balance_usage,
     } = unit;
 
     warn!(
@@ -224,6 +227,7 @@ pub async fn close_and_create_unit_service(
                     sz,
                     leverage,
                     sz_decimals,
+                    smart_balance_usage,
                 },
             )
             .await
@@ -242,7 +246,7 @@ pub async fn open_rand_poss_service(
     handlers: &Vec<Handlers>,
     unit: Unit,
 ) -> Vec<Result<AssetPosition, String>> {
-    let fat_on_high = true; // TODO: move to unit
+    let fat_on_high = unit.smart_balance_usage;
     let rand_is_buy_fat = get_rand_is_buy_fat();
     let mut rand_ks = if handlers.len() == 4 {
         get_rand_k_4()
