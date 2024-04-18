@@ -20,6 +20,7 @@ import {
 interface Props {
   accounts: string[]
   id: string
+  smartBalanceUsage: boolean
   name: string
 }
 
@@ -55,6 +56,7 @@ export const useBatch = ({
   accounts: accountsProps,
   id,
   name,
+  smartBalanceUsage,
 }: Props): ReturnType => {
   const { accounts, getAccountProxy, getUnitTimings, setUnitInitTimings } =
     useContext(GlobalContext)
@@ -280,6 +282,7 @@ export const useBatch = ({
           asset,
           sz,
           leverage,
+          smart_balance_usage: smartBalanceUsage,
           sz_decimals,
         },
       }).finally(async () => {
@@ -289,6 +292,7 @@ export const useBatch = ({
       })
     },
     [
+      smartBalanceUsage,
       batchAccounts,
       fetchUserStates,
       setTimings,
@@ -330,6 +334,7 @@ export const useBatch = ({
         unit: {
           asset,
           sz: getUnitSize(asset),
+          smart_balance_usage: smartBalanceUsage,
           leverage,
           sz_decimals,
         },
@@ -346,7 +351,8 @@ export const useBatch = ({
         error: `${name}: Error while re-creating unit with asset ${asset} error 🤯`,
       })
     },
-    [
+    [ 
+      smartBalanceUsage,
       batchAccounts,
       getUnitTimingReacreate,
       fetchUserStates,

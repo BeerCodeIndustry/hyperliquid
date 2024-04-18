@@ -1,4 +1,4 @@
-import { Box, Button, Paper, Typography } from '@mui/material'
+import { Box, Button, Checkbox, FormControl, FormControlLabel, Paper, Typography } from '@mui/material'
 import React, { useContext, useMemo, useState } from 'react'
 import { toast } from 'react-toastify'
 
@@ -6,7 +6,7 @@ import { CreateUnitModal } from '../../components/CreateUnitModal'
 import { FormUnit, ImportUnitsModal } from '../../components/ImportUnitsModal'
 import { Table } from '../../components/Table'
 import { UpdateUnitTimingModal } from '../../components/UpdateUnitTimingModal'
-import { GlobalContext } from '../../context'
+import { GlobalContext, db } from '../../context'
 import { Unit } from '../../types'
 import { getBatchAccount } from '../../utils'
 import { headCells } from './components/cells'
@@ -16,13 +16,15 @@ import { useBatch } from './hooks/useBatch'
 export const Batch: React.FC<{
   name: string
   accounts: string[]
+  smartBalanceUsage: boolean
   constant_timing: number
   id: string
-}> = ({ name, accounts, id, constant_timing }) => {
+}> = ({ name, accounts, id, constant_timing, smartBalanceUsage }) => {
   const [modalId, setModalId] = useState<string | null>(null)
   const { closeBatch, getAccountProxy } = useContext(GlobalContext)
 
   const [updatingUnit, setUpdatingUnit] = useState('')
+  const [smartUsage, setSmartUsage] = useState(smartBalanceUsage)
 
   const {
     batchAccounts,
@@ -37,7 +39,7 @@ export const Batch: React.FC<{
     setTimings,
     createUnit,
     closeUnit,
-  } = useBatch({ accounts, id, name })
+  } = useBatch({ accounts, id, name, smartBalanceUsage: smartUsage })
 
   const handleAction = (
     type: 'close_unit' | 'update_unit_timing',
@@ -58,6 +60,11 @@ export const Batch: React.FC<{
     }
     setTimings(updatingUnit, timing, getUnitTimingOpened(updatingUnit))
     setUpdatingUnit('')
+  }
+
+  const handleSmartBalanceChange = (value: boolean) => {
+    db.updateBatch(id, value)
+    setSmartUsage(value)
   }
 
   const handleCreateUnit = async (form: {
@@ -116,10 +123,22 @@ export const Batch: React.FC<{
         sx={{
           width: '100%',
           display: 'flex',
-          justifyContent: 'flex-end',
+          justifyContent: 'space-between',
           gap: '16px',
         }}
-      >
+      > 
+      <FormControl size='small' >
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={smartUsage}
+                  onChange={e => handleSmartBalanceChange(e.target.checked)}
+                />
+              }
+              label='Smart balance usage'
+            />
+          </FormControl>
+        <Box sx={{ display: 'flex', gap: 2}}>
         <Button
           variant='outlined'
           color='primary'
@@ -136,6 +155,8 @@ export const Batch: React.FC<{
         >
           Create Unit
         </Button>
+        </Box>
+       
       </Box>
     )
   }
@@ -214,13 +235,16 @@ export const Batch: React.FC<{
         )
       })}
 
-      <Table
-        headCells={headCells}
-        loading={initialLoading}
-        rows={rows}
-        pagination={false}
-        toolbar={toolbar()}
-      />
+      <Box sx={{ mt: 2 }}>
+        <Table
+          headCells={headCells}
+          loading={initialLoading}
+          rows={rows}
+          pagination={false}
+          toolbar={toolbar()}
+        />
+      </Box>
+      
     </Paper>
   )
 }

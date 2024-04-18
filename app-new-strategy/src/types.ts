@@ -26,6 +26,7 @@ export interface HeadCell {
 export interface Batch {
   id?: string
   name: string
+  smart_balance_usage: boolean;
   accounts: string[]
   unit_timings: string
   unit_sizes: string

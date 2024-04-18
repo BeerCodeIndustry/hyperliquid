@@ -165,6 +165,10 @@ export class SUPABASE_DB {
     return data ?? []
   }
 
+  public updateBatch = async (id: string, smart_balance_usage: boolean) => {
+    return this.client.from('batches').update({smart_balance_usage}).eq('id', id)
+  }
+
   public createBatch = async (
     name: string,
     accounts: string[],
