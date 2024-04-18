@@ -1,11 +1,11 @@
 {
-  "version": "3.3.0",
+  "version": "3.4.3",
   "notes": "See the assets to download this version and install.",
-  "pub_date": "2024-04-18T11:38:07.201Z",
+  "pub_date": "2024-04-18T21:57:09.172Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTazdZSUQ2eHNiNlpQc0pxS01USU5NdnI3cnhLWCtaY3ZRNXAzSGFmeXlndy9xUEpESXkvQUp1bytCaGdQcHM3STlCakxpR1pFcXFISEt0UkZOSmdTSUgvaWcramNSVmdJPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzEzNDQwMjgxCWZpbGU6aHlwZXJsaXF1aWQtZmFybWluZy1ib3RfMy4zLjBfeDY0X2VuLVVTLm1zaS56aXAKOVkya3FpN2xFcytRbE5FTGo4WDN1L2F5bFRiRXFDSjFMUkdvM01VbS9QTGo1cTZwYjV4bUhsdklFTmZaRjhUa2RDMzJDSEhEekRscmtISjhQOUVLRGc9PQo=",
-      "url": "https://github.com/BeerCodeIndustry/hyperliquid/releases/download/v3.3.0/hyperliquid-farming-bot_3.3.0_x64_en-US.msi.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTazdZSUQ2eHNiNmVnQ2RDQVdyVnZDOWt0RWwyOGFUczhBVk4wZ3R1dXJYZis5SVVaMDFXU1k5akdHcU90VEFwLzRKcXBCVDBpMzA1a09KNGh4NzQ0MXlzR0VrbFJwZVFNPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzEzNDc3NDI1CWZpbGU6aHlwZXJsaXF1aWQtZmFybWluZy1ib3RfMy40LjNfeDY0X2VuLVVTLm1zaS56aXAKOFZPei9IeUZoeW00UHVZMmZIczBxSzBhYWgyZ3NzanNyTjl2anRrUzlaSU5aeHZEVUMxWk02RTNvcHRwcW85ekNibG9lL0RZUTJ5M0tRNzhETm9kRHc9PQo=",
+      "url": "https://github.com/BeerCodeIndustry/hyperliquid/releases/download/v3.4.3/hyperliquid-farming-bot_3.4.3_x64_en-US.msi.zip"
     }
   }
 }
