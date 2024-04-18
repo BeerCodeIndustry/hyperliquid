@@ -5,9 +5,9 @@ use log::{error, info, warn};
 use rust_decimal::prelude::*;
 
 use crate::actions::exchange::{close_position, open_position};
-use crate::actions::info::{can_open_position, get_position};
+use crate::actions::info::{can_open_position, get_account_balance, get_position};
 use crate::types::{DefaultPair, Handlers, Unit};
-use crate::utils::rand::{get_rand_is_buy_fat, get_rand_k_4, get_rand_k_6};
+use crate::utils::rand::{get_rand_is_buy_fat, get_rand_k_4, get_rand_k_6, rand_idx};
 
 pub async fn create_unit_service(handlers: &Vec<Handlers>, unit: Unit) -> Result<(), String> {
     let Unit {
@@ -100,39 +100,15 @@ pub async fn create_unit_service(handlers: &Vec<Handlers>, unit: Unit) -> Result
         }))
         .await;
     } else {
-        let rand_is_buy_fat = get_rand_is_buy_fat();
-        let rand_ks = if handlers.len() == 4 {
-            get_rand_k_4()
-        } else {
-            get_rand_k_6()
-        };
-
-        poss = join_all(handlers.iter().enumerate().map(|(i, h)| {
-            let k = rand_ks[i].k as f64;
-            let is_fat = rand_ks[i].is_fat;
-            let is_buy = if is_fat {
-                rand_is_buy_fat
-            } else {
-                !rand_is_buy_fat
-            };
-
-            return open_position(
-                &h.exchange_client,
-                &h.info_client,
-                DefaultPair {
-                    asset: asset.to_string(),
-                    sz: Decimal::from_f64(sz * k / 100.0)
-                        .unwrap()
-                        .round_dp(sz_decimals)
-                        .to_f64()
-                        .unwrap(),
-                    reduce_only: false,
-                    order_type: "FrontendMarket".to_string(),
-                },
-                h.public_address.clone(),
-                is_buy,
-            );
-        }))
+        poss = open_rand_poss_service(
+            handlers,
+            Unit {
+                sz,
+                asset: asset.clone(),
+                sz_decimals,
+                leverage,
+            },
+        )
         .await;
     }
 
@@ -260,4 +236,65 @@ pub async fn close_and_create_unit_service(
                 .join(" & "),
         ),
     }
+}
+
+pub async fn open_rand_poss_service(
+    handlers: &Vec<Handlers>,
+    unit: Unit,
+) -> Vec<Result<AssetPosition, String>> {
+    let fat_on_high = true; // TODO: move to unit
+    let rand_is_buy_fat = get_rand_is_buy_fat();
+    let mut rand_ks = if handlers.len() == 4 {
+        get_rand_k_4()
+    } else {
+        get_rand_k_6()
+    };
+
+    let mut handlers_with_balances = join_all(
+        handlers
+            .iter()
+            .map(|h| get_account_balance(&h.info_client, &h.public_address).map(move |r| (r, h))),
+    )
+    .await;
+
+    if fat_on_high {
+        handlers_with_balances.sort_by(|(a, _), (b, _)| b.partial_cmp(a).unwrap());
+    } else {
+        rand_ks = rand_idx(rand_ks.clone());
+    }
+
+    let poss = join_all(
+        handlers_with_balances
+            .iter()
+            .enumerate()
+            .map(|(i, (b, h))| {
+                let k = rand_ks[i].k as f64;
+                let is_fat = rand_ks[i].is_fat;
+                let is_buy = if is_fat {
+                    rand_is_buy_fat
+                } else {
+                    !rand_is_buy_fat
+                };
+
+                return open_position(
+                    &h.exchange_client,
+                    &h.info_client,
+                    DefaultPair {
+                        asset: unit.asset.to_string(),
+                        sz: Decimal::from_f64(unit.sz * k / 100.0)
+                            .unwrap()
+                            .round_dp(unit.sz_decimals)
+                            .to_f64()
+                            .unwrap(),
+                        reduce_only: false,
+                        order_type: "FrontendMarket".to_string(),
+                    },
+                    h.public_address.clone(),
+                    is_buy,
+                );
+            }),
+    )
+    .await;
+
+    poss
 }

@@ -4,7 +4,7 @@ use rand::Rng;
 pub fn get_rand_k_4() -> Vec<RandK> {
     let mut rng = rand::thread_rng();
     rng.gen_range(10..11);
-    let min_k = 10;
+    let min_k = 20;
     let mut acc = 100;
 
     let k_1 = 100;
@@ -32,12 +32,13 @@ pub fn get_rand_k_4() -> Vec<RandK> {
         },
     ];
 
-    rand_idx_4(ks)
+    ks
+    // rand_idx_4(ks)
 }
 
 pub fn get_rand_k_6() -> Vec<RandK> {
     let mut rng = rand::thread_rng();
-    let min_k = 10;
+    let min_k = 20;
     let mut acc = 100;
 
     let k_1 = rng.gen_range(40..61); // fat
@@ -76,7 +77,8 @@ pub fn get_rand_k_6() -> Vec<RandK> {
         },
     ];
 
-    rand_idx_6(ks)
+    ks
+    // rand_idx_6(ks)
 }
 
 pub fn get_rand_is_buy_fat() -> bool {
@@ -134,4 +136,12 @@ pub fn rand_idx_6(ks: Vec<RandK>) -> Vec<RandK> {
     ks_6.push(ks[0]);
 
     ks_6
+}
+
+pub fn rand_idx(ks: Vec<RandK>) -> Vec<RandK> {
+    if ks.len() == 4 {
+        rand_idx_4(ks)
+    } else {
+        rand_idx_6(ks)
+    }
 }
