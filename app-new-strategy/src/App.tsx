@@ -108,7 +108,7 @@ const App = () => {
         </div>
         <LogsProvider>{tabId === Tabs.Logs.id && <Logs />}</LogsProvider>
       </Box>
-      <ToastContainer position='bottom-left' />
+      <ToastContainer position='bottom-left' pauseOnFocusLoss={false} autoClose={3000} />
     </Box>
   )
 }
