@@ -24,6 +24,11 @@ export class SUPABASE_DB {
     { openedTiming: number; recreateTiming: number }
   >
   unitTimingTimeoutId: NodeJS.Timeout | null
+  unitSizesChanges: Record<
+    string,
+    number
+  >
+  unitSizesTimeoutId: NodeJS.Timeout | null
   auth: {
     user: User
     session: Session
@@ -38,6 +43,9 @@ export class SUPABASE_DB {
 
     this.unitTimingChanges = {}
     this.unitTimingTimeoutId = null
+
+    this.unitSizesChanges = {}
+    this.unitSizesTimeoutId = null
 
     this.auth = null
   }
@@ -96,11 +104,23 @@ export class SUPABASE_DB {
     }
 
     const id = uuidv4()
-    await this.client.from('proxies').insert<Proxy>({ ...proxy, id, user_id: this.auth.user.id })
-    return this.client.from('accounts').insert({ ...account, proxy_id: id, user_id: this.auth.user.id })
+    await this.client
+      .from('proxies')
+      .insert<Proxy>({ ...proxy, id, user_id: this.auth.user.id })
+    return this.client
+      .from('accounts')
+      .insert({ ...account, proxy_id: id, user_id: this.auth.user.id })
   }
 
-  public removeAccounts = (accountIds: string[]) => {
+  public removeAccounts = async (accountIds: string[]) => {
+    const batches = await this.client.from('batches').select().filter('accounts', 'ov', `{${accountIds.map(id => `"${id}"`).join(',')}}`)
+  
+    if (batches.data?.length) {
+      return new Promise((_, rej) => {
+        rej('Some of accounts exists in batch, so they can not be deleted')
+      })
+    }
+    
     return this.client.from('accounts').delete().in('id', accountIds)
   }
 
@@ -145,10 +165,13 @@ export class SUPABASE_DB {
     return data ?? []
   }
 
+  public updateBatch = async (id: string, smart_balance_usage: boolean) => {
+    return this.client.from('batches').update({smart_balance_usage}).eq('id', id)
+  }
+
   public createBatch = async (
     name: string,
-    account_1_id: string,
-    account_2_id: string,
+    accounts: string[],
     timing: number,
   ) => {
     if (!this.auth) {
@@ -157,8 +180,7 @@ export class SUPABASE_DB {
 
     return this.client.from('batches').insert({
       name,
-      account_1_id,
-      account_2_id,
+      accounts,
       constant_timing: timing,
       user_id: this.auth.user.id,
     })
@@ -225,6 +247,63 @@ export class SUPABASE_DB {
     return JSON.parse(batch.data[0].unit_timings)
   }
 
+  public setUnitInitSize = async (
+    batchId: string,
+    asset: string,
+    size: number,
+  ) => {
+    this.unitSizesChanges = {
+      ...this.unitSizesChanges,
+      [asset]: size,
+    }
+
+    if (this.unitSizesTimeoutId) {
+      clearTimeout(this.unitSizesTimeoutId)
+    }
+
+    this.unitSizesTimeoutId = setTimeout(() => {
+      this.applyUnitSizesChanges(batchId)
+    }, 100)
+  }
+
+  private applyUnitSizesChanges = async (batchId: string) => {
+    const {data} = await this.client
+      .from('batches')
+      .select<string, {unit_sizes: string}>('unit_sizes')
+      .eq('id', batchId)
+
+    if (!data?.[0]) {
+      throw new Error('setUnitSizes')
+    }
+
+    const prev_unit_sizes = JSON.parse(data[0].unit_sizes)
+
+    const unit_sizes = JSON.stringify({
+      ...prev_unit_sizes,
+      ...this.unitSizesChanges,
+    })
+
+    this.unitSizesChanges = {}
+
+    return this.client
+      .from('batches')
+      .update({ unit_sizes })
+      .eq('id', batchId)
+  }
+
+  public getUnitSizes = async (batchId: string) => {
+    const {data} = await this.client
+      .from('batches')
+      .select<string, {unit_sizes: string}>('unit_sizes')
+      .eq('id', batchId)
+
+    if (!data?.[0]) {
+      throw new Error('getUnitSizes')
+    }
+
+    return JSON.parse(data?.[0].unit_sizes)
+  }
+
   public closeBatch = async (batchId: string) => {
     return this.client.from('batches').delete().eq('id', batchId)
   }
@@ -236,7 +315,7 @@ export class SUPABASE_DB {
         .select<string, LogRow>('*')
         .gte('created_at', start)
         .lte('created_at', end)
-        .order('created_at', { ascending: true })
+        .order('created_at', { ascending: false })
     ).data
   }
 

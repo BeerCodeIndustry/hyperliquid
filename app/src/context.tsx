@@ -1,6 +1,7 @@
 import { CircularProgress } from '@mui/material'
 import { invoke } from '@tauri-apps/api'
 import { createContext, useCallback, useEffect, useMemo, useState } from 'react'
+import { toast } from 'react-toastify'
 
 import { SUPABASE_DB } from './db/SUPABASE_DB'
 import { Account, Batch, Proxy } from './types'
@@ -23,13 +24,11 @@ interface GlobalContextType {
   ) => void
   createBatch: ({
     name,
-    account_1_id,
-    account_2_id,
+    accounts,
     timing,
   }: {
     name: string
-    account_1_id: string
-    account_2_id: string
+    accounts: string[]
     timing: number
   }) => void
   closeBatch: (batchId: string) => void
@@ -91,9 +90,13 @@ export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
   }, [])
 
   const removeAccounts = useCallback((accountIds: string[]) => {
-    db.removeAccounts(accountIds).then(() => {
-      getAccounts()
-    })
+    db.removeAccounts(accountIds)
+      .then(() => {
+        getAccounts()
+      })
+      .catch(e => {
+        toast(e, { type: 'error' })
+      })
   }, [])
 
   const removeProxies = useCallback((proxyIds: string[]) => {
@@ -170,16 +173,14 @@ export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
   const createBatch = useCallback(
     ({
       name,
-      account_1_id,
-      account_2_id,
+      accounts,
       timing,
     }: {
       name: string
-      account_1_id: string
-      account_2_id: string
+      accounts: string[]
       timing: number
     }) => {
-      db.createBatch(name, account_1_id, account_2_id, timing).then(() => {
+      db.createBatch(name, accounts, timing).then(() => {
         getBatches()
       })
     },
@@ -255,13 +256,13 @@ export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
     const insertLogs = async () => {
       await invoke('get_logs').then(logs => {
         return db.insertLogs(logs as string[]).then(() => {
-          return invoke('clear_logs')
+          return invoke('clear_logs', { rows: logs })
         })
       })
 
       t = setTimeout(() => {
         insertLogs()
-      }, 10000)
+      }, 30000)
     }
 
     insertLogs()

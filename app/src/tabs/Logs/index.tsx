@@ -7,19 +7,20 @@ import {
   Paper,
   Typography,
 } from '@mui/material'
-import { blue, green, red, yellow } from '@mui/material/colors'
+import { blue, lightGreen, red, yellow } from '@mui/material/colors'
 import { DateTimePicker, LocalizationProvider } from '@mui/x-date-pickers'
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
 import dayjs, { Dayjs } from 'dayjs'
 import 'dayjs/locale/ru'
 import { useContext, useEffect, useState } from 'react'
+import { v4 as uuidv4 } from 'uuid'
 
 import { LogsContext } from '../../logsContext'
 
 const colors = {
   DEBUG: blue[900],
   ERROR: red[900],
-  INFO: green[900],
+  INFO: lightGreen[500],
   WARN: yellow[900],
 }
 
@@ -122,9 +123,9 @@ export const Logs = () => {
             </Box>
           </Box>
         </AppBar>
-        <Box sx={{ display: 'flex', flexDirection: 'column-reverse', gap: 1 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
           {logs.map(info => (
-            <Paper sx={{ p: 1 }}>
+            <Paper sx={{ p: 1 }} key={uuidv4()}>
               <Typography color={getLogColor(info)}>{info}</Typography>
             </Paper>
           ))}

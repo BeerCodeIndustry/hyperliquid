@@ -11,13 +11,13 @@ export const stringifyProxy = (proxy: Proxy) => {
     return 'No proxy'
   }
 
-  return `${proxy.name}:${proxy.host}:${proxy.port}:${proxy.username}:${proxy.password}`
+  return `${proxy.host}:${proxy.port}:${proxy.username}:${proxy.password}`
 }
 
 export const parseProxy = (proxyString: string): Proxy => {
-  const [name, host, port, username, password] = proxyString.split(':')
+  const [host, port, username, password] = proxyString.split(':')
 
-  return { name, host, port, username, password }
+  return { host, port, username, password }
 }
 
 export const connectSocket = (cb: (socket: WebSocket | null) => void) => {
@@ -54,15 +54,19 @@ export const transformAccountStatesToUnits = (
           base_unit_info: {
             asset: coin,
             leverage: leverage.value,
-            size: Math.floor(Math.abs(Number(szi) / leverage.value)),
+            size: 0,
           },
           positions: [],
         }
+      }
+      if (Number(szi) > 0) {
+        unitsMap[coin].base_unit_info.size += Number(szi) / leverage.value
       }
       unitsMap[coin].positions.push({
         info: {
           szi: position.position.szi,
           positionValue: position.position.positionValue,
+          leverage: position.position.leverage.value,
           liquidationPx: position.position.liquidationPx,
         },
       })
@@ -114,5 +118,38 @@ export const formatLogs = (
     }
 
     return { text: log, created_at: match[1], user_id }
+  })
+}
+
+export const getLongPositions = (positions: Unit['positions']) => {
+  return positions.filter(p => p.info.szi[0] !== '-')
+}
+
+export const getShortPositions = (positions: Unit['positions']) => {
+  return positions.filter(p => p.info.szi[0] === '-')
+}
+
+export const getPositionsSummary = (positions: Unit['positions']) => {
+  return positions.reduce(
+    (acc, pos) =>
+      acc + Math.abs(Number(pos.info.szi)),
+    0,
+  )
+}
+
+export const withTimeout = <T>(invoke: () => Promise<T>, time = 20000) => {
+  return new Promise<T>((res, rej) => {
+    let timeout: NodeJS.Timeout;
+    invoke().then((response) => {
+      clearTimeout(timeout)
+      res(response)
+    }).catch((e) => {
+      clearTimeout(timeout)
+      rej(e)
+    })
+
+    timeout = setTimeout(() => {
+      rej("timeout " + time)
+    }, time)
   })
 }

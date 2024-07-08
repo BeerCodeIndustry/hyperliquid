@@ -1,8 +1,8 @@
-import DeleteIcon from '@mui/icons-material/Delete'
-import { Box, Button, IconButton, Tooltip } from '@mui/material'
+import { Box, Button } from '@mui/material'
 import React, { useContext, useMemo, useState } from 'react'
 
 import { AddAccountModal } from '../../components/AddAccountModal'
+import { ChipWithCopy } from '../../components/ChipWithCopy'
 import { SetProxyModal } from '../../components/SetProxyModal'
 import { Row, Table } from '../../components/Table'
 import { GlobalContext } from '../../context'
@@ -17,9 +17,9 @@ const createRows = (
     id: account.id!,
     data: [
       account.name,
-      account.public_address,
-      account.api_private_key,
-      stringifyProxy(getAccountProxy(account)!),
+      <ChipWithCopy value={account.public_address} />,
+      <ChipWithCopy value={account.api_private_key} />,
+      <ChipWithCopy value={stringifyProxy(getAccountProxy(account)!)} />,
     ],
   }))
 }
@@ -57,7 +57,10 @@ export const Accounts = () => {
   const rows = useMemo(() => createRows(accounts, getAccountProxy), [accounts])
   const [activeModalId, setModalId] = useState<string | null>(null)
 
-  const ActionBar: React.FC<{ selected: string[] }> = ({ selected }) => {
+  const ActionBar: React.FC<{
+    selected: string[]
+    onActionDone: () => void
+  }> = ({ selected, onActionDone }) => {
     return (
       <>
         <SetProxyModal
@@ -77,15 +80,22 @@ export const Accounts = () => {
           <Button
             variant='contained'
             color='primary'
-            onClick={() => setModalId('setProxyModal')}
+            onClick={() => {
+              setModalId('setProxyModal')
+            }}
           >
             Set Proxy
           </Button>
-          <Tooltip title='Delete' onClick={() => removeAccounts(selected)}>
-            <IconButton>
-              <DeleteIcon />
-            </IconButton>
-          </Tooltip>
+          <Button
+            variant='contained'
+            color='error'
+            onClick={() => {
+              onActionDone()
+              removeAccounts(selected)
+            }}
+          >
+            Delete selected
+          </Button>
         </Box>
       </>
     )

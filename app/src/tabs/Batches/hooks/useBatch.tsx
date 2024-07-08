@@ -9,14 +9,18 @@ import {
 } from 'react'
 import { toast } from 'react-toastify'
 
-import { GlobalContext } from '../../../context'
+import { GlobalContext, db } from '../../../context'
 import { Account, AccountState, Unit } from '../../../types'
-import { getBatchAccount, transformAccountStatesToUnits } from '../../../utils'
+import {
+  getBatchAccount,
+  transformAccountStatesToUnits,
+  withTimeout,
+} from '../../../utils'
 
 interface Props {
-  account_id_1: string
-  account_id_2: string
+  accounts: string[]
   id: string
+  smartBalanceUsage: boolean
   name: string
 }
 
@@ -28,10 +32,9 @@ interface CreateUnitPayload {
 }
 
 interface ReturnType {
-  account_1: Account
-  account_2: Account
+  batchAccounts: Account[]
   units: Unit[]
-  balances: Record<string, string>
+  balances: Record<string, { free: string; all: string }>
   unitTimings: Record<string, { openedTiming: number; recreateTiming: number }>
   closingUnits: string[]
   recreatingUnits: string[]
@@ -50,21 +53,20 @@ interface ReturnType {
 const UPDATE_INTERVAL = 2500
 
 export const useBatch = ({
-  account_id_1,
-  account_id_2,
+  accounts: accountsProps,
   id,
   name,
+  smartBalanceUsage,
 }: Props): ReturnType => {
   const { accounts, getAccountProxy, getUnitTimings, setUnitInitTimings } =
     useContext(GlobalContext)
 
-  const account_1 = useMemo(
-    () => accounts.find(a => a.id === account_id_1)!,
-    [accounts],
-  )
-  const account_2 = useMemo(
-    () => accounts.find(a => a.id === account_id_2)!,
-    [accounts],
+  const batchAccounts = useMemo(
+    () =>
+      accountsProps.map(a => {
+        return accounts.find(b => b.id === a)!
+      })!,
+    [accountsProps],
   )
 
   const updatingRef = useRef(false)
@@ -75,7 +77,9 @@ export const useBatch = ({
   const [creatingUnits, setCreatingUnits] = useState<string[]>([])
   const [recreatingUnits, setRecreatingUnits] = useState<string[]>([])
 
-  const [balances, setBalances] = useState<Record<string, string>>({})
+  const [balances, setBalances] = useState<
+    Record<string, { free: string; all: string }>
+  >({})
 
   const [accountStates, setAccountState] = useState<
     Record<string, AccountState>
@@ -84,6 +88,8 @@ export const useBatch = ({
   const [unitTimings, setUnitTimings] = useState<
     Record<string, { openedTiming: number; recreateTiming: number }>
   >({})
+
+  const [unitSizes, setUnitSizes] = useState<Record<string, number>>({})
 
   const units = useMemo(() => {
     return transformAccountStatesToUnits(Object.values(accountStates))
@@ -103,31 +109,124 @@ export const useBatch = ({
     [unitTimings],
   )
 
-  const fetchUserStates = useCallback((): Promise<
-    [AccountState, AccountState]
-  > => {
-    return invoke<[AccountState, AccountState]>('get_unit_user_states', {
-      account1: getBatchAccount(account_1, getAccountProxy(account_1)),
-      account2: getBatchAccount(account_2, getAccountProxy(account_2)),
-    }).then((res: [AccountState, AccountState]) => {
-      setAccountState({
-        [account_1.public_address]: res[0],
-        [account_2.public_address]: res[1],
-      })
-      setBalances({
-        [account_1.public_address]: res[0].marginSummary.accountValue,
-        [account_2.public_address]: res[1].marginSummary.accountValue,
-      })
+  const getUnitSize = useCallback(
+    (asset: string): number => {
+      return unitSizes[asset as keyof typeof unitTimings]
+    },
+    [unitSizes],
+  )
+
+  const getDecimals = useCallback((asset: string): Promise<number> => {
+    return invoke<number>('get_asset_sz_decimals', {
+      batchAccount: getBatchAccount(
+        batchAccounts[0],
+        getAccountProxy(batchAccounts[0]),
+      ),
+      asset,
+    }).catch(() => {
+      toast(
+        `${asset}: Error while getting sz_decimals. Set 0 as sz_decimals 🤯`,
+        { type: 'error' },
+      )
+
+      return 0
+    })
+  }, [])
+
+  const setTimings = useCallback(
+    async (asset: string, recreateTiming: number, openedTiming: number) => {
+      setUnitInitTimings(id, asset, recreateTiming, openedTiming)
+      setUnitTimings(prev => ({
+        ...prev,
+        [asset]: {
+          openedTiming,
+          recreateTiming,
+        },
+      }))
+    },
+    [setUnitInitTimings, setUnitTimings],
+  )
+
+  const fetchUserStates = useCallback((): Promise<AccountState[]> => {
+    return withTimeout<AccountState[]>(
+      () =>
+        invoke<AccountState[]>('get_unit_user_states', {
+          accounts: batchAccounts.map(acc =>
+            getBatchAccount(acc, getAccountProxy(acc)),
+          ),
+        })
+    ).then((res: AccountState[]) => {
+      setAccountState(
+        batchAccounts.reduce((acc, account, index) => {
+          return { ...acc, [account.public_address]: res[index] }
+        }, {}),
+      )
+
+      setBalances(
+        batchAccounts.reduce((acc, account, index) => {
+          return {
+            ...acc,
+            [account.public_address]: {
+              all: Number(res[index].marginSummary.accountValue).toFixed(2),
+              free: (
+                +res[index].marginSummary.accountValue -
+                +res[index].marginSummary.totalMarginUsed
+              ).toFixed(2),
+            },
+          }
+        }, {}),
+      )
 
       return res
     }) as Promise<[AccountState, AccountState]>
-  }, [account_1, account_2])
+  }, [batchAccounts])
+
+  const recreateUnit = useCallback(
+    async ({ asset, leverage }: Omit<CreateUnitPayload, 'timing' | 'sz'>) => {
+      setRecreatingUnits(prev => [...prev, asset])
+
+      const sz_decimals = await getDecimals(asset)
+
+      const promise = invoke('close_and_create_same_unit', {
+        batchAccounts: batchAccounts.map(acc =>
+          getBatchAccount(acc, getAccountProxy(acc)),
+        ),
+        unit: {
+          asset,
+          sz: getUnitSize(asset),
+          smart_balance_usage: smartBalanceUsage,
+          leverage,
+          sz_decimals,
+        },
+      }).finally(async () => {
+        const unitRecreateTiming = getUnitTimingReacreate(asset)
+        setTimings(asset, unitRecreateTiming, Date.now())
+        await fetchUserStates()
+        setRecreatingUnits(prev => prev.filter(unit => unit !== asset))
+      })
+
+      toast.promise(promise, {
+        pending: `${name}: Re-creating unit with asset ${asset}`,
+        success: `${name}: Unit with asset ${asset} re-created 👌`,
+        error: `${name}: Error while re-creating unit with asset ${asset} error 🤯`,
+      })
+    },
+    [ 
+      smartBalanceUsage,
+      batchAccounts,
+      getUnitTimingReacreate,
+      fetchUserStates,
+      setTimings,
+      getUnitSize,
+      setRecreatingUnits,
+    ],
+  )
 
   const updateLoop = useCallback(() => {
     updatingRef.current = true
-    const now = Date.now() - UPDATE_INTERVAL
+    const now = Date.now()
     return fetchUserStates()
-      .then((res: [AccountState, AccountState]) => {
+      .then((res: AccountState[]) => {
         const units = transformAccountStatesToUnits(res)
 
         units.forEach((unit: Unit) => {
@@ -141,18 +240,19 @@ export const useBatch = ({
           if (
             closingUnits.includes(unit.base_unit_info.asset) ||
             recreatingUnits.includes(unit.base_unit_info.asset) ||
-            creatingUnits.includes(unit.base_unit_info.asset)
+            creatingUnits.includes(unit.base_unit_info.asset) ||
+            !unitOpenedTiming ||
+            !unitRecreateTiming
           ) {
             return
           }
 
           if (
             now - unitOpenedTiming >= unitRecreateTiming ||
-            unit.positions.length === 1
+            unit.positions.length !== accountsProps.length
           ) {
             recreateUnit({
               asset: unit.base_unit_info.asset,
-              sz: unit.base_unit_info.size,
               leverage: unit.base_unit_info.leverage,
             })
           }
@@ -168,30 +268,31 @@ export const useBatch = ({
     creatingUnits,
     getUnitTimingOpened,
     getUnitTimingReacreate,
+    recreateUnit,
+    unitTimings,
   ])
 
   useEffect(() => {
-    Promise.all([getUnitTimings(id), fetchUserStates()]).then(
-      ([unitTimings]) => {
-        setUnitTimings(unitTimings)
-        setInitialLoading(false)
-      },
-    )
+    Promise.all([
+      getUnitTimings(id).then((unitTimings) => setUnitTimings(unitTimings)),
+      getUnitSizes().then(unitSizes => setUnitSizes(unitSizes)),
+      fetchUserStates()
+    ]).finally(() => {
+      setInitialLoading(false)
+    })
   }, [])
 
-  const setTimings = useCallback(
-    async (asset: string, recreateTiming: number, openedTiming: number) => {
-      await setUnitInitTimings(id, asset, recreateTiming, openedTiming)
-      setUnitTimings(prev => ({
-        ...prev,
-        [asset]: {
-          openedTiming,
-          recreateTiming,
-        },
-      }))
+  const setUnitSize = useCallback(
+    (asset: string, size: number) => {
+      setUnitSizes(prev => ({ ...prev, [asset]: size }))
+      return db.setUnitInitSize(id, asset, size)
     },
-    [setUnitInitTimings, setUnitTimings],
+    [id],
   )
+
+  const getUnitSizes = useCallback(() => {
+    return db.getUnitSizes(id)
+  }, [id])
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -210,21 +311,35 @@ export const useBatch = ({
     async ({ asset, sz, leverage, timing }: CreateUnitPayload) => {
       setCreatingUnits(prev => [...prev, asset])
 
+      await setUnitSize(asset, sz)
+      const sz_decimals = await getDecimals(asset)
+
       return invoke('create_unit', {
-        account1: getBatchAccount(account_1, getAccountProxy(account_1)),
-        account2: getBatchAccount(account_2, getAccountProxy(account_2)),
+        batchAccounts: batchAccounts.map(acc =>
+          getBatchAccount(acc, getAccountProxy(acc)),
+        ),
         unit: {
           asset,
           sz,
           leverage,
+          smart_balance_usage: smartBalanceUsage,
+          sz_decimals,
         },
       }).finally(async () => {
-        await setTimings(asset, timing, Date.now())
+        setTimings(asset, timing, Date.now())
         await fetchUserStates()
         setCreatingUnits(prev => prev.filter(coin => coin !== asset))
       })
     },
-    [account_1, account_2, fetchUserStates, setTimings],
+    [
+      smartBalanceUsage,
+      batchAccounts,
+      fetchUserStates,
+      setTimings,
+      getDecimals,
+      setUnitSize,
+      setCreatingUnits,
+    ],
   )
 
   const closeUnit = useCallback(
@@ -232,8 +347,9 @@ export const useBatch = ({
       setClosingUnits(prev => [...prev, unit.base_unit_info.asset])
 
       return invoke('close_unit', {
-        account1: getBatchAccount(account_1, getAccountProxy(account_1)),
-        account2: getBatchAccount(account_2, getAccountProxy(account_2)),
+        batchAccounts: batchAccounts.map(acc =>
+          getBatchAccount(acc, getAccountProxy(acc)),
+        ),
         asset: unit.base_unit_info.asset,
       }).finally(async () => {
         await fetchUserStates()
@@ -242,40 +358,11 @@ export const useBatch = ({
         )
       })
     },
-    [account_1, account_2, fetchUserStates],
-  )
-
-  const recreateUnit = useCallback(
-    ({ asset, sz, leverage }: Omit<CreateUnitPayload, 'timing'>) => {
-      setRecreatingUnits(prev => [...prev, asset])
-
-      const promise = invoke('close_and_create_same_unit', {
-        account1: getBatchAccount(account_1, getAccountProxy(account_1)),
-        account2: getBatchAccount(account_2, getAccountProxy(account_2)),
-        unit: {
-          asset,
-          sz,
-          leverage,
-        },
-      }).finally(async () => {
-        const unitRecreateTiming = getUnitTimingReacreate(asset)
-        await setTimings(asset, unitRecreateTiming, Date.now())
-        await fetchUserStates()
-        setRecreatingUnits(prev => prev.filter(unit => unit !== asset))
-      })
-
-      toast.promise(promise, {
-        pending: `${name}: Re-creating unit with asset ${asset}`,
-        success: `${name}: Unit with asset ${asset} re-created 👌`,
-        error: `${name}: Error while re-creating unit with asset ${asset} error 🤯`,
-      })
-    },
-    [account_1, account_2, getUnitTimingReacreate, fetchUserStates, setTimings],
+    [batchAccounts, fetchUserStates, setClosingUnits],
   )
 
   return {
-    account_1,
-    account_2,
+    batchAccounts,
     units,
     balances,
     unitTimings,

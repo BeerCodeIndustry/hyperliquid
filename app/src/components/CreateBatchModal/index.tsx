@@ -1,18 +1,31 @@
 import {
   Button,
+  Chip,
   FormControl,
+  FormHelperText,
   InputLabel,
   MenuItem,
   Modal,
+  OutlinedInput,
   Paper,
   Select,
+  SelectChangeEvent,
   TextField,
+  Typography,
 } from '@mui/material'
 import { useContext, useMemo, useState } from 'react'
 
 import Box from '@mui/material/Box'
 
 import { GlobalContext } from '../../context'
+
+const MenuProps = {
+  PaperProps: {
+    style: {
+      width: 250,
+    },
+  },
+}
 
 export const CreateBatchModal: React.FC<{
   open: boolean
@@ -21,34 +34,40 @@ export const CreateBatchModal: React.FC<{
   const { accounts, createBatch, batches } = useContext(GlobalContext)
   const [batchAccounts, setBatchAccounts] = useState<{
     name: string
-    account_1_id: string
-    account_2_id: string
+    accounts: string[]
     timing: number
   }>({
     name: '',
-    account_1_id: '',
-    account_2_id: '',
+    accounts: [],
     timing: 60,
   })
 
   const filteredAccounts = useMemo(() => {
-    const allBatches = batches.map(b => [b.account_1_id, b.account_2_id]).flat()
+    const allBatches = batches.map(b => b.accounts).flat()
 
     return accounts.filter(a => !allBatches.includes(a.id!))
   }, [accounts, batches])
 
   const onConfirm = () => {
-    if (batchAccounts.account_1_id && batchAccounts.account_2_id) {
+    if (
+      batchAccounts.accounts.length === 2 ||
+      batchAccounts.accounts.length === 4 ||
+      batchAccounts.accounts.length === 6
+    ) {
       createBatch(batchAccounts)
       handleClose()
     }
   }
-
-  const onChange = (
-    id: 'account_1_id' | 'account_2_id' | 'timing' | 'name',
-    v: string | number,
-  ) => {
+  console.log(batchAccounts)
+  const onChange = (id: 'timing' | 'name', v: string | number) => {
     setBatchAccounts(prev => ({ ...prev, [id]: v ?? '' }))
+  }
+
+  const onAccountsChange = (v: SelectChangeEvent<string[]>) => {
+    setBatchAccounts({
+      ...batchAccounts,
+      accounts: Array.from(v.target.value),
+    })
   }
 
   return (
@@ -71,46 +90,41 @@ export const CreateBatchModal: React.FC<{
               />
             </FormControl>
             <FormControl sx={{ m: 1, minWidth: 120 }}>
-              <InputLabel id='account-label'>Account 1</InputLabel>
+              <InputLabel id='demo-multiple-chip-label'>Accounts</InputLabel>
               <Select
-                labelId='account-label'
-                id='account-select'
-                value={batchAccounts.account_1_id}
-                label='Account 1'
-                onChange={e => onChange('account_1_id', e.target.value)}
+                labelId='demo-multiple-chip-label'
+                multiple
+                value={batchAccounts.accounts}
+                onChange={onAccountsChange}
+                maxRows={6}
+                input={
+                  <OutlinedInput id='select-multiple-chip' label='Accounts' />
+                }
+                renderValue={selected => (
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                    {selected.map(value => {
+                      const public_address = filteredAccounts.find(
+                        a => a.id === value,
+                      )?.public_address
+                      return <Chip key={value} label={public_address} />
+                    })}
+                  </Box>
+                )}
+                MenuProps={MenuProps}
               >
-                <MenuItem value='' key='none'>
-                  <em>None</em>
-                </MenuItem>
-                {filteredAccounts
-                  .filter(a => a.id !== batchAccounts.account_2_id)
-                  .map(a => (
-                    <MenuItem value={a.id} key={a.id}>
-                      {a.public_address}
-                    </MenuItem>
-                  ))}
+                {filteredAccounts.map(account => (
+                  <MenuItem key={account.id} value={account.id}>
+                    {account.public_address}
+                  </MenuItem>
+                ))}
+
+                {!filteredAccounts.length && (
+                  <Typography sx={{ p: 1 }}>No available accounts</Typography>
+                )}
               </Select>
-            </FormControl>
-            <FormControl sx={{ m: 1, minWidth: 120 }}>
-              <InputLabel id='account-label'>Account 2</InputLabel>
-              <Select
-                labelId='account-label'
-                id='account-select'
-                value={batchAccounts.account_2_id}
-                label='Account 2'
-                onChange={e => onChange('account_2_id', e.target.value)}
-              >
-                <MenuItem value='' key='none'>
-                  <em>None</em>
-                </MenuItem>
-                {filteredAccounts
-                  .filter(a => a.id !== batchAccounts.account_1_id)
-                  .map(a => (
-                    <MenuItem value={a.id} key={a.id}>
-                      {a.public_address}
-                    </MenuItem>
-                  ))}
-              </Select>
+              <FormHelperText variant='standard'>
+                Supported 2, 4 or 6 accounts in batch
+              </FormHelperText>
             </FormControl>
             <FormControl sx={{ m: 1, minWidth: 120 }}>
               <TextField
@@ -120,6 +134,10 @@ export const CreateBatchModal: React.FC<{
                 variant='outlined'
                 onChange={e => onChange('timing', Number(e.target.value))}
               />
+              <FormHelperText variant='standard'>
+                Not required, default 60 mins (you can change this value for
+                every single unit)
+              </FormHelperText>
             </FormControl>
           </Box>
 
@@ -137,9 +155,7 @@ export const CreateBatchModal: React.FC<{
               variant='contained'
               color='success'
               onClick={onConfirm}
-              disabled={
-                !batchAccounts.account_1_id || !batchAccounts.account_2_id
-              }
+              disabled={![2, 4, 6].includes(batchAccounts.accounts.length)}
             >
               Confirm
             </Button>

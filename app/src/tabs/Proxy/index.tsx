@@ -1,8 +1,8 @@
-import DeleteIcon from '@mui/icons-material/Delete'
-import { Box, Button, IconButton, Tooltip } from '@mui/material'
+import { Box, Button } from '@mui/material'
 import { useContext, useMemo, useState } from 'react'
 
 import { AddProxyModal } from '../../components/AddProxyModal'
+import { ChipWithCopy } from '../../components/ChipWithCopy'
 import { Row, Table } from '../../components/Table'
 import { GlobalContext } from '../../context'
 import { HeadCell, Proxy as ProxyType } from '../../types'
@@ -11,32 +11,25 @@ const createRows = (proxies: ProxyType[]): Row[] => {
   return proxies.map(proxy => ({
     id: proxy.id!,
     data: [
-      proxy.name,
-      `${proxy.host}:${proxy.port}`,
-      proxy.username,
-      proxy.password,
+      <ChipWithCopy value={`${proxy.host}:${proxy.port}`} />,
+      <ChipWithCopy value={proxy.username} />,
+      <ChipWithCopy value={proxy.password} />,
     ],
   }))
 }
 
 const headCells: HeadCell[] = [
   {
-    id: 'name',
-    align: 'left',
-    disablePadding: true,
-    label: 'Name',
-  },
-  {
     id: 'ip_port',
-    align: 'center',
+    align: 'left',
     disablePadding: false,
-    label: 'Ip:Port',
+    label: 'Host:Port',
   },
   {
     id: 'login',
     align: 'center',
     disablePadding: false,
-    label: 'Login',
+    label: 'Username',
   },
   {
     id: 'password',
@@ -51,15 +44,31 @@ export const Proxy = () => {
   const rows = useMemo(() => createRows(proxies), [proxies])
   const [activeModalId, setModalId] = useState<string | null>(null)
 
-  const ActionBar: React.FC<{ selected: string[] }> = ({ selected }) => {
+  const ActionBar: React.FC<{
+    selected: string[]
+    onActionDone: () => void
+  }> = ({ selected, onActionDone }) => {
     return (
-      <div>
-        <Tooltip title='Delete' onClick={() => removeProxies(selected)}>
-          <IconButton>
-            <DeleteIcon />
-          </IconButton>
-        </Tooltip>
-      </div>
+      <Box
+        sx={{
+          display: 'flex',
+          gap: 1,
+          alignItems: 'center',
+          width: '100%',
+          justifyContent: 'flex-end',
+        }}
+      >
+        <Button
+          variant='contained'
+          color='error'
+          onClick={() => {
+            onActionDone()
+            removeProxies(selected)
+          }}
+        >
+          Delete selected
+        </Button>
+      </Box>
     )
   }
 
@@ -69,7 +78,9 @@ export const Proxy = () => {
         <Button
           variant='contained'
           color='primary'
-          onClick={() => setModalId('addProxyModal')}
+          onClick={() => {
+            setModalId('addProxyModal')
+          }}
         >
           Add proxy
         </Button>

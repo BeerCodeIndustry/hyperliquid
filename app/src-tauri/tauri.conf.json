@@ -6,8 +6,8 @@
     "distDir": "../dist"
   },
   "package": {
-    "productName": "app",
-    "version": "0.0.0"
+    "productName": "hyperliquid-farming-bot",
+    "version": "3.4.6"
   },
   "tauri": {
     "allowlist": {
@@ -20,7 +20,7 @@
     "windows": [
       {
         "title": "app",
-        "width": 1280,
+        "width": 1480,
         "height": 920,
         "theme": "Dark"
       }
@@ -39,6 +39,17 @@
         "icons/icon.icns",
         "icons/icon.ico"
       ]
+    },
+    "updater": {
+      "active": true,
+      "endpoints": [
+        "https://beercodeindustry.github.io/hyperliquid/static.json"
+      ],
+      "dialog": true,
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEU5MUIxQkVCMDM4MkVEQTQKUldTazdZSUQ2eHNiNldrZnFWT0MwQjNDOHc2U244SjZlSHZoc3RhVGN0Ujlva3lvald1bXNSdS8K",
+      "windows": {
+        "installMode": "passive"
+      }
     }
   }
 }

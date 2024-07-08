@@ -20,7 +20,7 @@ export const AddAccountModal: React.FC<{
   const onConfirm = () => {
     if (account.api_private_key && account.public_address) {
       const { proxy, ...accountData } = account
-      handleAddAccount(accountData, proxy ? 'auto_name:' + account.proxy : '')
+      handleAddAccount(accountData, proxy ? account.proxy : '')
       handleClose()
     }
   }
@@ -58,6 +58,7 @@ export const AddAccountModal: React.FC<{
             <TextField
               label='Proxy'
               variant='outlined'
+              placeholder='host:port:login:password'
               onChange={e => onChange('proxy', e.target.value)}
             />
           </Box>

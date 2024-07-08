@@ -9,7 +9,6 @@ export interface Account {
 
 export interface Proxy {
   id?: string
-  name: string
   host: string
   port: string
   username: string
@@ -27,9 +26,10 @@ export interface HeadCell {
 export interface Batch {
   id?: string
   name: string
-  account_1_id: string
-  account_2_id: string
+  smart_balance_usage: boolean;
+  accounts: string[]
   unit_timings: string
+  unit_sizes: string
   constant_timing: number
   user_id?: string
 }
@@ -49,7 +49,7 @@ export interface Position {
 
 export interface AccountState {
   assetPositions: Position[]
-  marginSummary: { accountValue: string; totalRawUsd: string }
+  marginSummary: { accountValue: string; totalRawUsd: string, totalMarginUsed: string }
 }
 
 export interface Unit {
@@ -62,6 +62,7 @@ export interface Unit {
     info: {
       szi: string
       positionValue: string
+      leverage: number
       liquidationPx: string
     }
   }[]

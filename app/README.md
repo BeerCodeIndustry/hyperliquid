@@ -1,16 +1,34 @@
-# Tauri + React + Typescript
+Данный мануал должен помочь вам освоиться в работе с данным софтом. При возникновении вопросов пишите в чат.
 
-This template should help get you started developing with Tauri, React and Typescript in Vite.
+1. Добавление кошельков и прокси
+- Name - название для вашего кошелька
+- Public address - адрес вашего кошелька (Метамаска)
+- Api private key - достается по ссылке https://app.hyperliquid.xyz/API , вводите рандомное название, генерируете рандомный адрес и после нажимаете "Authorize API wallet". Красным текстом у вас будет выделен ваш Private API key . Сохраняете его после чего подписываете транзакцию с вашего кошелька. Повторно увидеть ваш Private API key будет невозможно.
+- Proxy - вставляете прокси в формате ip:port:log:pass
 
-## Recommended IDE Setup
+2. Объединение кошельков в батчи для работы с ними
+- Переходите во вкладку Batches
+- В верхнем левом углу нажимаете "Create batch"
+- Name - Название батча (для удобного ориентирования между батчами)
+- Accounts - Выбираете кошельки которые хотите поместить в пару. Допустимые пары это 2, 4, 6 кошельков.
+- Default unit re-create timing (mins) - тут ничего не трогаем, дефолтно установленный тайминг 60 минут.
 
-- [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+3. Create unit (Начало работы с батчами)
+- Select asset - Выбираете торговую пару для ваших кошельков, на данный момент доступны все возможные пары.
+- Size - Здесь указывается размер позиции без учета плеча, размер указывается в токенах (не в $).
+- Leverage - плечо
+- Re-create timing - Устанавливаете время спустя которое ваши позиции будут закрываться и переоткрываться без вашего вмешательства.
+- Пример: Выбираем ETH в size указываем 1 , в плечо указываем 2 , время пересоздания 30 минут. В данном случае будут открыты позиции на 2 ETH в лонг и 2 ETH в шорт, позиция будет автоматически переоткрываться спустя 30 минут на тот же самый тотал сайз (4 ETH) миксуя сайзы и лонги/шорты между кошельками.
 
-## Local DB up
+4. Import units (Массовый импорт юнитов)
+- Данная фича позволяет одновременно открывать большое количество пар
+- Заполнять нужно в формате Asset:size:leverage:re-create time , пример: ETH:1:1:30 . В этом случае откроется позиция на 1 ETH с 1 плечом и будет переоткрываться каждые 30 минут.
 
-- Install docker desktop for windows [download](https://desktop.docker.com/win/main/amd64/Docker%20Desktop%20Installer.exe?utm_source=docker&utm_medium=webreferral&utm_campaign=dd-smartbutton&utm_location=module&_gl=1*arlti6*_ga*MTIyOTgzMDcwLjE3MTA5NDA1NTc.*_ga_XJWPQMJYHQ*MTcxMjMxOTAyOS4yLjEuMTcxMjMxOTkzNC41Ny4wLjA.)
-- run docker desktop
-- run: `npx supabase init`
-- run: `npx supabase start`
+5. Доп информация
+- При ликвидациях все оставшиеся позиции закроются и весь ваш unit переоткроется. Мы не используем стоп лоссы и тейк профиты.
+- Максимальный slippage установлен на уровне 0.1% для того чтобы минимизировать потери.
+- Средние затраты на 1m вольюмов с данным ботом на уровне 450$ , 336$ из которых это фисы уплачиваемые гиперликвиду, оставшиеся 114$ потери на спредах и слипаже стакана.
+- Бот работает только маркет ордерами, игнорируя лимитки.
 
-- to stop db run: `npx supabase stop`
+6. Ошибки
+- Ошибка "error creating unit with asset "***" error" в 99.9% случаев вылазит если slippage превышате 0.1% или же у вас недостаточно баланса на кошельках.

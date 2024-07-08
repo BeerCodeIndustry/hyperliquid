@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use ethers::signers::LocalWallet;
 use hyperliquid_rust_sdk::{AssetPosition, ExchangeClient, InfoClient};
 use reqwest::Client;
@@ -32,7 +34,7 @@ pub struct Position {
     pub id: Uuid,
     pub asset_position: Option<AssetPosition>,
 }
-
+#[derive(Debug)]
 pub struct Account {
     pub public_address: String,
     pub wallet: LocalWallet,
@@ -54,7 +56,6 @@ pub struct AccountDTO {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct ProxyDTO {
-    pub name: String,
     pub host: String,
     pub port: String,
     pub username: String,
@@ -77,4 +78,12 @@ pub struct Unit {
     pub asset: String,
     pub sz: f64,
     pub leverage: u32,
+    pub sz_decimals: u32,
+    pub smart_balance_usage: bool,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct RandK {
+    pub k: i32,
+    pub is_fat: bool,
 }

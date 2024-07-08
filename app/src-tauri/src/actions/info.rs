@@ -10,7 +10,7 @@ use crate::utils::num::round_num_by_hyper_liquid;
 
 const DEFAULT_SLIPPAGE: f64 = 0.001; // 0.001 0.1%
 const FEES: f64 = 0.000336; // 0.000336
-const BALANCE_LIMIT: f64 = 10.0; // TODO: change to 50.0
+const BALANCE_LIMIT: f64 = 0.0; // TODO: change to 50.0
 
 pub async fn get_user_state(info_client: &InfoClient, public_address: &str) -> UserStateResponse {
     let user: String = public_address.parse().unwrap();
@@ -36,16 +36,22 @@ pub async fn get_position(
         .find(|pos| pos.position.coin == asset)
 }
 
-pub async fn get_account_balance(info_client: &InfoClient, public_address: &str) -> String {
+pub async fn get_account_balance(info_client: &InfoClient, public_address: &str) -> f64 {
     let user: String = public_address.parse().unwrap();
     let user = H160::from_str(&user).unwrap();
 
-    info_client
-        .user_state(user)
-        .await
-        .unwrap()
+    let user_state = info_client.user_state(user).await.unwrap();
+
+    user_state
         .margin_summary
         .account_value
+        .parse::<f64>()
+        .unwrap()
+        - user_state
+            .margin_summary
+            .total_margin_used
+            .parse::<f64>()
+            .unwrap()
 }
 
 pub async fn get_all_mids(info_client: &InfoClient) -> HashMap<String, String> {
@@ -93,7 +99,7 @@ pub async fn can_open_position(
     let full_amount =
         sz * (1.0 - FEES) * price_by_asset / leverage.to_f64().unwrap() + BALANCE_LIMIT;
 
-    balance.parse::<f64>().unwrap() >= full_amount
+    balance >= full_amount
 }
 
 pub async fn subscribe_positions(info_client: &mut InfoClient, public_address: &str) {

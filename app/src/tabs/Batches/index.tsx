@@ -12,10 +12,9 @@ export const Batches: React.FC = () => {
 
   return (
     <Box sx={{ width: '100%' }}>
-      <CreateBatchModal
-        open={modalId === 'createBatchModal'}
-        handleClose={() => setModalId(null)}
-      />
+      {modalId === 'createBatchModal' && (
+        <CreateBatchModal open={true} handleClose={() => setModalId(null)} />
+      )}
       <Button
         variant='contained'
         color='primary'
@@ -36,8 +35,8 @@ export const Batches: React.FC = () => {
           return (
             <Batch
               name={batch.name}
-              account_id_1={batch.account_1_id!}
-              account_id_2={batch.account_2_id!}
+              smartBalanceUsage={batch.smart_balance_usage}
+              accounts={batch.accounts}
               constant_timing={batch.constant_timing}
               id={batch.id!}
               key={batch.id}
