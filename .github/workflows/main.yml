@@ -30,7 +30,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: install frontend dependencies
-        working-directory: ./app-new-strategy
+        working-directory: ./app
         run: yarn install 
 
       - uses: tauri-apps/tauri-action@v0
@@ -39,7 +39,7 @@ jobs:
         with:
           appVersion: ${{ github.ref_name }}
           tagName: ${{ github.ref_name }}
-          projectPath: ./app-new-strategy
+          projectPath: ./app
           releaseName: ${{ github.ref_name }}
           releaseBody: 'See the assets to download this version and install.'
           releaseDraft: false
