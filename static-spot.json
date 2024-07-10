@@ -1,1 +1,11 @@
-
+{
+  "version": "1.0.0",
+  "notes": "See the assets to download this version and install.",
+  "pub_date": "2024-07-10T22:48:09.695Z",
+  "platforms": {
+    "windows-x86_64": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTazdZSUQ2eHNiNlpaNm52ZGtEL25wLzBhdk1INXE1SGJJRTB6Ull4S2dTTDU3czFUaGRzdi81aFdweDFTNHFMLzlaUU11YUZKQ1JnYk55SWphaEd3dDBMaEwvMTlCVUFBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzIwNjUxNjg1CWZpbGU6aHlwZXJsaXF1aWQtc3BvdC1ib3RfMS4wLjBfeDY0X2VuLVVTLm1zaS56aXAKQSsrQURuWVhub1FLdjMzcUE3bEhvam0zK1hyaWVFM2RRejBudzJzMWNFVWZQUmY2S2pBVXR6eUxMSWZwYXZ0ZnVnU2t0ZDkxTk5FUXU3Vm14SzBKQUE9PQo=",
+      "url": "https://github.com/BeerCodeIndustry/hyperliquid/releases/download/v1.0.0/hyperliquid-spot-bot_1.0.0_x64_en-US.msi.zip"
+    }
+  }
+}
