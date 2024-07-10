@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use ethers::signers::LocalWallet;
-use hyperliquid_rust_sdk::{AssetPosition, ExchangeClient, InfoClient};
+use hyperliquid_rust_sdk::{Level, AssetPosition, ExchangeClient, InfoClient};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -13,6 +13,7 @@ pub struct DefaultPair {
     pub sz: f64,
     pub order_type: String,
 }
+
 
 pub enum OrderType {
     Position,
@@ -68,6 +69,7 @@ pub struct BatchAccount {
     pub proxy: Option<ProxyDTO>,
 }
 
+
 #[derive(Clone, Debug)]
 pub struct GlobalAccount {
     pub sub_id: Option<u32>,
@@ -82,8 +84,21 @@ pub struct Unit {
     pub smart_balance_usage: bool,
 }
 
+#[derive(Deserialize, Debug, Clone)]
+pub struct Bid {
+    pub asset: String,
+    pub sz: f64,
+    pub is_buy: bool
+}
+
 #[derive(Debug, Clone, Copy)]
 pub struct RandK {
     pub k: i32,
     pub is_fat: bool,
+}
+
+#[derive(Debug, Clone)]
+pub struct OrderBook {
+    pub buy: f64,
+    pub sell: f64
 }

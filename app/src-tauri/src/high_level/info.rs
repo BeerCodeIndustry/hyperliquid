@@ -1,5 +1,7 @@
 use crate::actions::account::{get_account, get_info_client};
 use crate::types::BatchAccount;
+use hyperliquid_rust_sdk::SpotMeta;
+use log::info;
 
 #[tauri::command]
 pub async fn get_asset_price(batch_account: BatchAccount, asset: String) -> String {
@@ -25,4 +27,14 @@ pub async fn get_asset_sz_decimals(
         Some(s) => Ok(s.sz_decimals),
         None => Err("Cannot find asset".to_string()),
     }
+}
+
+#[tauri::command]
+pub async fn get_spot_assets_meta(batch_account: BatchAccount) -> SpotMeta {
+    let account = get_account(batch_account).unwrap();
+    let info_client = get_info_client(&account).await.unwrap();
+
+    let meta = info_client.spot_meta().await.unwrap();
+
+    meta
 }

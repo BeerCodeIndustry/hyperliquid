@@ -11,13 +11,13 @@ edition = "2021"
 tauri-build = { version = "1", features = [] }
 
 [dependencies]
-tauri = { version = "1", features = [ "updater", "shell-open"] }
+tauri = { version = "1", features = ["updater", "shell-open"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 dotenv = "0.15.0"
 env_logger = "0.11.3"
-ethers = { version = "0.17.0", features = ["eip712", "abigen"] }
-hyperliquid_rust_sdk = "0.3.0"
+ethers = { version = "2.0.14", features = ["eip712", "abigen"] }
+hyperliquid_rust_sdk = { path = "../../hyperliquid-rust-sdk" }
 itertools = "0.12.1"
 log = "0.4.21"
 reqwest = "0.11.18"

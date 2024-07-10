@@ -116,3 +116,4 @@ pub async fn get_batch_account_handlers(batch_account: BatchAccount) -> Result<H
         public_address: account.public_address.clone(),
     })
 }
+

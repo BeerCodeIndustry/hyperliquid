@@ -1,12 +1,18 @@
 use ethers::types::H160;
-use hyperliquid_rust_sdk::{AssetPosition, InfoClient, Message, Subscription, UserStateResponse};
+use hyperliquid_rust_sdk::{
+    AssetPosition, InfoClient, L2SnapshotResponse, Level, Message, Meta, OrderInfo,
+    OrderStatusResponse, SpotMeta, SpotMetaAndAssetCtxs, Subscription, UserStateResponse,
+};
 
-use log::info;
+use log::{error, info};
 use rust_decimal::prelude::ToPrimitive;
 use std::{collections::HashMap, str::FromStr};
 use tokio::sync::mpsc::unbounded_channel;
 
-use crate::utils::num::round_num_by_hyper_liquid;
+use crate::{
+    types::OrderBook,
+    utils::{convert_types::convert_public_address, num::round_num_by_hyper_liquid},
+};
 
 const DEFAULT_SLIPPAGE: f64 = 0.001; // 0.001 0.1%
 const FEES: f64 = 0.000336; // 0.000336
@@ -56,6 +62,20 @@ pub async fn get_account_balance(info_client: &InfoClient, public_address: &str)
 
 pub async fn get_all_mids(info_client: &InfoClient) -> HashMap<String, String> {
     info_client.all_mids().await.unwrap()
+}
+
+pub async fn get_l2_book(info_client: &InfoClient, coin: &str, is_buy: bool) -> f64 {
+    let levels = &info_client
+        .l2_snapshot(coin.to_string())
+        .await
+        .unwrap()
+        .levels;
+
+    let buy = levels[0][0].clone();
+    let sell = levels[1][0].clone();
+    let price = if is_buy { buy.px } else { sell.px };
+
+    price.parse::<f64>().unwrap()
 }
 
 pub async fn slippage_price(
@@ -113,5 +133,24 @@ pub async fn subscribe_positions(info_client: &mut InfoClient, public_address: &
 
     while let Some(Message::AllMids(all_mids)) = receiver.recv().await {
         info!("Received order updates: {:?}", all_mids);
+    }
+}
+
+pub async fn get_order_info(
+    info_client: &InfoClient,
+    public_address: &str,
+    oid: u64,
+) -> Result<OrderInfo, String> {
+    let user = convert_public_address(public_address);
+
+    let r = info_client.query_order_by_oid(user, oid).await;
+
+    match r {
+        Ok(order) => Ok(order.order),
+        Err(e) => {
+            error!("Smth went wrong while get_order_info {:?}", e);
+
+            return Err(format!("Smth went wrong while get_order_info {:?}", e));
+        }
     }
 }
