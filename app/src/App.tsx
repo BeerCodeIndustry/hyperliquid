@@ -11,8 +11,9 @@ import { Login } from './components/Login'
 import { ThemeSwitch } from './components/ThemeSwitch'
 import { GlobalContext } from './context'
 import { LogsProvider } from './logsContext'
-import { Accounts, Batches, Logs, Proxy } from './tabs'
+import { Accounts, Logs, Proxy } from './tabs'
 import { Theme, ThemeContext } from './themeContext'
+import { Spot } from './tabs/Spot'
 
 const Tabs = {
   Accounts: {
@@ -23,9 +24,9 @@ const Tabs = {
     label: 'Proxy',
     id: 'Proxy',
   },
-  Batches: {
-    label: 'Batches',
-    id: 'Batches',
+  Spot: {
+    label: 'Spot trading',
+    id: 'Spot',
   },
   Logs: {
     label: 'Logs',
@@ -103,8 +104,8 @@ const App = () => {
         <div style={{ display: tabId === Tabs.Proxy.id ? 'block' : 'none' }}>
           <Proxy />
         </div>
-        <div style={{ display: tabId === Tabs.Batches.id ? 'block' : 'none' }}>
-          <Batches />
+        <div style={{ display: tabId === Tabs.Spot.id ? 'block' : 'none' }}>
+          <Spot />
         </div>
         <LogsProvider>{tabId === Tabs.Logs.id && <Logs />}</LogsProvider>
       </Box>
