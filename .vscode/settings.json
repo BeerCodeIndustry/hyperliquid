@@ -1,4 +1,6 @@
 {
   "rust-analyzer.showUnlinkedFileNotification": false,
-  "CodeGPT.apiKey": "CodeGPT Plus Beta"
+  "CodeGPT.apiKey": "CodeGPT Plus Beta",
+  "prettier.configPath": "./app/.prettierrc",
+  "prettier.prettierPath": "./app/node_modules/prettier"
 }
