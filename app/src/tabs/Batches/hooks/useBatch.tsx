@@ -148,13 +148,12 @@ export const useBatch = ({
   )
 
   const fetchUserStates = useCallback((): Promise<AccountState[]> => {
-    return withTimeout<AccountState[]>(
-      () =>
-        invoke<AccountState[]>('get_unit_user_states', {
-          accounts: batchAccounts.map(acc =>
-            getBatchAccount(acc, getAccountProxy(acc)),
-          ),
-        })
+    return withTimeout<AccountState[]>(() =>
+      invoke<AccountState[]>('get_unit_user_states', {
+        accounts: batchAccounts.map(acc =>
+          getBatchAccount(acc, getAccountProxy(acc)),
+        ),
+      }),
     ).then((res: AccountState[]) => {
       setAccountState(
         batchAccounts.reduce((acc, account, index) => {
@@ -211,7 +210,7 @@ export const useBatch = ({
         error: `${name}: Error while re-creating unit with asset ${asset} error 🤯`,
       })
     },
-    [ 
+    [
       smartBalanceUsage,
       batchAccounts,
       getUnitTimingReacreate,
@@ -274,9 +273,9 @@ export const useBatch = ({
 
   useEffect(() => {
     Promise.all([
-      getUnitTimings(id).then((unitTimings) => setUnitTimings(unitTimings)),
+      getUnitTimings(id).then(unitTimings => setUnitTimings(unitTimings)),
       getUnitSizes().then(unitSizes => setUnitSizes(unitSizes)),
-      fetchUserStates()
+      fetchUserStates(),
     ]).finally(() => {
       setInitialLoading(false)
     })

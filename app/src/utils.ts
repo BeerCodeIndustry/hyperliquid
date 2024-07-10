@@ -1,10 +1,4 @@
-import {
-  Account,
-  AccountState,
-  BatchAccount,
-  Proxy,
-  Unit,
-} from './types'
+import { Account, AccountState, BatchAccount, Proxy, Unit } from './types'
 
 export const stringifyProxy = (proxy: Proxy) => {
   if (!proxy) {
@@ -130,26 +124,24 @@ export const getShortPositions = (positions: Unit['positions']) => {
 }
 
 export const getPositionsSummary = (positions: Unit['positions']) => {
-  return positions.reduce(
-    (acc, pos) =>
-      acc + Math.abs(Number(pos.info.szi)),
-    0,
-  )
+  return positions.reduce((acc, pos) => acc + Math.abs(Number(pos.info.szi)), 0)
 }
 
 export const withTimeout = <T>(invoke: () => Promise<T>, time = 20000) => {
   return new Promise<T>((res, rej) => {
-    let timeout: NodeJS.Timeout;
-    invoke().then((response) => {
-      clearTimeout(timeout)
-      res(response)
-    }).catch((e) => {
-      clearTimeout(timeout)
-      rej(e)
-    })
+    let timeout: NodeJS.Timeout
+    invoke()
+      .then(response => {
+        clearTimeout(timeout)
+        res(response)
+      })
+      .catch(e => {
+        clearTimeout(timeout)
+        rej(e)
+      })
 
     timeout = setTimeout(() => {
-      rej("timeout " + time)
+      rej('timeout ' + time)
     }, time)
   })
 }

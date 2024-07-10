@@ -1,4 +1,12 @@
-import { Box, Button, Checkbox, FormControl, FormControlLabel, Paper, Typography } from '@mui/material'
+import {
+  Box,
+  Button,
+  Checkbox,
+  FormControl,
+  FormControlLabel,
+  Paper,
+  Typography,
+} from '@mui/material'
 import React, { useContext, useMemo, useState } from 'react'
 import { toast } from 'react-toastify'
 
@@ -126,37 +134,36 @@ export const Batch: React.FC<{
           justifyContent: 'space-between',
           gap: '16px',
         }}
-      > 
-      <FormControl size='small' >
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={smartUsage}
-                  onChange={e => handleSmartBalanceChange(e.target.checked)}
-                />
-              }
-              label='Smart balance usage'
-            />
-          </FormControl>
-        <Box sx={{ display: 'flex', gap: 2}}>
-        <Button
-          variant='outlined'
-          color='primary'
-          disabled={initialLoading}
-          onClick={() => setModalId('importUnitsModal')}
-        >
-          Import units
-        </Button>
-        <Button
-          variant='contained'
-          color='primary'
-          disabled={initialLoading}
-          onClick={() => setModalId('createUnitModal')}
-        >
-          Create Unit
-        </Button>
+      >
+        <FormControl size='small'>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={smartUsage}
+                onChange={e => handleSmartBalanceChange(e.target.checked)}
+              />
+            }
+            label='Smart balance usage'
+          />
+        </FormControl>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <Button
+            variant='outlined'
+            color='primary'
+            disabled={initialLoading}
+            onClick={() => setModalId('importUnitsModal')}
+          >
+            Import units
+          </Button>
+          <Button
+            variant='contained'
+            color='primary'
+            disabled={initialLoading}
+            onClick={() => setModalId('createUnitModal')}
+          >
+            Create Unit
+          </Button>
         </Box>
-       
       </Box>
     )
   }
@@ -244,7 +251,6 @@ export const Batch: React.FC<{
           toolbar={toolbar()}
         />
       </Box>
-      
     </Paper>
   )
 }

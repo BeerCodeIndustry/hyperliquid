@@ -12,8 +12,8 @@ import { ThemeSwitch } from './components/ThemeSwitch'
 import { GlobalContext } from './context'
 import { LogsProvider } from './logsContext'
 import { Accounts, Logs, Proxy } from './tabs'
-import { Theme, ThemeContext } from './themeContext'
 import { Spot } from './tabs/Spot'
+import { Theme, ThemeContext } from './themeContext'
 
 const Tabs = {
   Accounts: {
@@ -36,7 +36,7 @@ const Tabs = {
 
 const App = () => {
   const { changeTheme, theme } = useContext(ThemeContext)
-  const { isAuth, logout } = useContext(GlobalContext)
+  const { isAuth, logout, accounts } = useContext(GlobalContext)
   const [tabId, setTabId] = useState<string>(
     localStorage.getItem('lastTabId') ?? Tabs.Accounts.id,
   )
@@ -76,7 +76,12 @@ const App = () => {
           aria-label='basic tabs example'
         >
           {Object.values(Tabs).map(({ label, id }) => (
-            <MuiTab label={label} value={id} key={id} />
+            <MuiTab
+              label={label}
+              value={id}
+              key={id}
+              disabled={id === 'Spot' && accounts.length === 0}
+            />
           ))}
         </MuiTabs>
         <Box sx={{ display: 'flex', gap: 2 }}>
@@ -109,7 +114,11 @@ const App = () => {
         </div>
         <LogsProvider>{tabId === Tabs.Logs.id && <Logs />}</LogsProvider>
       </Box>
-      <ToastContainer position='bottom-left' pauseOnFocusLoss={false} autoClose={3000} />
+      <ToastContainer
+        position='bottom-left'
+        pauseOnFocusLoss={false}
+        autoClose={3000}
+      />
     </Box>
   )
 }
