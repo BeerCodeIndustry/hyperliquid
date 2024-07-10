@@ -6,8 +6,8 @@
     "distDir": "../dist"
   },
   "package": {
-    "productName": "hyperliquid-farming-bot",
-    "version": "3.4.6"
+    "productName": "hyperliquid-spot-bot",
+    "version": "1.0.0"
   },
   "tauri": {
     "allowlist": {
@@ -19,7 +19,7 @@
     },
     "windows": [
       {
-        "title": "app",
+        "title": "hyperliquid-spot-bot",
         "width": 1480,
         "height": 920,
         "theme": "Dark"
@@ -31,7 +31,7 @@
     "bundle": {
       "active": true,
       "targets": "all",
-      "identifier": "hyperliquid",
+      "identifier": "hyperliquid-spot-bot",
       "icon": [
         "icons/32x32.png",
         "icons/128x128.png",
@@ -43,7 +43,7 @@
     "updater": {
       "active": true,
       "endpoints": [
-        "https://beercodeindustry.github.io/hyperliquid/static.json"
+        "https://beercodeindustry.github.io/hyperliquid/static-spot.json"
       ],
       "dialog": true,
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEU5MUIxQkVCMDM4MkVEQTQKUldTazdZSUQ2eHNiNldrZnFWT0MwQjNDOHc2U244SjZlSHZoc3RhVGN0Ujlva3lvald1bXNSdS8K",
