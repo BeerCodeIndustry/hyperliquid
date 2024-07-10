@@ -1,3 +1,4 @@
+import { LoadingButton } from '@mui/lab'
 import {
   Button,
   FormControl,
@@ -24,6 +25,7 @@ export const CreateTraderOrderModal: React.FC<{
   batchAccount: BatchAccount
   meta: SpotMeta
 }> = ({ open, handleClose, meta, fetchOrders, batchAccount }) => {
+  const [loading, setLoading] = useState(false)
   const [order, setOrder] = useState<{ size: number; coin: string }>({
     size: 0,
     coin: '',
@@ -43,6 +45,7 @@ export const CreateTraderOrderModal: React.FC<{
   }
 
   const onConfirm = async () => {
+    setLoading(true)
     const id = await openOrder()
     if (id) {
       db.createTraderOrder({
@@ -51,10 +54,16 @@ export const CreateTraderOrderModal: React.FC<{
         opened_at: Date.now(),
         trader_id: batchAccount.account.public_address,
         status: 'opened',
-      }).then(() => {
-        fetchOrders()
-        handleClose()
       })
+        .then(() => {
+          fetchOrders()
+          handleClose()
+        })
+        .finally(() => {
+          setLoading(false)
+        })
+    } else {
+      setLoading(false)
     }
   }
   const onChange = (id: 'size' | 'coin', v: string | number) => {
@@ -136,17 +145,23 @@ export const CreateTraderOrderModal: React.FC<{
               justifyContent: 'space-between',
             }}
           >
-            <Button variant='contained' color='error' onClick={handleClose}>
+            <Button
+              variant='contained'
+              color='error'
+              onClick={handleClose}
+              disabled={loading}
+            >
               Cancel
             </Button>
-            <Button
+            <LoadingButton
               variant='contained'
               color='success'
               onClick={onConfirm}
+              loading={loading}
               disabled={!order.coin || !order.size}
             >
               Confirm
-            </Button>
+            </LoadingButton>
           </Box>
         </Box>
       </Paper>
