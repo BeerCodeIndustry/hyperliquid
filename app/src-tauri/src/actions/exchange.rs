@@ -1,7 +1,6 @@
 use async_recursion::async_recursion;
 use hyperliquid_rust_sdk::{
-    AssetPosition, ClientLimit, ClientOrder, ClientOrderRequest, ExchangeClient,
-    ExchangeDataStatus, ExchangeResponseStatus, FilledOrder, InfoClient, RestingOrder,
+    AssetPosition, ClientCancelRequest, ClientLimit, ClientOrder, ClientOrderRequest, ExchangeClient, ExchangeDataStatus, ExchangeResponseStatus, FilledOrder, InfoClient, RestingOrder
 };
 use log::{error, info, warn};
 
@@ -142,11 +141,7 @@ pub async fn open_limit_order(
         limit_px,
     };
 
-    let response = exchange_client.order(order, None).await;
-
-    info!("{:#?}", response);
-
-    let response = response.unwrap();
+    let response = exchange_client.order(order, None).await.unwrap();
 
     match response {
         ExchangeResponseStatus::Ok(exchange_response) => {
@@ -231,4 +226,55 @@ pub async fn open_position(
             return Err(e);
         }
     }
+}
+
+pub async fn modify_limit_order(
+    new_order: ClientOrderRequest,
+    oid: u64,
+    exchange_client: &ExchangeClient,
+) -> Result<RestingOrder, String> {
+    let response = exchange_client.modify_order(oid, new_order, None).await;
+
+    info!("{:#?}", response);
+
+    let response = response.unwrap();
+
+    match response {
+        ExchangeResponseStatus::Ok(exchange_response) => {
+            match &exchange_response.data.unwrap().statuses[0] {
+                ExchangeDataStatus::Resting(r) => return Ok(r.clone()),
+                ExchangeDataStatus::Error(e) => return Err(e.clone()),
+                // ExchangeDataStatus::Filled(f) => return Ok(f.clone()),
+                _ => return Err("Smth went wrong with order".to_string()),
+            }
+        }
+        ExchangeResponseStatus::Err(e) => {
+            error!("Exchange error: {e:?}",);
+
+            return Err("Exchange error".to_string());
+        }
+    };
+}
+
+pub async fn cancel_limit_order(exchange_client: &ExchangeClient, asset: String, oid: u64) -> Result<(), String> {
+    let response = exchange_client.cancel(ClientCancelRequest {
+        asset,
+        oid
+    }, None).await.unwrap();
+
+    match response {
+        ExchangeResponseStatus::Ok(exchange_response) => {
+            match &exchange_response.data.unwrap().statuses[0] {
+                ExchangeDataStatus::Success => return Ok(()),
+                ExchangeDataStatus::Error(e) => return Err(e.clone()),
+                // ExchangeDataStatus::Filled(f) => return Ok(f.clone()),
+                _ => return Err("Smth went wrong while canceling order".to_string()),
+            }
+        }
+        ExchangeResponseStatus::Err(e) => {
+            error!("Exchange error: {e:?}",);
+
+            return Err("Exchange error".to_string());
+        }
+    };
 }

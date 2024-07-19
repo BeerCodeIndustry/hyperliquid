@@ -41,3 +41,8 @@ pub fn round_num_by_hyper_liquid(num: f64) -> f64 {
         .to_f64()
         .unwrap()
 }
+
+pub fn floor_to_precision(value: f64, precision: u32) -> f64 {
+    let factor = 10_f64.powi(precision as i32);
+    (value * factor).floor() / factor
+}

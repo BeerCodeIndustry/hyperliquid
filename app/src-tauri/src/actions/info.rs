@@ -4,14 +4,18 @@ use hyperliquid_rust_sdk::{
     OrderStatusResponse, SpotMeta, SpotMetaAndAssetCtxs, Subscription, UserStateResponse,
 };
 
+use itertools::Itertools;
 use log::{error, info};
 use rust_decimal::prelude::ToPrimitive;
 use std::{collections::HashMap, str::FromStr};
 use tokio::sync::mpsc::unbounded_channel;
 
 use crate::{
-    types::OrderBook,
-    utils::{convert_types::convert_public_address, num::round_num_by_hyper_liquid},
+    types::{ConvertedOrderInfo, OrderBook},
+    utils::{
+        convert_types::{convert_order_status, convert_public_address},
+        num::round_num_by_hyper_liquid,
+    },
 };
 
 const DEFAULT_SLIPPAGE: f64 = 0.001; // 0.001 0.1%
@@ -60,22 +64,39 @@ pub async fn get_account_balance(info_client: &InfoClient, public_address: &str)
             .unwrap()
 }
 
+pub async fn get_account_token_amount(
+    info_client: &InfoClient,
+    public_address: &str,
+    coin_name: String,
+) -> Result<f64, String> {
+    let user = convert_public_address(public_address);
+
+    let balances = info_client.user_token_balances(user).await.unwrap();
+
+    let token_amount = balances.balances.iter().find(|b| b.coin == coin_name);
+
+    match token_amount {
+        Some(u) => Ok(u.total.parse::<f64>().unwrap()),
+        None => {
+            error!("User {:?} balance not found", coin_name);
+
+            return Err(format!("User {:?} balance not found", coin_name));
+        }
+    }
+}
+
 pub async fn get_all_mids(info_client: &InfoClient) -> HashMap<String, String> {
     info_client.all_mids().await.unwrap()
 }
 
-pub async fn get_l2_book(info_client: &InfoClient, coin: &str, is_buy: bool) -> f64 {
-    let levels = &info_client
+pub async fn get_l2_book(info_client: &InfoClient, coin: &str) -> OrderBook {
+    let levels = info_client
         .l2_snapshot(coin.to_string())
         .await
         .unwrap()
         .levels;
 
-    let buy = levels[0][0].clone();
-    let sell = levels[1][0].clone();
-    let price = if is_buy { buy.px } else { sell.px };
-
-    price.parse::<f64>().unwrap()
+    levels
 }
 
 pub async fn slippage_price(
@@ -140,13 +161,13 @@ pub async fn get_order_info(
     info_client: &InfoClient,
     public_address: &str,
     oid: u64,
-) -> Result<OrderInfo, String> {
+) -> Result<ConvertedOrderInfo, String> {
     let user = convert_public_address(public_address);
 
     let r = info_client.query_order_by_oid(user, oid).await;
 
     match r {
-        Ok(order) => Ok(order.order),
+        Ok(order) => Ok(convert_order_status(order.order)),
         Err(e) => {
             error!("Smth went wrong while get_order_info {:?}", e);
 

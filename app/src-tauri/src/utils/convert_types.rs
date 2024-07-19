@@ -1,10 +1,11 @@
 use ethers::types::H160;
-use hyperliquid_rust_sdk::UserStateResponse;
+use hyperliquid_rust_sdk::{ClientOrderRequest, OrderInfo, UserStateResponse};
 use std::str::FromStr;
+use log::info;
 
-use crate::dto_types::user_state::{
+use crate::{dto_types::user_state::{
     AssetPosition, Leverage, MarginSummary, PositionData, UserState,
-};
+}, types::{ConvertedOrderInfo, OrderStatus}};
 
 pub fn convert_user_state(user_state: UserStateResponse) -> UserState {
     UserState {
@@ -50,4 +51,22 @@ pub fn convert_public_address(public_address: &str) -> H160 {
     let user: String = public_address.parse().unwrap();
     
     H160::from_str(&user).unwrap()
+}
+
+pub fn convert_order_status(order: OrderInfo) -> ConvertedOrderInfo {
+    ConvertedOrderInfo {
+        order: order.order,
+        status: match order.status.as_str() {
+            "open" => OrderStatus::Open,
+            "filled" => OrderStatus::Filled,
+            "canceled" => OrderStatus::Canceled,
+            "rejected" => OrderStatus::Rejected,
+            _ => {
+                info!("Unknown order status: {}", order.status);
+
+                OrderStatus::Unknown
+            }
+        },
+        status_timestamp: order.status_timestamp
+    }
 }

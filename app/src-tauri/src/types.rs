@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use ethers::signers::LocalWallet;
-use hyperliquid_rust_sdk::{Level, AssetPosition, ExchangeClient, InfoClient};
+use hyperliquid_rust_sdk::{AssetPosition, BasicOrderInfo, ExchangeClient, InfoClient, Level};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -13,7 +13,6 @@ pub struct DefaultPair {
     pub sz: f64,
     pub order_type: String,
 }
-
 
 pub enum OrderType {
     Position,
@@ -69,7 +68,6 @@ pub struct BatchAccount {
     pub proxy: Option<ProxyDTO>,
 }
 
-
 #[derive(Clone, Debug)]
 pub struct GlobalAccount {
     pub sub_id: Option<u32>,
@@ -88,7 +86,9 @@ pub struct Unit {
 pub struct Bid {
     pub asset: String,
     pub sz: f64,
-    pub is_buy: bool
+    pub is_buy: bool,
+    pub coin_name: String,
+    pub sz_decimals: u32,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -97,8 +97,21 @@ pub struct RandK {
     pub is_fat: bool,
 }
 
-#[derive(Debug, Clone)]
-pub struct OrderBook {
-    pub buy: f64,
-    pub sell: f64
+pub type OrderBook = Vec<Vec<Level>>;
+
+#[derive(Debug, Clone, Copy, Deserialize, PartialEq, Eq)]
+pub enum OrderStatus {
+    Open,
+    Canceled,
+    Filled,
+    Rejected,
+    Unknown,
+}
+
+#[derive(Deserialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct ConvertedOrderInfo {
+    pub order: BasicOrderInfo,
+    pub status: OrderStatus,
+    pub status_timestamp: u64,
 }
